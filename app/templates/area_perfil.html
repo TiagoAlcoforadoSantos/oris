@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+
+{% block title %}{{ titulo }} — ORIS{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="h3 mb-0">{{ titulo }}</h1>
+    <div>
+        <a href="{{ url_for('main.index') }}" class="btn btn-outline-secondary btn-sm">Início</a>
+        <a href="{{ url_for('auth.logout') }}" class="btn btn-outline-secondary btn-sm">Sair</a>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        <p class="mb-1"><strong>Usuário autenticado:</strong> {{ usuario.nome }}</p>
+        <p class="mb-0"><strong>Perfil:</strong> {{ usuario.perfil.value }}</p>
+    </div>
+</div>
+
+<p class="text-muted small mt-4">
+    Esta página existe apenas para comprovar o controle de acesso (RBAC)
+    por perfil. As funcionalidades reais desta área serão implementadas
+    em fases futuras.
+</p>
+{% endblock %}

@@ -1,6 +1,6 @@
 # ORIS — Plataforma de Governança da Rede de Saúde Bucal
 
-> ⚠️ **Status do projeto:** em desenvolvimento — FASE 3 concluída (autenticação: login, bcrypt, sessão, logout).
+> ⚠️ **Status do projeto:** em desenvolvimento — FASE 4 concluída (RBAC e gerenciamento de acesso).
 > Este README será expandido a cada fase concluída.
 
 ## O que é o ORIS
@@ -55,7 +55,8 @@ ORIS/
 │   ├── cli.py               # comando `flask criar-usuario`
 │   ├── routes/
 │   │   ├── auth.py               # /login, /logout
-│   │   └── main.py               # "/" (rota protegida)
+│   │   ├── main.py               # "/" (rota protegida)
+│   │   └── areas.py              # /admin, /gestao, /responsavel, /gestor (RBAC)
 │   ├── models/
 │   │   ├── enums.py             # PerfilUsuario, situações, status
 │   │   ├── mixins.py            # TimestampMixin (created_at/updated_at)
@@ -68,7 +69,9 @@ ORIS/
 │   ├── templates/
 │   │   ├── base.html            # layout com Bootstrap
 │   │   ├── login.html
-│   │   └── index.html           # página protegida provisória
+│   │   ├── index.html           # página protegida provisória
+│   │   ├── area_perfil.html     # áreas de teste do RBAC
+│   │   └── acesso_negado.html   # página de erro 403
 │   ├── static/
 │   │   ├── css/
 │   │   ├── js/
@@ -77,7 +80,8 @@ ORIS/
 │   └── utils/
 │       ├── datetime_utils.py    # helper de data/hora (UTC)
 │       ├── security.py          # hash/verificação de senha (bcrypt)
-│       └── decorators.py        # login_required
+│       ├── decorators.py        # login_required, roles_required
+│       └── rbac.py               # matriz de acesso das áreas de teste
 │
 ├── database/
 │   └── schema.sql           # DDL completo das tabelas (MySQL)
@@ -85,7 +89,8 @@ ORIS/
 ├── tests/
 │   ├── test_fase1_estrutura.py
 │   ├── test_fase2_models.py
-│   └── test_fase3_autenticacao.py
+│   ├── test_fase3_autenticacao.py
+│   └── test_fase4_rbac.py
 │
 ├── .env                     # configuração local (NÃO versionar)
 ├── .env.example             # modelo de configuração
@@ -233,7 +238,7 @@ Resposta esperada:
 {
   "status": "ok",
   "app": "ORIS",
-  "fase": "3 - autenticacao (login, bcrypt, sessao, logout)"
+  "fase": "4 - rbac e gerenciamento de acesso"
 }
 ```
 
@@ -252,7 +257,7 @@ O ORIS possui login individual por email/senha. Rotas disponíveis:
 1. O usuário informa email e senha.
 2. O sistema busca o usuário pelo email.
 3. Verifica se o usuário existe, está **ativo** e se a senha confere
-   (comparação seria feita via bcrypt, nunca texto puro).
+   (comparação feita via bcrypt, nunca texto puro).
 4. Se tudo estiver correto, cria uma sessão Flask com o mínimo necessário
    (`usuario_id` e `autenticado`) e redireciona para `/`.
 5. Se qualquer verificação falhar (usuário inexistente, senha errada ou
@@ -264,6 +269,40 @@ O ORIS possui login individual por email/senha. Rotas disponíveis:
 **Rota protegida:** o decorator `login_required`
 (`app/utils/decorators.py`) verifica a sessão no backend antes de liberar
 o acesso — a proteção nunca depende apenas da interface.
+
+## RBAC — Controle de acesso por perfil (FASE 4)
+
+Toda rota restrita a um ou mais perfis usa o decorator
+`roles_required(*perfis)` (`app/utils/decorators.py`), que:
+
+1. verifica se existe sessão autenticada (senão, redireciona para `/login`);
+2. verifica se o usuário ainda existe e está **ativo** (senão, encerra a
+   sessão e redireciona para `/login` — mesmo que a sessão já existisse
+   antes de o usuário ser desativado);
+3. verifica se o `perfil` do usuário está entre os perfis permitidos
+   (senão, HTTP 403 — página "Acesso negado").
+
+Rotas de teste do RBAC (ainda sem funcionalidade real — servem apenas
+para comprovar a autorização):
+
+| Rota           | Quem acessa                              |
+|----------------|-------------------------------------------|
+| `/admin`       | ADMINISTRADOR                              |
+| `/gestao`      | ADMINISTRADOR, GESTAO_INFORMACAO           |
+| `/responsavel` | ADMINISTRADOR, RESPONSAVEL_SAUDE_BUCAL     |
+| `/gestor`      | ADMINISTRADOR, GESTOR                      |
+
+O ADMINISTRADOR acessa todas as áreas (conforme a Fase 4 define que esse
+perfil "acessa todas as áreas administrativas"); os demais perfis só
+acessam a própria área.
+
+A página inicial (`/`) só mostra, no menu, os links das áreas que o
+perfil do usuário autenticado pode acessar — mas isso é só uma
+conveniência de interface; o bloqueio de verdade acontece sempre no
+backend, mesmo que alguém digite a URL diretamente.
+
+Quando um usuário autenticado tenta acessar uma área sem permissão, vê a
+página "403 — Acesso negado", sem detalhes internos do sistema.
 
 ## Usuário de teste
 
@@ -286,34 +325,32 @@ O comando pergunta:
 > `.example` no email — a validação de formato os rejeita. Prefira algo
 > como `usuario@oris.com.br`.
 
+Crie um usuário de cada perfil para demonstrar a matriz de acesso da
+Fase 4 (`/admin`, `/gestao`, `/responsavel`, `/gestor`).
+
 ## Como rodar os testes
 
 ```bash
 python -m pytest tests/ -v
 ```
 
-## Usuários de teste
-
-Veja a seção "Usuário de teste" acima — use `flask --app run.py criar-usuario`
-para criar quantos usuários forem necessários para a demonstração.
-
 ## Perfis de usuário
 
-O sistema terá 4 perfis:
+O sistema tem 4 perfis:
 
-1. **ADMINISTRADOR** — acesso total, gestão de usuários
-2. **GESTAO_INFORMACAO** — valida e aprova/rejeita alterações
-3. **RESPONSAVEL_SAUDE_BUCAL** — cadastra e edita unidades/serviços/equipamentos
-4. **GESTOR** — apenas consulta (dashboard e visualização)
+1. **ADMINISTRADOR** — acesso total, gestão de usuários, acessa todas as áreas
+2. **GESTAO_INFORMACAO** — consulta dados, valida/aprova alterações (fluxo real na Fase 7), consulta auditoria
+3. **RESPONSAVEL_SAUDE_BUCAL** — consulta dados, cadastra/edita unidades, serviços e equipamentos (CRUDs reais nas Fases 5/6)
+4. **GESTOR** — somente leitura, apenas consulta e visualização
 
-O campo `perfil` já existe em `usuarios` desde a Fase 2, mas as regras de
-permissão de cada perfil (RBAC) serão implementadas na **FASE 4** — por
-enquanto, qualquer usuário autenticado acessa a única rota protegida
-existente (`/`).
+As regras de acesso de cada perfil (RBAC) já estão implementadas desde a
+Fase 4 — veja a seção "RBAC — Controle de acesso por perfil" acima. Os
+CRUDs de negócio em si (unidades, serviços, equipamentos, aprovação)
+ainda serão implementados nas próximas fases.
 
 ## Segurança implementada
 
-Até o momento (FASE 3):
+Até o momento (FASE 4):
 
 - Nenhuma credencial sensível fica hardcoded no código — tudo vem do `.env`
   via `python-dotenv`.
@@ -330,19 +367,25 @@ Até o momento (FASE 3):
 - Mensagem de erro de login sempre genérica ("Email ou senha inválidos."),
   sem revelar se o email existe, se a senha está errada ou se a conta
   está inativa.
-- A verificação de permissão da rota protegida acontece no backend
-  (`login_required`), nunca apenas escondendo botões na interface.
+- Controle de acesso por perfil (RBAC) verificado sempre no backend
+  (`roles_required`), nunca apenas escondendo links na interface —
+  segue o princípio de menor privilégio e prepara a segregação de
+  funções entre quem edita (`RESPONSAVEL_SAUDE_BUCAL`) e quem aprova
+  (`GESTAO_INFORMACAO`).
+- Um usuário desativado perde o acesso imediatamente, mesmo que já
+  tivesse uma sessão ativa antes de ser desativado.
+- Página dedicada de "Acesso negado" (HTTP 403), sem expor detalhes
+  internos do sistema.
 
-Itens de segurança das próximas fases (RBAC completo, fluxo de aprovação,
-auditoria detalhada, LGPD) serão documentados aqui conforme forem
-implementados.
+Itens de segurança das próximas fases (fluxo de aprovação, auditoria
+detalhada, LGPD) serão documentados aqui conforme forem implementados.
 
 ## Roadmap de fases
 
 - [x] FASE 1 — Estrutura do projeto, ambiente, Flask, MySQL
 - [x] FASE 2 — Banco de dados, models, usuários, perfis
 - [x] FASE 3 — Login, bcrypt, sessão, logout
-- [ ] FASE 4 — Gestão de acesso, proteção de rotas
+- [x] FASE 4 — RBAC e gerenciamento de acesso
 - [ ] FASE 5 — Unidades
 - [ ] FASE 6 — Serviços e equipamentos
 - [ ] FASE 7 — Fluxo de aprovação

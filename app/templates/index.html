@@ -20,4 +20,20 @@
     Esta é uma página provisória apenas para comprovar a autenticação.
     O dashboard real do ORIS será implementado em uma fase futura.
 </p>
+
+{% if areas %}
+<hr class="my-4">
+<h2 class="h5">Áreas disponíveis para o seu perfil</h2>
+<div class="list-group">
+    {% for endpoint, titulo in areas %}
+        <a href="{{ url_for(endpoint) }}" class="list-group-item list-group-item-action">
+            {{ titulo }}
+        </a>
+    {% endfor %}
+</div>
+<p class="text-muted small mt-2">
+    Apenas as áreas de teste do RBAC (Fase 4) permitidas ao seu perfil
+    aparecem aqui — o backend também bloqueia o acesso direto pela URL.
+</p>
+{% endif %}
 {% endblock %}
