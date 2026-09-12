@@ -1,6 +1,6 @@
 # ORIS — Plataforma de Governança da Rede de Saúde Bucal
 
-> ⚠️ **Status do projeto:** em desenvolvimento — FASE 10 concluída (Importador de Planilhas).
+> ⚠️ **Status do projeto:** em desenvolvimento — FASE 11 concluída (Administração de Usuários).
 > Este README será expandido a cada fase concluída.
 
 ## O que é o ORIS
@@ -64,7 +64,8 @@ ORIS/
 │   │   ├── alteracoes.py         # listar, visualizar, aprovar, rejeitar
 │   │   ├── auditoria.py          # /auditoria (somente leitura)
 │   │   ├── dashboard.py          # /dashboard
-│   │   └── importacao.py         # importador de planilhas (.xlsx/.csv)
+│   │   ├── importacao.py         # importador de planilhas (.xlsx/.csv)
+│   │   └── usuarios.py           # administração de usuários (só ADMINISTRADOR)
 │   ├── models/
 │   │   ├── enums.py             # PerfilUsuario, situações, status, TipoOperacaoAlteracao
 │   │   ├── mixins.py            # TimestampMixin (created_at/updated_at)
@@ -94,12 +95,15 @@ ORIS/
 │   │   ├── auditoria/
 │   │   │   ├── lista.html
 │   │   │   └── detalhe.html
-│   │   └── importacao/
-│   │       ├── index.html
-│   │       ├── nova.html
-│   │       ├── mapeamento.html
-│   │       ├── validacao_erros.html
-│   │       └── previa.html
+│   │   ├── importacao/
+│   │   │   ├── index.html
+│   │   │   ├── nova.html
+│   │   │   ├── mapeamento.html
+│   │   │   ├── validacao_erros.html
+│   │   │   └── previa.html
+│   │   └── usuarios/
+│   │       ├── lista.html
+│   │       └── form.html         # criar e editar (+ mini-form de redefinir senha)
 │   ├── static/
 │   │   ├── css/
 │   │   ├── js/
@@ -128,7 +132,8 @@ ORIS/
 │   ├── test_fase7_alteracoes.py
 │   ├── test_fase8_auditoria.py
 │   ├── test_fase9_dashboard.py
-│   └── test_fase10_importacao.py
+│   ├── test_fase10_importacao.py
+│   └── test_fase11_usuarios.py
 │
 ├── .env                     # configuração local (NÃO versionar)
 ├── .env.example             # modelo de configuração
@@ -276,7 +281,7 @@ Resposta esperada:
 {
   "status": "ok",
   "app": "ORIS",
-  "fase": "10 - importador de planilhas"
+  "fase": "11 - administracao de usuarios"
 }
 ```
 
@@ -653,6 +658,74 @@ um aprovador de verdade (diferente de quem solicitou) via a lista com
 itens pendentes. Registrar `CSRFProtect` corrige isso e também
 protege, de forma consistente, os novos formulários do importador.
 
+## Administração de Usuários (FASE 11)
+
+Módulo exclusivo do **ADMINISTRADOR** para gerenciar os usuários do
+sistema — os outros três perfis (`GESTAO_INFORMACAO`,
+`RESPONSAVEL_SAUDE_BUCAL`, `GESTOR`) recebem HTTP 403 ao tentar
+acessar qualquer rota de `/usuarios`, sempre verificado no backend
+via `roles_required`, nunca só escondendo o link do menu.
+
+| Rota                          | Método    | Descrição                                    |
+|--------------------------------|-----------|-------------------------------------------------|
+| `/usuarios`                     | GET       | Listagem, com busca por nome/email e filtro por perfil/situação |
+| `/usuarios/novo`                | GET, POST | Criar usuário                                    |
+| `/usuarios/<id>/editar`         | GET, POST | Editar nome, email e perfil                      |
+| `/usuarios/<id>/situacao`       | POST      | Ativar/desativar                                 |
+| `/usuarios/<id>/senha`          | POST      | Redefinição administrativa de senha              |
+
+**Criação:** nome, email, senha e perfil. Email precisa ser único
+(mesma verificação amigável já usada em Unidades/CNES). A senha é
+transformada em hash bcrypt antes de ser salva — nunca fica em texto
+puro em nenhum momento, nem na criação nem depois. **Regra mínima de
+senha:** esta é a primeira vez que o projeto codifica um tamanho
+mínimo de senha (8 caracteres) — o `LoginForm` da Fase 3 nunca exigiu
+isso, só que o campo não estivesse vazio; adotamos 8 caracteres como
+esse mínimo, tanto na criação quanto na redefinição de senha.
+
+**Edição:** nome, email e perfil — não a senha (ver "Redefinir
+senha" abaixo) nem a situação (tem seu próprio botão/rota, seguindo o
+mesmo padrão já usado em Unidade/Serviço/Equipamento).
+
+**Ativar/desativar:** nenhuma exclusão física de usuário existe em
+lugar nenhum do sistema. Um usuário desativado:
+- não consegue fazer login (checado desde a Fase 3, reaproveitado
+  aqui sem alterações);
+- perde o acesso a **qualquer** área protegida imediatamente, mesmo
+  que já tivesse uma sessão ativa antes de ser desativado. Isso já
+  valia para rotas que exigem um perfil específico (`roles_required`,
+  desde a Fase 4) — nesta fase, a mesma checagem de "o usuário
+  continua ativo?" foi estendida também para `login_required`
+  (usada pelas telas só de consulta), fechando uma lacuna: antes,
+  uma sessão antiga de um usuário desativado ainda conseguia ver,
+  por exemplo, a listagem de Unidades, embora não conseguisse fazer
+  login de novo.
+
+**Proteção do último administrador:** o sistema nunca pode ficar sem
+nenhum `ADMINISTRADOR` ativo. Duas ações são bloqueadas quando
+deixariam a contagem de administradores ativos chegar a zero:
+- desativar o último `ADMINISTRADOR` ativo;
+- mudar o perfil do último `ADMINISTRADOR` ativo para qualquer outro.
+
+A regra vale tanto para um administrador mexendo em outra conta
+quanto na própria — é a mesma verificação nos dois casos.
+
+**Redefinição de senha:** o `ADMINISTRADOR` pode definir uma nova
+senha para qualquer usuário (por exemplo, se ele esquecer a própria).
+A senha nova também vira hash bcrypt antes de salvar; a senha antiga
+nunca é exibida (e não há como recuperá-la, só substituí-la). Não há
+e-mail de recuperação nem token de redefinição nesta fase — é uma
+ação administrativa direta, feita pelo `ADMINISTRADOR` logado.
+
+**Auditoria:** toda ação gera um registro rastreável —
+`CRIAR_USUARIO`, `EDITAR_USUARIO`, `ATIVAR_USUARIO`,
+`DESATIVAR_USUARIO`, `ALTERAR_PERFIL` e `REDEFINIR_SENHA` — cada um
+atribuído ao `ADMINISTRADOR` que executou a ação. Uma única edição
+pode gerar mais de um registro (ex.: mudar nome e perfil ao mesmo
+tempo gera `EDITAR_USUARIO` e `ALTERAR_PERFIL` separadamente), cada
+um só com os campos que de fato mudaram. Nunca é registrada senha,
+hash ou qualquer credencial — nem na criação, nem na redefinição.
+
 ## Usuário de teste
 
 Não existe usuário fixo/hardcoded no código. Para criar um usuário
@@ -699,7 +772,7 @@ ainda serão implementados nas próximas fases.
 
 ## Segurança implementada
 
-Até o momento (FASE 10):
+Até o momento (FASE 11):
 
 - Nenhuma credencial sensível fica hardcoded no código — tudo vem do `.env`
   via `python-dotenv`.
@@ -707,7 +780,8 @@ Até o momento (FASE 10):
 - Conexão com o MySQL configurada via SQLAlchemy com usuário de banco
   dedicado (privilégio mínimo, sem usar o `root`).
 - Senhas nunca são armazenadas em texto puro — apenas o hash bcrypt
-  (biblioteca `bcrypt`), gerado com salt aleatório a cada chamada.
+  (biblioteca `bcrypt`), gerado com salt aleatório a cada chamada —
+  também na criação e na redefinição administrativa (Fase 11).
 - Sessão do Flask guarda apenas `usuario_id` e `autenticado` — nunca a
   senha ou o hash.
 - Cookies de sessão com `HttpOnly` e `SameSite=Lax` (e `Secure` em
@@ -720,6 +794,14 @@ Até o momento (FASE 10):
   está inativa.
 - Controle de acesso por perfil (RBAC) verificado sempre no backend
   (`roles_required`), nunca apenas escondendo links/botões na interface.
+  A Administração de Usuários (Fase 11) é exclusiva do ADMINISTRADOR.
+- Um usuário desativado perde o acesso imediatamente a **qualquer**
+  área protegida, mesmo com uma sessão antiga ainda "logada" — desde
+  a Fase 11, essa checagem vale tanto para rotas com perfil específico
+  quanto para as que só exigem estar autenticado.
+- Proteção contra o sistema ficar sem nenhum ADMINISTRADOR ativo: não
+  é possível desativar nem trocar o perfil do último administrador
+  ativo (Fase 11).
 - Segregação de funções real: criar/editar/alterar situação de Unidade,
   Serviço e Equipamento (manualmente ou via importação de planilha)
   passa a exigir aprovação de um ADMINISTRADOR ou GESTAO_INFORMACAO —
@@ -729,11 +811,13 @@ Até o momento (FASE 10):
   aplicação falhar (ex.: conflito de CNES), nada é salvo e a alteração
   continua PENDENTE.
 - Auditoria funcional e protegida: login/logout, solicitação, aprovação,
-  rejeição e a mudança efetivamente aplicada geram registros
-  rastreáveis (quem, quando, o quê, valores antes/depois quando
-  aplicável) — nunca senha ou hash. A auditoria é somente leitura: não
-  existe rota de edição ou exclusão pela aplicação, e só
-  ADMINISTRADOR/GESTAO_INFORMACAO podem consultá-la.
+  rejeição, a mudança efetivamente aplicada e agora também toda a
+  administração de usuários (criação, edição, ativação/desativação,
+  troca de perfil, redefinição de senha) geram registros rastreáveis
+  (quem, quando, o quê, valores antes/depois quando aplicável) — nunca
+  senha ou hash. A auditoria é somente leitura: não existe rota de
+  edição ou exclusão pela aplicação, e só ADMINISTRADOR/
+  GESTAO_INFORMACAO podem consultá-la.
 - O Dashboard reaproveita essa mesma restrição: a seção "Atividade
   recente" só mostra o histórico completo para ADMINISTRADOR/
   GESTAO_INFORMACAO — RESPONSAVEL_SAUDE_BUCAL e GESTOR veem apenas a
@@ -742,22 +826,23 @@ Até o momento (FASE 10):
   linhas limitados, nome de arquivo gerado pelo servidor (nunca o do
   usuário), armazenamento temporário fora de `static`/`templates`, e
   remoção do arquivo assim que deixa de ser necessário.
-- Um usuário desativado perde o acesso imediatamente, mesmo que já
-  tivesse uma sessão ativa antes de ser desativado.
 - Páginas dedicadas de "Acesso negado" (HTTP 403) e "Não encontrado"
   (HTTP 404), sem expor detalhes internos do sistema (ex.: erro de
   banco de dados) para o usuário.
 - Todo acesso ao banco passa pelo ORM (SQLAlchemy), sem SQL manual —
   proteção nativa contra SQL Injection.
-- Unicidade de CNES validada tanto na aplicação (mensagem amigável)
-  quanto no banco (constraint), cobrindo também condições de corrida.
+- Unicidade de CNES e de email de usuário validada tanto na aplicação
+  (mensagem amigável) quanto no banco (constraint), cobrindo também
+  condições de corrida.
 - Integridade referencial de Serviços/Equipamentos validada no
   backend: unidade sempre precisa existir, e um equipamento nunca pode
   ser associado a um serviço de outra unidade — inclusive quando os
   dados vêm de uma planilha importada.
+- Nenhuma exclusão física de usuário existe em nenhuma rota — apenas
+  ativação/desativação, preservando histórico e auditoria.
 
-Itens de segurança das próximas fases (LGPD, acabamento geral) serão
-documentados aqui conforme forem implementados.
+Itens de segurança das próximas fases (LGPD/criptografia adicional,
+acabamento geral) serão documentados aqui conforme forem implementados.
 
 ## Roadmap de fases
 
@@ -771,8 +856,9 @@ documentados aqui conforme forem implementados.
 - [x] FASE 8 — Auditoria e rastreabilidade
 - [x] FASE 9 — Dashboard
 - [x] FASE 10 — Importador de Planilhas (.xlsx/.csv)
-- [ ] Próximas fases — administração de usuários, LGPD/criptografia
-      final, acabamento de UX/UI, testes e polimento final
+- [x] FASE 11 — Administração de Usuários
+- [ ] Próximas fases — LGPD/criptografia final, acabamento de UX/UI,
+      testes e polimento final
 
 ## Dados de demonstração
 

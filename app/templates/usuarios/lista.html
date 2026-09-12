@@ -1,0 +1,94 @@
+{% extends "base.html" %}
+
+{% block title %}Administração de Usuários — ORIS{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="h3 mb-0">Administração de Usuários</h1>
+    <div>
+        <a href="{{ url_for('main.index') }}" class="btn btn-outline-secondary btn-sm">Início</a>
+        <a href="{{ url_for('usuarios.novo') }}" class="btn btn-primary btn-sm">+ Novo usuário</a>
+    </div>
+</div>
+
+<form method="GET" class="row g-2 mb-3">
+    <div class="col-auto">
+        <input type="text" name="busca" class="form-control form-control-sm" placeholder="Buscar por nome ou email" value="{{ busca or '' }}">
+    </div>
+    <div class="col-auto">
+        <select name="perfil" class="form-select form-select-sm" onchange="this.form.submit()">
+            <option value="">Todos os perfis</option>
+            {% for perfil in perfis %}
+                <option value="{{ perfil }}" {% if perfil_filtro == perfil %}selected{% endif %}>{{ perfil }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    <div class="col-auto">
+        <select name="situacao" class="form-select form-select-sm" onchange="this.form.submit()">
+            <option value="">Todas as situações</option>
+            <option value="1" {% if situacao_filtro == "1" %}selected{% endif %}>Ativo</option>
+            <option value="0" {% if situacao_filtro == "0" %}selected{% endif %}>Inativo</option>
+        </select>
+    </div>
+    <div class="col-auto">
+        <button type="submit" class="btn btn-outline-secondary btn-sm">Filtrar</button>
+    </div>
+</form>
+
+{% if usuarios %}
+<div class="table-responsive">
+    <table class="table table-striped align-middle">
+        <thead>
+            <tr>
+                <th>Nome</th>
+                <th>Email</th>
+                <th>Perfil</th>
+                <th>Situação</th>
+                <th>Criado em</th>
+                <th>Atualizado em</th>
+                <th class="text-end">Ações</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for usuario in usuarios %}
+            <tr>
+                <td>{{ usuario.nome }}</td>
+                <td>{{ usuario.email }}</td>
+                <td>{{ usuario.perfil.value }}</td>
+                <td>
+                    {% if usuario.ativo %}
+                        <span class="badge bg-success">Ativo</span>
+                    {% else %}
+                        <span class="badge bg-secondary">Inativo</span>
+                    {% endif %}
+                </td>
+                <td>{{ usuario.created_at.strftime("%d/%m/%Y %H:%M") }}</td>
+                <td>{{ usuario.updated_at.strftime("%d/%m/%Y %H:%M") if usuario.updated_at else "—" }}</td>
+                <td class="text-end">
+                    <a href="{{ url_for('usuarios.editar', usuario_id=usuario.id) }}" class="btn btn-sm btn-outline-primary">Editar</a>
+                    <form method="POST" action="{{ url_for('usuarios.alterar_situacao', usuario_id=usuario.id) }}" class="d-inline">
+                        {{ form_acao.hidden_tag() }}
+                        {% if usuario.ativo %}
+                            <input type="hidden" name="acao" value="desativar">
+                            <button type="submit" class="btn btn-sm btn-outline-danger">Desativar</button>
+                        {% else %}
+                            <input type="hidden" name="acao" value="ativar">
+                            <button type="submit" class="btn btn-sm btn-outline-success">Ativar</button>
+                        {% endif %}
+                    </form>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% else %}
+<p class="text-muted">Nenhum usuário encontrado para esses filtros.</p>
+{% endif %}
+
+<p class="text-muted small mt-3">
+    O último ADMINISTRADOR ativo do sistema não pode ser desativado nem
+    perder o perfil de administrador — essa proteção é sempre aplicada
+    no backend.
+</p>
+{% endblock %}

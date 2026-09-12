@@ -24,6 +24,9 @@
                 {% if usuario_logado and usuario_logado.perfil.value in ["ADMINISTRADOR", "GESTAO_INFORMACAO"] %}
                     <a class="nav-link" href="{{ url_for('auditoria.listar') }}">Auditoria</a>
                 {% endif %}
+                {% if usuario_logado and usuario_logado.perfil.value == "ADMINISTRADOR" %}
+                    <a class="nav-link" href="{{ url_for('usuarios.listar') }}">Usuários</a>
+                {% endif %}
             </div>
         </div>
     </nav>

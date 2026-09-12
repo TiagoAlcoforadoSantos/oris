@@ -7,7 +7,7 @@ sem precisar implementar nada manualmente.
 
 from flask_wtf import FlaskForm
 from wtforms import PasswordField, SelectField, StringField, SubmitField
-from wtforms.validators import DataRequired, Email, Length, Regexp
+from wtforms.validators import DataRequired, Email, Length, Regexp, ValidationError
 
 # Regex do CNES, compartilhada com o importador de planilhas (Fase 10)
 # em app/services/importacao_service.py — mantida em um único lugar
@@ -209,3 +209,117 @@ class AcaoAlteracaoForm(FlaskForm):
     dados, só o token CSRF embutido pelo FlaskForm."""
 
     submit = SubmitField("Confirmar")
+
+
+class CriarUsuarioForm(FlaskForm):
+    """Formulário de criação de usuário (Fase 11 — Administração de
+    Usuários). A unicidade do email é verificada à parte, na rota,
+    para dar uma mensagem amigável específica.
+
+    Regra mínima de senha: o projeto não tinha, até esta fase, uma
+    regra de tamanho mínimo para senha (o LoginForm só exige que o
+    campo não esteja vazio). Para o cadastro administrativo de um
+    novo usuário, adotamos um mínimo de 8 caracteres — a mesma ideia
+    de "regra mínima de segurança" pedida pela Fase 11, aplicada pela
+    primeira vez aqui e documentada no README.
+    """
+
+    nome = StringField(
+        "Nome",
+        validators=[DataRequired(message="Informe o nome."), Length(max=150)],
+    )
+
+    email = StringField(
+        "Email",
+        validators=[
+            DataRequired(message="Informe o email."),
+            Email(message="Email inválido.", check_deliverability=False),
+            Length(max=150),
+        ],
+    )
+
+    senha = PasswordField(
+        "Senha",
+        validators=[
+            DataRequired(message="Informe a senha."),
+            Length(min=8, max=255, message="A senha deve ter no mínimo 8 caracteres."),
+        ],
+    )
+
+    perfil = SelectField(
+        "Perfil",
+        choices=[
+            ("ADMINISTRADOR", "Administrador"),
+            ("GESTAO_INFORMACAO", "Gestão da Informação"),
+            ("RESPONSAVEL_SAUDE_BUCAL", "Responsável pela Saúde Bucal"),
+            ("GESTOR", "Gestor"),
+        ],
+        validators=[DataRequired(message="Selecione um perfil.")],
+    )
+
+    ativo = SelectField(
+        "Situação",
+        choices=[("1", "Ativo"), ("0", "Inativo")],
+        default="1",
+        validators=[DataRequired()],
+    )
+
+    submit = SubmitField("Salvar")
+
+
+class EditarUsuarioForm(FlaskForm):
+    """Formulário de edição de usuário — só nome, email e perfil. A
+    situação (ativo/inativo) tem sua própria rota/botão dedicado
+    (`/usuarios/<id>/situacao`), seguindo o mesmo padrão já usado em
+    Unidade/Serviço/Equipamento. A senha também não é editada aqui —
+    ver `RedefinirSenhaForm`."""
+
+    nome = StringField(
+        "Nome",
+        validators=[DataRequired(message="Informe o nome."), Length(max=150)],
+    )
+
+    email = StringField(
+        "Email",
+        validators=[
+            DataRequired(message="Informe o email."),
+            Email(message="Email inválido.", check_deliverability=False),
+            Length(max=150),
+        ],
+    )
+
+    perfil = SelectField(
+        "Perfil",
+        choices=[
+            ("ADMINISTRADOR", "Administrador"),
+            ("GESTAO_INFORMACAO", "Gestão da Informação"),
+            ("RESPONSAVEL_SAUDE_BUCAL", "Responsável pela Saúde Bucal"),
+            ("GESTOR", "Gestor"),
+        ],
+        validators=[DataRequired(message="Selecione um perfil.")],
+    )
+
+    submit = SubmitField("Salvar")
+
+
+class RedefinirSenhaForm(FlaskForm):
+    """Formulário mínimo para o ADMINISTRADOR definir uma nova senha
+    para outro usuário (Fase 11, item 8). A senha nunca é exibida de
+    volta — este formulário só recebe a nova senha e a confirmação."""
+
+    nova_senha = PasswordField(
+        "Nova senha",
+        validators=[
+            DataRequired(message="Informe a nova senha."),
+            Length(min=8, max=255, message="A senha deve ter no mínimo 8 caracteres."),
+        ],
+    )
+    confirmar_senha = PasswordField(
+        "Confirmar nova senha",
+        validators=[DataRequired(message="Confirme a nova senha.")],
+    )
+    submit = SubmitField("Redefinir senha")
+
+    def validate_confirmar_senha(self, field):
+        if field.data != self.nova_senha.data:
+            raise ValidationError("As senhas informadas não conferem.")

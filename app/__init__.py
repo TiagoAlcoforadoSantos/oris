@@ -1,25 +1,13 @@
 """
 Application factory do ORIS.
 
-Nesta FASE 10, o ORIS ganha um importador de planilhas (.xlsx/.csv)
-para Unidades, Serviços e Equipamentos. O upload nunca grava direto
-no banco — cada linha nova ou alterada vira uma solicitação PENDENTE,
-reaproveitando o mesmo mecanismo de aprovação da Fase 7 e a mesma
-auditoria da Fase 8. Reaproveita também a autenticação (Fase 3) e o
-RBAC (Fase 4) sem alterá-los.
-
-CORREÇÃO NESTA FASE: `CSRFProtect` passou a ser inicializado
-globalmente. Antes, `{{ csrf_token() }}` só funcionava dentro de
-templates que recebiam uma instância de `FlaskForm` (via
-`form.hidden_tag()`) — mas o template `alteracoes/lista.html` (Fase 7)
-usa `{{ csrf_token() }}` diretamente, sem nenhuma FlaskForm associada,
-o que quebrava a página sempre que um aprovador de verdade (diferente
-de quem solicitou) via a lista com alterações pendentes. Nenhum teste
-anterior pegou esse caso porque reaproveitava a mesma sessão ao trocar
-de usuário nos testes, mascarando o cenário. `CSRFProtect(app)` resolve
-isso (registra `csrf_token` como global do Jinja de verdade) e também
-passa a validar CSRF automaticamente nas rotas novas desta fase que
-usam formulários simples (sem FlaskForm), como o importador.
+Nesta FASE 11, o ORIS ganha a Administração de Usuários — exclusiva
+do ADMINISTRADOR: listar, criar, editar (nome/email/perfil),
+ativar/desativar e redefinir senha. Protege o sistema contra ficar
+sem nenhum ADMINISTRADOR ativo, e integra tudo com a auditoria da
+Fase 8. Reaproveita autenticação (Fase 3), RBAC (Fase 4) e não altera
+o fluxo de aprovação (Fase 7), a auditoria (Fase 8), o Dashboard
+(Fase 9) nem o Importador (Fase 10).
 """
 
 from flask import Flask, render_template
@@ -52,7 +40,8 @@ def create_app(config_object=None):
     # Registra os blueprints: autenticação (login/logout), rota
     # protegida inicial, áreas de teste do RBAC, os CRUDs de
     # Unidades/Serviços/Equipamentos, o fluxo de Alterações, a
-    # consulta de Auditoria, o Dashboard e o Importador de planilhas.
+    # consulta de Auditoria, o Dashboard, o Importador de planilhas e
+    # a Administração de Usuários.
     from app.routes.auth import auth_bp
     from app.routes.main import main_bp
     from app.routes.areas import areas_bp
@@ -63,6 +52,7 @@ def create_app(config_object=None):
     from app.routes.auditoria import auditoria_bp
     from app.routes.dashboard import dashboard_bp
     from app.routes.importacao import importacao_bp
+    from app.routes.usuarios import usuarios_bp
 
     app.register_blueprint(auth_bp)
     app.register_blueprint(main_bp)
@@ -74,6 +64,7 @@ def create_app(config_object=None):
     app.register_blueprint(auditoria_bp)
     app.register_blueprint(dashboard_bp)
     app.register_blueprint(importacao_bp)
+    app.register_blueprint(usuarios_bp)
 
     # Registra o comando de CLI para criar usuários (ver app/cli.py).
     from app.cli import register_cli_commands
@@ -81,8 +72,8 @@ def create_app(config_object=None):
     register_cli_commands(app)
 
     # Disponibiliza o usuário autenticado em todos os templates (ex.:
-    # para o menu em base.html decidir se mostra o link "Auditoria",
-    # que só faz sentido para ADMINISTRADOR/GESTAO_INFORMACAO).
+    # para o menu em base.html decidir se mostra os links "Auditoria"
+    # e "Usuários", que só fazem sentido para perfis específicos).
     @app.context_processor
     def inject_usuario_logado():
         from app.utils.decorators import usuario_atual
@@ -98,8 +89,8 @@ def create_app(config_object=None):
         return render_template("acesso_negado.html"), 403
 
     # Página amigável para registros/URLs inexistentes (ex.: unidade,
-    # serviço, equipamento, alteração ou registro de auditoria com id
-    # que não existe), sem expor detalhes internos.
+    # serviço, equipamento, alteração, registro de auditoria ou
+    # usuário com id que não existe), sem expor detalhes internos.
     @app.errorhandler(404)
     def nao_encontrado(erro):
         return render_template("nao_encontrado.html"), 404
@@ -111,7 +102,7 @@ def create_app(config_object=None):
         return {
             "status": "ok",
             "app": "ORIS",
-            "fase": "10 - importador de planilhas",
+            "fase": "11 - administracao de usuarios",
         }
 
     return app

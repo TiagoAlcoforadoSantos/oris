@@ -41,16 +41,28 @@ def usuario_atual():
 
 
 def login_required(view_func):
-    """Garante que a rota só seja acessada por um usuário autenticado.
+    """Garante que a rota só seja acessada por um usuário autenticado
+    E ainda ativo.
 
     Se não houver sessão autenticada, redireciona para a tela de
-    login.
+    login. Se o usuário foi desativado depois do login, a sessão é
+    encerrada e ele também é levado de volta ao login — mesma
+    verificação que `roles_required` já fazia, agora unificada aqui
+    também (Fase 11: um usuário desativado não pode continuar
+    acessando NENHUMA área protegida, mesmo as que não exigem um
+    perfil específico).
     """
 
     @wraps(view_func)
     def wrapper(*args, **kwargs):
         if not _sessao_autenticada():
             return redirect(url_for("auth.login"))
+
+        usuario = usuario_atual()
+        if usuario is None or not usuario.ativo:
+            session.clear()
+            return redirect(url_for("auth.login"))
+
         return view_func(*args, **kwargs)
 
     return wrapper
