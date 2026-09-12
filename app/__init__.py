@@ -1,12 +1,12 @@
 """
 Application factory do ORIS.
 
-Nesta FASE 8, o ORIS ganha auditoria funcional: login/logout, CRUDs
-de Unidade/Serviço/Equipamento e o fluxo de aprovação da Fase 7 agora
-registram trilhas de auditoria (quem, quando, o quê, em qual
-registro, e valores antes/depois quando aplicável), consultáveis
-somente por ADMINISTRADOR e GESTAO_INFORMACAO em /auditoria. Ainda
-NÃO possui dashboard real — isso fica para a próxima fase.
+Nesta FASE 9, o ORIS ganha um dashboard funcional: indicadores gerais
+(unidades, serviços, equipamentos, alterações), resumo da rede,
+alterações pendentes e atividade recente, tudo calculado a partir de
+dados reais do banco. Reaproveita a autenticação (Fase 3), o RBAC
+(Fase 4), o fluxo de aprovação (Fase 7) e a auditoria (Fase 8) sem
+alterá-los.
 """
 
 from flask import Flask, render_template
@@ -32,8 +32,8 @@ def create_app(config_object=None):
 
     # Registra os blueprints: autenticação (login/logout), rota
     # protegida inicial, áreas de teste do RBAC, os CRUDs de
-    # Unidades/Serviços/Equipamentos, o fluxo de Alterações e a
-    # consulta de Auditoria.
+    # Unidades/Serviços/Equipamentos, o fluxo de Alterações, a
+    # consulta de Auditoria e o Dashboard.
     from app.routes.auth import auth_bp
     from app.routes.main import main_bp
     from app.routes.areas import areas_bp
@@ -42,6 +42,7 @@ def create_app(config_object=None):
     from app.routes.equipamentos import equipamentos_bp
     from app.routes.alteracoes import alteracoes_bp
     from app.routes.auditoria import auditoria_bp
+    from app.routes.dashboard import dashboard_bp
 
     app.register_blueprint(auth_bp)
     app.register_blueprint(main_bp)
@@ -51,6 +52,7 @@ def create_app(config_object=None):
     app.register_blueprint(equipamentos_bp)
     app.register_blueprint(alteracoes_bp)
     app.register_blueprint(auditoria_bp)
+    app.register_blueprint(dashboard_bp)
 
     # Registra o comando de CLI para criar usuários (ver app/cli.py).
     from app.cli import register_cli_commands
@@ -88,7 +90,7 @@ def create_app(config_object=None):
         return {
             "status": "ok",
             "app": "ORIS",
-            "fase": "8 - auditoria e rastreabilidade",
+            "fase": "9 - dashboard",
         }
 
     return app

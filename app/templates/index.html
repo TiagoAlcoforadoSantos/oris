@@ -17,14 +17,17 @@
 </div>
 
 <div class="mt-4">
-    <a href="{{ url_for('unidades.listar') }}" class="btn btn-primary">
+    <a href="{{ url_for('dashboard.index') }}" class="btn btn-primary">
+        Dashboard
+    </a>
+    <a href="{{ url_for('unidades.listar') }}" class="btn btn-outline-primary">
         Unidades de Saúde Bucal
     </a>
 </div>
 
 <p class="text-muted small mt-4">
     Esta é uma página provisória apenas para comprovar a autenticação.
-    O dashboard real do ORIS será implementado em uma fase futura.
+    O Dashboard reúne a visão geral do sistema.
 </p>
 
 {% if areas %}

@@ -1,6 +1,6 @@
 # ORIS — Plataforma de Governança da Rede de Saúde Bucal
 
-> ⚠️ **Status do projeto:** em desenvolvimento — FASE 8 concluída (auditoria e rastreabilidade).
+> ⚠️ **Status do projeto:** em desenvolvimento — FASE 9 concluída (Dashboard).
 > Este README será expandido a cada fase concluída.
 
 ## O que é o ORIS
@@ -61,7 +61,8 @@ ORIS/
 │   │   ├── servicos.py           # CRUD de Serviços (com fluxo de aprovação)
 │   │   ├── equipamentos.py       # CRUD de Equipamentos (com fluxo de aprovação)
 │   │   ├── alteracoes.py         # listar, visualizar, aprovar, rejeitar
-│   │   └── auditoria.py          # /auditoria (somente leitura)
+│   │   ├── auditoria.py          # /auditoria (somente leitura)
+│   │   └── dashboard.py          # /dashboard
 │   ├── models/
 │   │   ├── enums.py             # PerfilUsuario, situações, status, TipoOperacaoAlteracao
 │   │   ├── mixins.py            # TimestampMixin (created_at/updated_at)
@@ -75,6 +76,7 @@ ORIS/
 │   │   ├── base.html            # layout com Bootstrap
 │   │   ├── login.html
 │   │   ├── index.html           # página protegida provisória
+│   │   ├── dashboard.html       # indicadores, resumo, aprovações, atividade
 │   │   ├── area_perfil.html     # áreas de teste do RBAC
 │   │   ├── acesso_negado.html   # página de erro 403
 │   │   ├── nao_encontrado.html  # página de erro 404
@@ -96,7 +98,8 @@ ORIS/
 │   │   └── images/
 │   ├── services/
 │   │   ├── alteracoes_service.py  # registrar/aplicar/aprovar/rejeitar (Fase 7)
-│   │   └── auditoria_service.py   # registrar_auditoria (Fase 8)
+│   │   ├── auditoria_service.py   # registrar_auditoria (Fase 8)
+│   │   └── dashboard_service.py   # indicadores e listagens do dashboard (Fase 9)
 │   └── utils/
 │       ├── datetime_utils.py    # helper de data/hora (UTC)
 │       ├── security.py          # hash/verificação de senha (bcrypt)
@@ -114,7 +117,8 @@ ORIS/
 │   ├── test_fase5_unidades.py
 │   ├── test_fase6_servicos_equipamentos.py
 │   ├── test_fase7_alteracoes.py
-│   └── test_fase8_auditoria.py
+│   ├── test_fase8_auditoria.py
+│   └── test_fase9_dashboard.py
 │
 ├── .env                     # configuração local (NÃO versionar)
 ├── .env.example             # modelo de configuração
@@ -262,7 +266,7 @@ Resposta esperada:
 {
   "status": "ok",
   "app": "ORIS",
-  "fase": "8 - auditoria e rastreabilidade"
+  "fase": "9 - dashboard"
 }
 ```
 
@@ -507,6 +511,33 @@ nem mesmo para ADMINISTRADOR. A única forma de um registro existir é
 através do serviço central `app/services/auditoria_service.py`,
 chamado internamente pelo próprio sistema.
 
+## Dashboard (FASE 9)
+
+`/dashboard` reúne uma visão geral da Rede de Saúde Bucal, com dados
+reais calculados direto do banco (`app/services/dashboard_service.py`)
+— nenhum dado fictício. Acessível aos 4 perfis (`ADMINISTRADOR`,
+`GESTAO_INFORMACAO`, `RESPONSAVEL_SAUDE_BUCAL`, `GESTOR`).
+
+**Indicadores:** total/ativas/inativas/em manutenção de Unidades;
+total/ativos/inativos de Serviços e de Equipamentos;
+pendentes/aprovadas/rejeitadas de Alterações.
+
+**Resumo da rede:** lista das unidades (nome, CNES, município, UF,
+situação), com filtro por situação via `?situacao=`.
+
+**Alterações pendentes:** reaproveita a listagem já existente da
+Fase 7 — nenhum mecanismo novo de aprovação foi criado. Quem tem
+permissão para aprovar (`ADMINISTRADOR`/`GESTAO_INFORMACAO`) vê um
+atalho direto para agir; os demais perfis só visualizam.
+
+**Atividade recente:** reaproveita a auditoria da Fase 8, respeitando
+a mesma restrição de acesso já estabelecida lá — `ADMINISTRADOR` e
+`GESTAO_INFORMACAO` veem a atividade de todo o sistema;
+`RESPONSAVEL_SAUDE_BUCAL` e `GESTOR` veem só a própria atividade (e
+o dashboard avisa isso explicitamente), já que esses dois perfis não
+têm acesso à auditoria administrativa completa. Nunca exibe senha ou
+hash — o model `Auditoria` nunca armazena esses dados.
+
 ## Usuário de teste
 
 Não existe usuário fixo/hardcoded no código. Para criar um usuário
@@ -553,7 +584,7 @@ ainda serão implementados nas próximas fases.
 
 ## Segurança implementada
 
-Até o momento (FASE 8):
+Até o momento (FASE 9):
 
 - Nenhuma credencial sensível fica hardcoded no código — tudo vem do `.env`
   via `python-dotenv`.
@@ -588,6 +619,10 @@ Até o momento (FASE 8):
   aplicável) — nunca senha ou hash. A auditoria é somente leitura: não
   existe rota de edição ou exclusão pela aplicação, e só
   ADMINISTRADOR/GESTAO_INFORMACAO podem consultá-la.
+- O Dashboard reaproveita essa mesma restrição: a seção "Atividade
+  recente" só mostra o histórico completo para ADMINISTRADOR/
+  GESTAO_INFORMACAO — RESPONSAVEL_SAUDE_BUCAL e GESTOR veem apenas a
+  própria atividade, nunca a de outros usuários.
 - Um usuário desativado perde o acesso imediatamente, mesmo que já
   tivesse uma sessão ativa antes de ser desativado.
 - Páginas dedicadas de "Acesso negado" (HTTP 403) e "Não encontrado"
@@ -614,7 +649,7 @@ documentados aqui conforme forem implementados.
 - [x] FASE 6 — CRUD de Serviços e Equipamentos
 - [x] FASE 7 — Fluxo de alterações e aprovação
 - [x] FASE 8 — Auditoria e rastreabilidade
-- [ ] FASE 9 — Dashboard
+- [x] FASE 9 — Dashboard
 - [ ] FASE 10 — Testes, segurança, acabamento, README final
 
 ## Dados de demonstração
