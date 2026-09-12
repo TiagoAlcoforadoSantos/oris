@@ -1,0 +1,31 @@
+# Ambiente virtual
+venv/
+env/
+.venv/
+
+# Variáveis de ambiente (segredos)
+.env
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+.pytest_cache/
+
+# Bancos/arquivos locais
+*.sqlite3
+*.db
+
+# Logs
+*.log
+
+# Editor / SO
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Cobertura de testes
+.coverage
+htmlcov/

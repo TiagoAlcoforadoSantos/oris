@@ -1,0 +1,12 @@
+Flask==3.0.3
+Flask-SQLAlchemy==3.1.1
+PyMySQL==1.1.1
+bcrypt==4.2.0
+python-dotenv==1.0.1
+WTForms==3.1.2
+Flask-WTF==1.2.1
+cryptography==43.0.1
+email_validator==2.3.0
+
+# Dependência de desenvolvimento/testes
+pytest==8.3.3
