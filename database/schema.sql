@@ -135,9 +135,10 @@ CREATE TABLE IF NOT EXISTS alteracoes (
 
 -- ----------------------------------------------------------
 -- Tabela: auditorias
--- Trilha de auditoria (audit log). A gravação efetiva dos
--- eventos será feita a partir da FASE 3, conforme cada
--- funcionalidade for implementada.
+-- Trilha de auditoria (audit log), funcional a partir da FASE 8.
+-- `valor_anterior`/`valor_novo` guardam (em JSON) só os campos que
+-- realmente mudaram numa edição/alteração de situação — nunca senha
+-- ou senha_hash.
 -- ----------------------------------------------------------
 CREATE TABLE IF NOT EXISTS auditorias (
     id INT NOT NULL AUTO_INCREMENT,
@@ -146,6 +147,8 @@ CREATE TABLE IF NOT EXISTS auditorias (
     tabela VARCHAR(100) NULL,
     registro_id INT NULL,
     descricao TEXT NULL,
+    valor_anterior TEXT NULL,
+    valor_novo TEXT NULL,
     data_hora DATETIME NOT NULL,
     PRIMARY KEY (id),
     KEY ix_auditorias_usuario_id (usuario_id),

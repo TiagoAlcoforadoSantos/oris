@@ -19,6 +19,9 @@
                 <a class="nav-link" href="{{ url_for('servicos.listar') }}">Serviços</a>
                 <a class="nav-link" href="{{ url_for('equipamentos.listar') }}">Equipamentos</a>
                 <a class="nav-link" href="{{ url_for('alteracoes.listar') }}">Alterações</a>
+                {% if usuario_logado and usuario_logado.perfil.value in ["ADMINISTRADOR", "GESTAO_INFORMACAO"] %}
+                    <a class="nav-link" href="{{ url_for('auditoria.listar') }}">Auditoria</a>
+                {% endif %}
             </div>
         </div>
     </nav>

@@ -7,19 +7,28 @@ Fluxo do login (POST /login):
 3. Verifica se o usuário existe.
 4. Verifica se o usuário está ativo.
 5. Valida a senha com bcrypt (app.utils.security.verificar_senha).
-6. Se tudo correto, cria a sessão autenticada.
+6. Se tudo correto, cria a sessão autenticada e audita a ação LOGIN
+   (Fase 8).
 7. Redireciona para a área autenticada (rota "/").
 
 Em qualquer passo de falha (usuário não existe, senha errada, ou
 usuário inativo) a mensagem exibida é sempre a mesma — genérica —
 para não revelar se o email existe ou não, nem o motivo específico
-da negação.
+da negação. Login malsucedido NÃO é auditado nesta fase (a Fase 8
+pede auditoria de LOGIN/LOGOUT bem-sucedidos; tentativas falhas não
+identificam de forma confiável um usuário para atribuir o evento).
+
+O logout audita a ação LOGOUT antes de limpar a sessão (precisa do
+usuário ainda identificado na sessão para saber quem registrar).
 """
 
 from flask import Blueprint, flash, redirect, render_template, session, url_for
 
+from app.extensions import db
 from app.forms import LoginForm
 from app.models import Usuario
+from app.services.auditoria_service import registrar_auditoria
+from app.utils.decorators import usuario_atual
 from app.utils.security import verificar_senha
 
 auth_bp = Blueprint("auth", __name__)
@@ -57,6 +66,10 @@ def login():
             session["usuario_id"] = usuario.id
             session["autenticado"] = True
             session.permanent = True
+
+            registrar_auditoria(usuario=usuario, acao="LOGIN")
+            db.session.commit()
+
             return redirect(url_for("main.index"))
 
         flash(MENSAGEM_LOGIN_INVALIDO, "danger")
@@ -66,6 +79,13 @@ def login():
 
 @auth_bp.route("/logout")
 def logout():
+    # Precisa capturar o usuário ANTES de limpar a sessão, para saber
+    # quem registrar na auditoria.
+    usuario = usuario_atual()
+    if usuario is not None:
+        registrar_auditoria(usuario=usuario, acao="LOGOUT")
+        db.session.commit()
+
     # Remove toda a sessão (autenticação e qualquer outro dado
     # eventualmente guardado nela), garantindo que nada de acesso
     # anterior sobreviva ao logout.

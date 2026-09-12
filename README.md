@@ -1,6 +1,6 @@
 # ORIS — Plataforma de Governança da Rede de Saúde Bucal
 
-> ⚠️ **Status do projeto:** em desenvolvimento — FASE 7 concluída (fluxo de alterações e aprovação).
+> ⚠️ **Status do projeto:** em desenvolvimento — FASE 8 concluída (auditoria e rastreabilidade).
 > Este README será expandido a cada fase concluída.
 
 ## O que é o ORIS
@@ -60,7 +60,8 @@ ORIS/
 │   │   ├── unidades.py           # CRUD de Unidades (com fluxo de aprovação)
 │   │   ├── servicos.py           # CRUD de Serviços (com fluxo de aprovação)
 │   │   ├── equipamentos.py       # CRUD de Equipamentos (com fluxo de aprovação)
-│   │   └── alteracoes.py         # listar, visualizar, aprovar, rejeitar
+│   │   ├── alteracoes.py         # listar, visualizar, aprovar, rejeitar
+│   │   └── auditoria.py          # /auditoria (somente leitura)
 │   ├── models/
 │   │   ├── enums.py             # PerfilUsuario, situações, status, TipoOperacaoAlteracao
 │   │   ├── mixins.py            # TimestampMixin (created_at/updated_at)
@@ -69,7 +70,7 @@ ORIS/
 │   │   ├── servico.py
 │   │   ├── equipamento.py
 │   │   ├── alteracao.py          # + operacao, dados_novos (Fase 7)
-│   │   └── auditoria.py
+│   │   └── auditoria.py          # + valor_anterior, valor_novo (Fase 8)
 │   ├── templates/
 │   │   ├── base.html            # layout com Bootstrap
 │   │   ├── login.html
@@ -83,7 +84,10 @@ ORIS/
 │   │   │   └── detalhe.html
 │   │   ├── servicos/              # mesmo padrão de unidades/
 │   │   ├── equipamentos/          # mesmo padrão de unidades/
-│   │   └── alteracoes/
+│   │   ├── alteracoes/
+│   │   │   ├── lista.html
+│   │   │   └── detalhe.html
+│   │   └── auditoria/
 │   │       ├── lista.html
 │   │       └── detalhe.html
 │   ├── static/
@@ -91,7 +95,8 @@ ORIS/
 │   │   ├── js/
 │   │   └── images/
 │   ├── services/
-│   │   └── alteracoes_service.py  # registrar/aplicar/aprovar/rejeitar (Fase 7)
+│   │   ├── alteracoes_service.py  # registrar/aplicar/aprovar/rejeitar (Fase 7)
+│   │   └── auditoria_service.py   # registrar_auditoria (Fase 8)
 │   └── utils/
 │       ├── datetime_utils.py    # helper de data/hora (UTC)
 │       ├── security.py          # hash/verificação de senha (bcrypt)
@@ -108,7 +113,8 @@ ORIS/
 │   ├── test_fase4_rbac.py
 │   ├── test_fase5_unidades.py
 │   ├── test_fase6_servicos_equipamentos.py
-│   └── test_fase7_alteracoes.py
+│   ├── test_fase7_alteracoes.py
+│   └── test_fase8_auditoria.py
 │
 ├── .env                     # configuração local (NÃO versionar)
 ├── .env.example             # modelo de configuração
@@ -256,7 +262,7 @@ Resposta esperada:
 {
   "status": "ok",
   "app": "ORIS",
-  "fase": "7 - fluxo de alteracoes e aprovacao"
+  "fase": "8 - auditoria e rastreabilidade"
 }
 ```
 
@@ -457,6 +463,50 @@ CNES — a segunda só conflita quando alguém tenta aprová-la), nada é
 salvo e a alteração continua `PENDENTE`, pronta para ser corrigida ou
 rejeitada.
 
+## Auditoria e rastreabilidade (FASE 8)
+
+A tabela `Auditoria` (criada na Fase 2) passa a ser preenchida de
+verdade. Toda ação relevante do sistema gera um registro, sempre na
+mesma transação da operação que descreve — se a operação falhar e
+sofrer rollback, a auditoria correspondente cai junto.
+
+**Ações auditadas:** `LOGIN`, `LOGOUT`, `SOLICITAR_ALTERACAO`,
+`APROVAR_ALTERACAO`, `REJEITAR_ALTERACAO`, e — só quando uma alteração
+é efetivamente aprovada — `CRIAR`, `EDITAR` ou `ALTERAR_SITUACAO`.
+
+**Distinção importante (exigida pela própria Fase 8):** solicitar uma
+criação/edição/alteração de situação NUNCA gera uma auditoria de
+`CRIAR`/`EDITAR`/`ALTERAR_SITUACAO` enquanto a alteração está
+`PENDENTE` — só `SOLICITAR_ALTERACAO`. A auditoria da mudança de fato
+(com valores antes/depois) só é criada no momento em que a alteração é
+aprovada e aplicada. Uma alteração rejeitada nunca gera auditoria de
+`CRIAR`/`EDITAR`/`ALTERAR_SITUACAO`, porque nada chegou a ser
+escrito no registro de negócio.
+
+Cada evento de aprovação gera, na prática, dois registros de
+auditoria: um creditado ao **solicitante original** (a mudança em si
+— ex.: `EDITAR` com `valor_anterior`/`valor_novo`) e outro creditado
+ao **aprovador** (`APROVAR_ALTERACAO`, referenciando a alteração
+decidida). Isso mantém claro tanto quem propôs a mudança quanto quem
+autorizou.
+
+**Valores antes/depois:** `valor_anterior` e `valor_novo` guardam, em
+JSON, só os campos que realmente mudaram (nunca o registro inteiro,
+nunca senha ou hash) — ex.: `{"situacao": "ATIVA"}` →
+`{"situacao": "MANUTENCAO"}`.
+
+**Quem consulta:** somente `ADMINISTRADOR` e `GESTAO_INFORMACAO`
+(mesma matriz da Fase 4), via `/auditoria` (listagem, com filtro por
+usuário/ação/entidade/data) e `/auditoria/<id>` (detalhe, com
+valores antes/depois). `RESPONSAVEL_SAUDE_BUCAL` e `GESTOR` recebem
+403.
+
+**Proteção:** a auditoria é somente leitura — propositalmente não
+existe nenhuma rota de edição ou exclusão de registros de auditoria,
+nem mesmo para ADMINISTRADOR. A única forma de um registro existir é
+através do serviço central `app/services/auditoria_service.py`,
+chamado internamente pelo próprio sistema.
+
 ## Usuário de teste
 
 Não existe usuário fixo/hardcoded no código. Para criar um usuário
@@ -503,7 +553,7 @@ ainda serão implementados nas próximas fases.
 
 ## Segurança implementada
 
-Até o momento (FASE 7):
+Até o momento (FASE 8):
 
 - Nenhuma credencial sensível fica hardcoded no código — tudo vem do `.env`
   via `python-dotenv`.
@@ -532,6 +582,12 @@ Até o momento (FASE 7):
 - Aprovação e aplicação da mudança acontecem na mesma transação: se a
   aplicação falhar (ex.: conflito de CNES), nada é salvo e a alteração
   continua PENDENTE.
+- Auditoria funcional e protegida: login/logout, solicitação, aprovação,
+  rejeição e a mudança efetivamente aplicada geram registros
+  rastreáveis (quem, quando, o quê, valores antes/depois quando
+  aplicável) — nunca senha ou hash. A auditoria é somente leitura: não
+  existe rota de edição ou exclusão pela aplicação, e só
+  ADMINISTRADOR/GESTAO_INFORMACAO podem consultá-la.
 - Um usuário desativado perde o acesso imediatamente, mesmo que já
   tivesse uma sessão ativa antes de ser desativado.
 - Páginas dedicadas de "Acesso negado" (HTTP 403) e "Não encontrado"
@@ -545,8 +601,8 @@ Até o momento (FASE 7):
   backend: unidade sempre precisa existir, e um equipamento nunca pode
   ser associado a um serviço de outra unidade.
 
-Itens de segurança das próximas fases (auditoria detalhada, LGPD)
-serão documentados aqui conforme forem implementados.
+Itens de segurança das próximas fases (LGPD, acabamento geral) serão
+documentados aqui conforme forem implementados.
 
 ## Roadmap de fases
 
@@ -557,7 +613,7 @@ serão documentados aqui conforme forem implementados.
 - [x] FASE 5 — CRUD de Unidades
 - [x] FASE 6 — CRUD de Serviços e Equipamentos
 - [x] FASE 7 — Fluxo de alterações e aprovação
-- [ ] FASE 8 — Auditoria
+- [x] FASE 8 — Auditoria e rastreabilidade
 - [ ] FASE 9 — Dashboard
 - [ ] FASE 10 — Testes, segurança, acabamento, README final
 

@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+
+{% block title %}Auditoria — ORIS{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="h3 mb-0">Auditoria</h1>
+    <a href="{{ url_for('main.index') }}" class="btn btn-outline-secondary btn-sm">Início</a>
+</div>
+
+<form method="GET" class="row g-2 mb-3">
+    <div class="col-auto">
+        <select name="usuario_id" class="form-select form-select-sm" onchange="this.form.submit()">
+            <option value="">Todos os usuários</option>
+            {% for usuario in usuarios %}
+                <option value="{{ usuario.id }}" {% if usuario_id_filtro == usuario.id %}selected{% endif %}>
+                    {{ usuario.nome }}
+                </option>
+            {% endfor %}
+        </select>
+    </div>
+    <div class="col-auto">
+        <select name="acao" class="form-select form-select-sm" onchange="this.form.submit()">
+            <option value="">Todas as ações</option>
+            {% for acao in acoes_disponiveis %}
+                <option value="{{ acao }}" {% if acao_filtro == acao %}selected{% endif %}>{{ acao }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    <div class="col-auto">
+        <select name="tabela" class="form-select form-select-sm" onchange="this.form.submit()">
+            <option value="">Todas as entidades</option>
+            <option value="unidades" {% if tabela_filtro == "unidades" %}selected{% endif %}>Unidades</option>
+            <option value="servicos" {% if tabela_filtro == "servicos" %}selected{% endif %}>Serviços</option>
+            <option value="equipamentos" {% if tabela_filtro == "equipamentos" %}selected{% endif %}>Equipamentos</option>
+            <option value="alteracoes" {% if tabela_filtro == "alteracoes" %}selected{% endif %}>Alterações</option>
+        </select>
+    </div>
+    <div class="col-auto">
+        <input type="date" name="data" class="form-control form-control-sm" value="{{ data_filtro or '' }}" onchange="this.form.submit()">
+    </div>
+</form>
+
+{% if registros %}
+<div class="table-responsive">
+    <table class="table table-striped align-middle">
+        <thead>
+            <tr>
+                <th>Data/Hora</th>
+                <th>Usuário</th>
+                <th>Ação</th>
+                <th>Entidade</th>
+                <th>Registro</th>
+                <th>Descrição</th>
+                <th class="text-end">Detalhes</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for registro in registros %}
+            <tr>
+                <td>{{ registro.data_hora.strftime("%d/%m/%Y %H:%M:%S") }}</td>
+                <td>{{ registro.usuario.nome }}</td>
+                <td><span class="badge bg-dark">{{ registro.acao }}</span></td>
+                <td>{{ registro.tabela or "—" }}</td>
+                <td>{{ registro.registro_id if registro.registro_id is not none else "—" }}</td>
+                <td>{{ registro.descricao or "—" }}</td>
+                <td class="text-end">
+                    <a href="{{ url_for('auditoria.visualizar', auditoria_id=registro.id) }}" class="btn btn-sm btn-outline-secondary">Ver</a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% else %}
+<p class="text-muted">Nenhum registro de auditoria encontrado.</p>
+{% endif %}
+
+<p class="text-muted small mt-3">
+    Registros ordenados do mais recente para o mais antigo. A auditoria
+    é somente leitura — não existe edição ou exclusão pela aplicação.
+</p>
+{% endblock %}
