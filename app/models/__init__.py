@@ -12,6 +12,7 @@ from app.models.enums import (
     SituacaoAtivoInativo,
     SituacaoUnidade,
     StatusAlteracao,
+    TipoOperacaoAlteracao,
 )
 from app.models.usuario import Usuario
 from app.models.unidade import Unidade
@@ -31,4 +32,5 @@ __all__ = [
     "SituacaoUnidade",
     "SituacaoAtivoInativo",
     "StatusAlteracao",
+    "TipoOperacaoAlteracao",
 ]

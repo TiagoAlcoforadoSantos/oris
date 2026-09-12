@@ -196,3 +196,11 @@ class AlterarSituacaoAtivoInativoForm(FlaskForm):
         validators=[DataRequired(message="Selecione uma situação.")],
     )
     submit = SubmitField("Alterar situação")
+
+
+class AcaoAlteracaoForm(FlaskForm):
+    """Formulário mínimo, usado só para dar proteção CSRF aos botões
+    de aprovar/rejeitar uma Alteração (Fase 7) — não tem campos de
+    dados, só o token CSRF embutido pelo FlaskForm."""
+
+    submit = SubmitField("Confirmar")

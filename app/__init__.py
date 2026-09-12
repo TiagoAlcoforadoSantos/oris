@@ -1,11 +1,12 @@
 """
 Application factory do ORIS.
 
-Nesta FASE 6, o ORIS ganha o CRUD de Serviços e Equipamentos,
-seguindo o mesmo padrão de Unidades (Fase 5), reaproveitando
-autenticação (Fase 3) e RBAC (Fase 4). Ainda NÃO possui fluxo de
-aprovação, auditoria completa ou dashboard real — isso fica para as
-próximas fases.
+Nesta FASE 7, o ORIS ganha o fluxo de governança de alterações:
+criar/editar/alterar situação de Unidade, Serviço e Equipamento passa
+a exigir aprovação (ADMINISTRADOR ou GESTAO_INFORMACAO, nunca o
+próprio solicitante) antes de ser efetivado. Ainda NÃO possui
+auditoria completa ou dashboard real — isso fica para as próximas
+fases.
 """
 
 from flask import Flask, render_template
@@ -30,14 +31,15 @@ def create_app(config_object=None):
         from app import models  # noqa: F401
 
     # Registra os blueprints: autenticação (login/logout), rota
-    # protegida inicial, áreas de teste do RBAC e os CRUDs de
-    # Unidades, Serviços e Equipamentos.
+    # protegida inicial, áreas de teste do RBAC, os CRUDs de
+    # Unidades/Serviços/Equipamentos e o fluxo de Alterações.
     from app.routes.auth import auth_bp
     from app.routes.main import main_bp
     from app.routes.areas import areas_bp
     from app.routes.unidades import unidades_bp
     from app.routes.servicos import servicos_bp
     from app.routes.equipamentos import equipamentos_bp
+    from app.routes.alteracoes import alteracoes_bp
 
     app.register_blueprint(auth_bp)
     app.register_blueprint(main_bp)
@@ -45,6 +47,7 @@ def create_app(config_object=None):
     app.register_blueprint(unidades_bp)
     app.register_blueprint(servicos_bp)
     app.register_blueprint(equipamentos_bp)
+    app.register_blueprint(alteracoes_bp)
 
     # Registra o comando de CLI para criar usuários (ver app/cli.py).
     from app.cli import register_cli_commands
@@ -52,14 +55,16 @@ def create_app(config_object=None):
     register_cli_commands(app)
 
     # Página de acesso negado, usada sempre que roles_required
-    # bloquear um usuário autenticado sem o perfil necessário.
+    # bloquear um usuário autenticado sem o perfil necessário (ou
+    # quando um solicitante tenta aprovar/rejeitar a própria
+    # alteração — ver app/routes/alteracoes.py).
     @app.errorhandler(403)
     def acesso_negado(erro):
         return render_template("acesso_negado.html"), 403
 
     # Página amigável para registros/URLs inexistentes (ex.: unidade,
-    # serviço ou equipamento com id que não existe), sem expor
-    # detalhes internos.
+    # serviço, equipamento ou alteração com id que não existe), sem
+    # expor detalhes internos.
     @app.errorhandler(404)
     def nao_encontrado(erro):
         return render_template("nao_encontrado.html"), 404
@@ -71,7 +76,7 @@ def create_app(config_object=None):
         return {
             "status": "ok",
             "app": "ORIS",
-            "fase": "6 - crud de servicos e equipamentos",
+            "fase": "7 - fluxo de alteracoes e aprovacao",
         }
 
     return app

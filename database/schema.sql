@@ -102,16 +102,23 @@ CREATE TABLE IF NOT EXISTS equipamentos (
 
 -- ----------------------------------------------------------
 -- Tabela: alteracoes
--- Estrutura de dados para o futuro fluxo de aprovação (FASE 7).
--- `tabela` + `registro_id` referenciam de forma genérica o
--- registro afetado (ex.: tabela='unidades', registro_id=5),
--- por isso registro_id não é uma foreign key tradicional.
+-- Fluxo de aprovação (FASE 7). `tabela` + `registro_id` referenciam
+-- de forma genérica o registro afetado (ex.: tabela='unidades',
+-- registro_id=5), por isso registro_id não é uma foreign key
+-- tradicional. `registro_id` é NULL enquanto uma operação CRIAR
+-- ainda está PENDENTE (o registro ainda não existe).
+-- `operacao` e `dados_novos` foram adicionados na FASE 7: sem eles
+-- não haveria como saber, no momento da aprovação, o que aplicar
+-- (criar/editar/mudar situação) nem com quais valores — ver
+-- app/models/alteracao.py para a justificativa completa.
 -- ----------------------------------------------------------
 CREATE TABLE IF NOT EXISTS alteracoes (
     id INT NOT NULL AUTO_INCREMENT,
     usuario_id INT NOT NULL,
     tabela VARCHAR(100) NOT NULL,
-    registro_id INT NOT NULL,
+    registro_id INT NULL,
+    operacao ENUM('CRIAR', 'EDITAR', 'ALTERAR_SITUACAO') NOT NULL,
+    dados_novos TEXT NULL,
     descricao TEXT NULL,
     status ENUM('PENDENTE', 'APROVADO', 'REJEITADO') NOT NULL DEFAULT 'PENDENTE',
     created_at DATETIME NOT NULL,

@@ -1,16 +1,23 @@
 """
-CRUD de Serviços de Saúde Bucal (Fase 6).
+CRUD de Serviços de Saúde Bucal (Fase 6), com fluxo de aprovação
+integrado a partir da Fase 7.
 
-Segue exatamente o mesmo padrão estabelecido para Unidades na Fase 5:
+Segue exatamente o mesmo padrão estabelecido para Unidades:
 
 - Consultar (listar/visualizar): qualquer usuário autenticado.
-- Criar / editar / alterar situação: ADMINISTRADOR, GESTAO_INFORMACAO
-  e RESPONSAVEL_SAUDE_BUCAL. GESTOR nunca altera dados.
+- Solicitar (criar / editar / alterar situação): ADMINISTRADOR,
+  GESTAO_INFORMACAO e RESPONSAVEL_SAUDE_BUCAL. GESTOR nunca altera
+  dados.
+
+A PARTIR DA FASE 7: nenhuma dessas operações grava direto no banco —
+cada uma registra uma Alteracao PENDENTE (via
+app.services.alteracoes_service.registrar_alteracao) e só é aplicada
+quando aprovada em /alteracoes.
 
 Todo Serviço pertence obrigatoriamente a uma Unidade existente — a
 lista de unidades do formulário vem sempre do banco no momento da
 requisição, e a existência da unidade é conferida de novo no
-backend antes de salvar (defesa em profundidade).
+backend antes de registrar a solicitação (defesa em profundidade).
 """
 
 from flask import Blueprint, abort, flash, redirect, render_template, request, url_for
@@ -18,6 +25,7 @@ from flask import Blueprint, abort, flash, redirect, render_template, request, u
 from app.extensions import db
 from app.forms import AlterarSituacaoAtivoInativoForm, ServicoForm
 from app.models import PerfilUsuario, Servico, SituacaoAtivoInativo, Unidade
+from app.services.alteracoes_service import registrar_alteracao
 from app.utils.decorators import login_required, roles_required, usuario_atual
 
 servicos_bp = Blueprint("servicos", __name__, url_prefix="/servicos")
@@ -93,7 +101,9 @@ def visualizar(servico_id):
 
 
 # ----------------------------------------------------------------
-# Escrita — ADMINISTRADOR, GESTAO_INFORMACAO, RESPONSAVEL_SAUDE_BUCAL
+# Solicitação de escrita — ADMINISTRADOR, GESTAO_INFORMACAO,
+# RESPONSAVEL_SAUDE_BUCAL. Cria Alteracao PENDENTE em vez de gravar
+# direto no banco.
 # ----------------------------------------------------------------
 
 @servicos_bp.route("/novo", methods=["GET", "POST"])
@@ -108,16 +118,23 @@ def novo():
             flash("A unidade selecionada não existe.", "danger")
             return render_template("servicos/form.html", form=form, titulo="Novo Serviço")
 
-        servico = Servico(
-            nome=form.nome.data.strip(),
-            unidade_id=unidade.id,
-            situacao=form.situacao.data,
-        )
-        db.session.add(servico)
-        db.session.commit()
+        dados = {
+            "nome": form.nome.data.strip(),
+            "unidade_id": unidade.id,
+            "situacao": form.situacao.data,
+        }
+        descricao = f"Criação de novo Serviço: {dados['nome']} (Unidade {unidade.nome})"
 
-        flash(f"Serviço '{servico.nome}' cadastrado com sucesso.", "success")
-        return redirect(url_for("servicos.visualizar", servico_id=servico.id))
+        alteracao = registrar_alteracao(
+            usuario_atual(), "servicos", None, "CRIAR", dados, descricao
+        )
+
+        flash(
+            f"Solicitação de cadastro do serviço '{dados['nome']}' registrada "
+            f"(Alteração #{alteracao.id}) e aguardando aprovação.",
+            "info",
+        )
+        return redirect(url_for("alteracoes.visualizar", alteracao_id=alteracao.id))
 
     return render_template("servicos/form.html", form=form, titulo="Novo Serviço")
 
@@ -138,13 +155,40 @@ def editar(servico_id):
                 "servicos/form.html", form=form, titulo=f"Editar Serviço — {servico.nome}", servico=servico
             )
 
-        servico.nome = form.nome.data.strip()
-        servico.unidade_id = unidade.id
-        servico.situacao = form.situacao.data
-        db.session.commit()
+        dados_novos = {
+            "nome": form.nome.data.strip(),
+            "unidade_id": unidade.id,
+            "situacao": form.situacao.data,
+        }
 
-        flash(f"Serviço '{servico.nome}' atualizado com sucesso.", "success")
-        return redirect(url_for("servicos.visualizar", servico_id=servico.id))
+        valores_atuais = {
+            "nome": servico.nome,
+            "unidade_id": servico.unidade_id,
+            "situacao": servico.situacao.value,
+        }
+        campos_alterados = [
+            f"{campo} '{valores_atuais[campo]}' → '{valor}'"
+            for campo, valor in dados_novos.items()
+            if str(valores_atuais[campo]) != str(valor)
+        ]
+        if not campos_alterados:
+            flash("Nenhuma alteração foi detectada nos dados informados.", "warning")
+            return render_template(
+                "servicos/form.html", form=form, titulo=f"Editar Serviço — {servico.nome}", servico=servico
+            )
+
+        descricao = f"Edição do Serviço {servico.id} ({servico.nome}): " + "; ".join(campos_alterados)
+
+        alteracao = registrar_alteracao(
+            usuario_atual(), "servicos", servico.id, "EDITAR", dados_novos, descricao
+        )
+
+        flash(
+            f"Solicitação de edição do serviço '{servico.nome}' registrada "
+            f"(Alteração #{alteracao.id}) e aguardando aprovação.",
+            "info",
+        )
+        return redirect(url_for("alteracoes.visualizar", alteracao_id=alteracao.id))
 
     if not form.is_submitted():
         form.nome.data = servico.nome
@@ -160,14 +204,26 @@ def editar(servico_id):
 @roles_required(*PERFIS_QUE_ALTERAM)
 def alterar_situacao(servico_id):
     servico = _buscar_servico_ou_404(servico_id)
-
     form = AlterarSituacaoAtivoInativoForm()
 
-    if form.validate_on_submit():
-        servico.situacao = form.situacao.data
-        db.session.commit()
-        flash(f"Situação do serviço '{servico.nome}' alterada para {servico.situacao.value}.", "success")
-    else:
+    if not form.validate_on_submit():
         flash("Situação inválida.", "danger")
+        return redirect(url_for("servicos.visualizar", servico_id=servico.id))
 
-    return redirect(url_for("servicos.visualizar", servico_id=servico.id))
+    nova_situacao = form.situacao.data
+
+    if nova_situacao == servico.situacao.value:
+        flash("O serviço já está nessa situação.", "warning")
+        return redirect(url_for("servicos.visualizar", servico_id=servico.id))
+
+    descricao = f"Alteração do Serviço {servico.id} ({servico.nome}): situação {servico.situacao.value} → {nova_situacao}"
+
+    alteracao = registrar_alteracao(
+        usuario_atual(), "servicos", servico.id, "ALTERAR_SITUACAO", {"situacao": nova_situacao}, descricao
+    )
+
+    flash(
+        f"Solicitação de alteração de situação registrada (Alteração #{alteracao.id}) e aguardando aprovação.",
+        "info",
+    )
+    return redirect(url_for("alteracoes.visualizar", alteracao_id=alteracao.id))

@@ -1,0 +1,87 @@
+{% extends "base.html" %}
+
+{% block title %}Alteração #{{ alteracao.id }} — ORIS{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="h3 mb-0">Alteração #{{ alteracao.id }}</h1>
+    <a href="{{ url_for('alteracoes.listar') }}" class="btn btn-outline-secondary btn-sm">Voltar para a lista</a>
+</div>
+
+<div class="card mb-4">
+    <div class="card-body">
+        <dl class="row mb-0">
+            <dt class="col-sm-3">Status</dt>
+            <dd class="col-sm-9">
+                {% if alteracao.status.value == "PENDENTE" %}
+                    <span class="badge bg-warning text-dark">Pendente</span>
+                {% elif alteracao.status.value == "APROVADO" %}
+                    <span class="badge bg-success">Aprovado</span>
+                {% else %}
+                    <span class="badge bg-secondary">Rejeitado</span>
+                {% endif %}
+            </dd>
+
+            <dt class="col-sm-3">Solicitante</dt>
+            <dd class="col-sm-9">{{ alteracao.usuario_criador.nome }} ({{ alteracao.usuario_criador.perfil.value }})</dd>
+
+            <dt class="col-sm-3">Entidade</dt>
+            <dd class="col-sm-9">{{ alteracao.tabela }}</dd>
+
+            <dt class="col-sm-3">Operação</dt>
+            <dd class="col-sm-9">{{ alteracao.operacao.value }}</dd>
+
+            <dt class="col-sm-3">Registro afetado</dt>
+            <dd class="col-sm-9">
+                {% if alteracao.registro_id %}
+                    #{{ alteracao.registro_id }}
+                    {% if alteracao.tabela == "unidades" %}
+                        (<a href="{{ url_for('unidades.visualizar', unidade_id=alteracao.registro_id) }}">ver unidade</a>)
+                    {% elif alteracao.tabela == "servicos" %}
+                        (<a href="{{ url_for('servicos.visualizar', servico_id=alteracao.registro_id) }}">ver serviço</a>)
+                    {% elif alteracao.tabela == "equipamentos" %}
+                        (<a href="{{ url_for('equipamentos.visualizar', equipamento_id=alteracao.registro_id) }}">ver equipamento</a>)
+                    {% endif %}
+                {% else %}
+                    <span class="text-muted">Ainda não criado — aguardando aprovação</span>
+                {% endif %}
+            </dd>
+
+            <dt class="col-sm-3">Descrição</dt>
+            <dd class="col-sm-9">{{ alteracao.descricao }}</dd>
+
+            <dt class="col-sm-3">Solicitada em</dt>
+            <dd class="col-sm-9">{{ alteracao.created_at.strftime("%d/%m/%Y %H:%M") }}</dd>
+
+            {% if alteracao.usuario_aprovador %}
+            <dt class="col-sm-3">Responsável pela decisão</dt>
+            <dd class="col-sm-9">{{ alteracao.usuario_aprovador.nome }}</dd>
+
+            <dt class="col-sm-3">Decisão em</dt>
+            <dd class="col-sm-9">{{ alteracao.approved_at.strftime("%d/%m/%Y %H:%M") }}</dd>
+            {% endif %}
+        </dl>
+    </div>
+</div>
+
+{% if pode_decidir %}
+<div class="card">
+    <div class="card-body d-flex gap-2">
+        <form method="POST" action="{{ url_for('alteracoes.aprovar', alteracao_id=alteracao.id) }}">
+            {{ form.hidden_tag() }}
+            <button type="submit" class="btn btn-success">Aprovar</button>
+        </form>
+        <form method="POST" action="{{ url_for('alteracoes.rejeitar', alteracao_id=alteracao.id) }}">
+            {{ form.hidden_tag() }}
+            <button type="submit" class="btn btn-danger">Rejeitar</button>
+        </form>
+    </div>
+</div>
+{% elif alteracao.status.value == "PENDENTE" %}
+<p class="text-muted small">
+    Esta alteração está pendente, mas você não pode decidir sobre ela
+    (seja porque seu perfil não aprova alterações, seja porque foi
+    você quem a solicitou).
+</p>
+{% endif %}
+{% endblock %}

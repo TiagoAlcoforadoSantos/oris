@@ -13,6 +13,7 @@ import pytest
 from app import create_app
 from app.extensions import db
 from app.models import (
+    Alteracao,
     Equipamento,
     PerfilUsuario,
     Servico,
@@ -21,6 +22,7 @@ from app.models import (
     Unidade,
     Usuario,
 )
+from app.services.alteracoes_service import aprovar_alteracao
 from app.utils.security import gerar_hash_senha
 from config import TestingConfig
 
@@ -106,6 +108,11 @@ def _ids(app):
         }
 
 
+def _usuario(app, perfil):
+    with app.app_context():
+        return Usuario.query.filter_by(email=EMAILS[perfil]).first()
+
+
 # ==================================================================
 # SERVIÇOS
 # ==================================================================
@@ -125,8 +132,9 @@ def test_gestor_lista_servicos(client):
     assert "Odontologia Geral" in resp.get_data(as_text=True)
 
 
-# 3. Perfil autorizado consegue criar serviço
-def test_administrador_cria_servico(client, app):
+# 3. Perfil autorizado consegue SOLICITAR a criação de um serviço
+# (Fase 7: fica PENDENTE até ser aprovado)
+def test_administrador_solicita_criacao_de_servico(client, app):
     ids = _ids(app)
     _login(client, PerfilUsuario.ADMINISTRADOR)
 
@@ -136,9 +144,27 @@ def test_administrador_cria_servico(client, app):
         follow_redirects=True,
     )
     assert resp.status_code == 200
-    assert "cadastrado com sucesso" in resp.get_data(as_text=True)
+    assert "aguardando aprovação" in resp.get_data(as_text=True)
 
     with app.app_context():
+        assert Servico.query.filter_by(nome="Prótese Dentária").first() is None
+        assert Alteracao.query.filter_by(tabela="servicos", operacao="CRIAR").first() is not None
+
+
+def test_aprovar_criacao_de_servico_efetiva_o_registro(client, app):
+    ids = _ids(app)
+    _login(client, PerfilUsuario.ADMINISTRADOR)
+
+    client.post(
+        "/servicos/novo",
+        data={"nome": "Prótese Dentária", "unidade_id": ids["unidade_a"], "situacao": "ATIVO"},
+    )
+
+    with app.app_context():
+        alteracao = Alteracao.query.filter_by(tabela="servicos", operacao="CRIAR").first()
+        aprovador = _usuario(app, PerfilUsuario.GESTAO_INFORMACAO)
+        ok, _ = aprovar_alteracao(alteracao, aprovador)
+        assert ok is True
         assert Servico.query.filter_by(nome="Prótese Dentária").first() is not None
 
 
@@ -153,8 +179,8 @@ def test_visualizar_servico(client, app):
     assert "UBS Unidade A" in resp.get_data(as_text=True)
 
 
-# 5. Perfil autorizado consegue editar serviço
-def test_editar_servico(client, app):
+# 5. Perfil autorizado consegue SOLICITAR a edição de um serviço
+def test_solicita_edicao_de_servico(client, app):
     ids = _ids(app)
     _login(client, PerfilUsuario.GESTAO_INFORMACAO)
 
@@ -164,23 +190,58 @@ def test_editar_servico(client, app):
         follow_redirects=True,
     )
     assert resp.status_code == 200
-    assert "atualizado com sucesso" in resp.get_data(as_text=True)
+    assert "aguardando aprovação" in resp.get_data(as_text=True)
 
     with app.app_context():
+        servico = db.session.get(Servico, ids["servico_a"])
+        assert servico.nome == "Odontologia Geral"  # ainda não mudou
+
+
+def test_aprovar_edicao_de_servico_aplica_a_mudanca(client, app):
+    ids = _ids(app)
+    _login(client, PerfilUsuario.GESTAO_INFORMACAO)
+
+    client.post(
+        f"/servicos/{ids['servico_a']}/editar",
+        data={"nome": "Odontologia Geral (Renomeado)", "unidade_id": ids["unidade_a"], "situacao": "ATIVO"},
+    )
+
+    with app.app_context():
+        alteracao = Alteracao.query.filter_by(tabela="servicos", operacao="EDITAR").first()
+        aprovador = _usuario(app, PerfilUsuario.ADMINISTRADOR)
+        ok, _ = aprovar_alteracao(alteracao, aprovador)
+        assert ok is True
+
         servico = db.session.get(Servico, ids["servico_a"])
         assert servico.nome == "Odontologia Geral (Renomeado)"
 
 
-# 6. Perfil autorizado consegue alterar situação
-def test_alterar_situacao_servico(client, app):
+# 6. Perfil autorizado consegue SOLICITAR alteração de situação
+def test_solicita_alteracao_de_situacao_servico(client, app):
     ids = _ids(app)
     _login(client, PerfilUsuario.ADMINISTRADOR)
 
     resp = client.post(f"/servicos/{ids['servico_a']}/situacao", data={"situacao": "INATIVO"}, follow_redirects=True)
     assert resp.status_code == 200
-    assert "alterada para INATIVO" in resp.get_data(as_text=True)
+    assert "aguardando aprovação" in resp.get_data(as_text=True)
 
     with app.app_context():
+        servico = db.session.get(Servico, ids["servico_a"])
+        assert servico.situacao == SituacaoAtivoInativo.ATIVO  # ainda não mudou
+
+
+def test_aprovar_alteracao_de_situacao_de_servico_aplica_a_mudanca(client, app):
+    ids = _ids(app)
+    _login(client, PerfilUsuario.ADMINISTRADOR)
+
+    client.post(f"/servicos/{ids['servico_a']}/situacao", data={"situacao": "INATIVO"})
+
+    with app.app_context():
+        alteracao = Alteracao.query.filter_by(tabela="servicos", operacao="ALTERAR_SITUACAO").first()
+        aprovador = _usuario(app, PerfilUsuario.GESTAO_INFORMACAO)
+        ok, _ = aprovar_alteracao(alteracao, aprovador)
+        assert ok is True
+
         servico = db.session.get(Servico, ids["servico_a"])
         assert servico.situacao == SituacaoAtivoInativo.INATIVO
 
@@ -279,8 +340,8 @@ def test_gestor_lista_equipamentos(client):
     assert "Cadeira Odontológica" in resp.get_data(as_text=True)
 
 
-# 15. Perfil autorizado consegue criar equipamento
-def test_administrador_cria_equipamento(client, app):
+# 15. Perfil autorizado consegue SOLICITAR a criação de um equipamento
+def test_administrador_solicita_criacao_de_equipamento(client, app):
     ids = _ids(app)
     _login(client, PerfilUsuario.ADMINISTRADOR)
 
@@ -296,15 +357,40 @@ def test_administrador_cria_equipamento(client, app):
         follow_redirects=True,
     )
     assert resp.status_code == 200
-    assert "cadastrado com sucesso" in resp.get_data(as_text=True)
+    assert "aguardando aprovação" in resp.get_data(as_text=True)
 
     with app.app_context():
+        assert Equipamento.query.filter_by(nome="Autoclave").first() is None
+        assert Alteracao.query.filter_by(tabela="equipamentos", operacao="CRIAR").first() is not None
+
+
+def test_aprovar_criacao_de_equipamento_efetiva_o_registro(client, app):
+    ids = _ids(app)
+    _login(client, PerfilUsuario.ADMINISTRADOR)
+
+    client.post(
+        "/equipamentos/novo",
+        data={
+            "nome": "Autoclave",
+            "tipo": "Esterilização",
+            "unidade_id": ids["unidade_a"],
+            "servico_id": ids["servico_a"],
+            "situacao": "ATIVO",
+        },
+    )
+
+    with app.app_context():
+        alteracao = Alteracao.query.filter_by(tabela="equipamentos", operacao="CRIAR").first()
+        aprovador = _usuario(app, PerfilUsuario.GESTAO_INFORMACAO)
+        ok, _ = aprovar_alteracao(alteracao, aprovador)
+        assert ok is True
+
         criado = Equipamento.query.filter_by(nome="Autoclave").first()
         assert criado is not None
         assert criado.servico_id == ids["servico_a"]
 
 
-def test_criar_equipamento_sem_servico(client, app):
+def test_solicita_criacao_de_equipamento_sem_servico(client, app):
     ids = _ids(app)
     _login(client, PerfilUsuario.ADMINISTRADOR)
 
@@ -320,9 +406,14 @@ def test_criar_equipamento_sem_servico(client, app):
         follow_redirects=True,
     )
     assert resp.status_code == 200
-    assert "cadastrado com sucesso" in resp.get_data(as_text=True)
+    assert "aguardando aprovação" in resp.get_data(as_text=True)
 
     with app.app_context():
+        alteracao = Alteracao.query.filter_by(tabela="equipamentos", operacao="CRIAR").first()
+        aprovador = _usuario(app, PerfilUsuario.GESTAO_INFORMACAO)
+        ok, _ = aprovar_alteracao(alteracao, aprovador)
+        assert ok is True
+
         criado = Equipamento.query.filter_by(nome="Compressor").first()
         assert criado is not None
         assert criado.servico_id is None
@@ -339,8 +430,8 @@ def test_visualizar_equipamento(client, app):
     assert "UBS Unidade A" in resp.get_data(as_text=True)
 
 
-# 17. Perfil autorizado consegue editar equipamento
-def test_editar_equipamento(client, app):
+# 17. Perfil autorizado consegue SOLICITAR a edição de um equipamento
+def test_solicita_edicao_de_equipamento(client, app):
     ids = _ids(app)
     _login(client, PerfilUsuario.GESTAO_INFORMACAO)
 
@@ -356,15 +447,40 @@ def test_editar_equipamento(client, app):
         follow_redirects=True,
     )
     assert resp.status_code == 200
-    assert "atualizado com sucesso" in resp.get_data(as_text=True)
+    assert "aguardando aprovação" in resp.get_data(as_text=True)
 
     with app.app_context():
+        equipamento = db.session.get(Equipamento, ids["equipamento_a"])
+        assert equipamento.nome == "Cadeira Odontológica"  # ainda não mudou
+
+
+def test_aprovar_edicao_de_equipamento_aplica_a_mudanca(client, app):
+    ids = _ids(app)
+    _login(client, PerfilUsuario.GESTAO_INFORMACAO)
+
+    client.post(
+        f"/equipamentos/{ids['equipamento_a']}/editar",
+        data={
+            "nome": "Cadeira Odontológica (Nova)",
+            "tipo": "Equipamento clínico",
+            "unidade_id": ids["unidade_a"],
+            "servico_id": ids["servico_a"],
+            "situacao": "ATIVO",
+        },
+    )
+
+    with app.app_context():
+        alteracao = Alteracao.query.filter_by(tabela="equipamentos", operacao="EDITAR").first()
+        aprovador = _usuario(app, PerfilUsuario.ADMINISTRADOR)
+        ok, _ = aprovar_alteracao(alteracao, aprovador)
+        assert ok is True
+
         equipamento = db.session.get(Equipamento, ids["equipamento_a"])
         assert equipamento.nome == "Cadeira Odontológica (Nova)"
 
 
-# 18. Perfil autorizado consegue alterar situação
-def test_alterar_situacao_equipamento(client, app):
+# 18. Perfil autorizado consegue SOLICITAR alteração de situação
+def test_solicita_alteracao_de_situacao_equipamento(client, app):
     ids = _ids(app)
     _login(client, PerfilUsuario.ADMINISTRADOR)
 
@@ -372,9 +488,25 @@ def test_alterar_situacao_equipamento(client, app):
         f"/equipamentos/{ids['equipamento_a']}/situacao", data={"situacao": "INATIVO"}, follow_redirects=True
     )
     assert resp.status_code == 200
-    assert "alterada para INATIVO" in resp.get_data(as_text=True)
+    assert "aguardando aprovação" in resp.get_data(as_text=True)
 
     with app.app_context():
+        equipamento = db.session.get(Equipamento, ids["equipamento_a"])
+        assert equipamento.situacao == SituacaoAtivoInativo.ATIVO  # ainda não mudou
+
+
+def test_aprovar_alteracao_de_situacao_de_equipamento_aplica_a_mudanca(client, app):
+    ids = _ids(app)
+    _login(client, PerfilUsuario.ADMINISTRADOR)
+
+    client.post(f"/equipamentos/{ids['equipamento_a']}/situacao", data={"situacao": "INATIVO"})
+
+    with app.app_context():
+        alteracao = Alteracao.query.filter_by(tabela="equipamentos", operacao="ALTERAR_SITUACAO").first()
+        aprovador = _usuario(app, PerfilUsuario.GESTAO_INFORMACAO)
+        ok, _ = aprovar_alteracao(alteracao, aprovador)
+        assert ok is True
+
         equipamento = db.session.get(Equipamento, ids["equipamento_a"])
         assert equipamento.situacao == SituacaoAtivoInativo.INATIVO
 

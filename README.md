@@ -1,6 +1,6 @@
 # ORIS — Plataforma de Governança da Rede de Saúde Bucal
 
-> ⚠️ **Status do projeto:** em desenvolvimento — FASE 6 concluída (CRUD de Serviços e Equipamentos).
+> ⚠️ **Status do projeto:** em desenvolvimento — FASE 7 concluída (fluxo de alterações e aprovação).
 > Este README será expandido a cada fase concluída.
 
 ## O que é o ORIS
@@ -51,23 +51,24 @@ ORIS/
 ├── app/
 │   ├── __init__.py        # application factory
 │   ├── extensions.py      # instância do SQLAlchemy
-│   ├── forms.py            # formulários (Flask-WTF) — LoginForm
+│   ├── forms.py            # formulários (Flask-WTF)
 │   ├── cli.py               # comando `flask criar-usuario`
 │   ├── routes/
 │   │   ├── auth.py               # /login, /logout
 │   │   ├── main.py               # "/" (rota protegida)
 │   │   ├── areas.py              # /admin, /gestao, /responsavel, /gestor (RBAC)
-│   │   ├── unidades.py           # CRUD de Unidades de Saúde Bucal
-│   │   ├── servicos.py           # CRUD de Serviços
-│   │   └── equipamentos.py       # CRUD de Equipamentos
+│   │   ├── unidades.py           # CRUD de Unidades (com fluxo de aprovação)
+│   │   ├── servicos.py           # CRUD de Serviços (com fluxo de aprovação)
+│   │   ├── equipamentos.py       # CRUD de Equipamentos (com fluxo de aprovação)
+│   │   └── alteracoes.py         # listar, visualizar, aprovar, rejeitar
 │   ├── models/
-│   │   ├── enums.py             # PerfilUsuario, situações, status
+│   │   ├── enums.py             # PerfilUsuario, situações, status, TipoOperacaoAlteracao
 │   │   ├── mixins.py            # TimestampMixin (created_at/updated_at)
 │   │   ├── usuario.py
 │   │   ├── unidade.py
 │   │   ├── servico.py
 │   │   ├── equipamento.py
-│   │   ├── alteracao.py
+│   │   ├── alteracao.py          # + operacao, dados_novos (Fase 7)
 │   │   └── auditoria.py
 │   ├── templates/
 │   │   ├── base.html            # layout com Bootstrap
@@ -81,12 +82,16 @@ ORIS/
 │   │   │   ├── form.html         # cadastro e edição
 │   │   │   └── detalhe.html
 │   │   ├── servicos/              # mesmo padrão de unidades/
-│   │   └── equipamentos/          # mesmo padrão de unidades/
+│   │   ├── equipamentos/          # mesmo padrão de unidades/
+│   │   └── alteracoes/
+│   │       ├── lista.html
+│   │       └── detalhe.html
 │   ├── static/
 │   │   ├── css/
 │   │   ├── js/
 │   │   └── images/
-│   ├── services/           # regras de negócio — próximas fases
+│   ├── services/
+│   │   └── alteracoes_service.py  # registrar/aplicar/aprovar/rejeitar (Fase 7)
 │   └── utils/
 │       ├── datetime_utils.py    # helper de data/hora (UTC)
 │       ├── security.py          # hash/verificação de senha (bcrypt)
@@ -102,7 +107,8 @@ ORIS/
 │   ├── test_fase3_autenticacao.py
 │   ├── test_fase4_rbac.py
 │   ├── test_fase5_unidades.py
-│   └── test_fase6_servicos_equipamentos.py
+│   ├── test_fase6_servicos_equipamentos.py
+│   └── test_fase7_alteracoes.py
 │
 ├── .env                     # configuração local (NÃO versionar)
 ├── .env.example             # modelo de configuração
@@ -250,7 +256,7 @@ Resposta esperada:
 {
   "status": "ok",
   "app": "ORIS",
-  "fase": "6 - crud de servicos e equipamentos"
+  "fase": "7 - fluxo de alteracoes e aprovacao"
 }
 ```
 
@@ -389,6 +395,68 @@ associados a ela. A listagem de Serviços e Equipamentos aceita filtros
 simples via querystring (`?unidade_id=`, `?situacao=`, e também
 `?servico_id=` para equipamentos).
 
+## Fluxo de alterações e aprovação (FASE 7)
+
+A partir desta fase, **criar, editar ou alterar a situação** de uma
+Unidade, Serviço ou Equipamento não grava mais direto no banco.
+Cada uma dessas ações registra uma `Alteracao` com status `PENDENTE`
+e só é de fato aplicada quando aprovada por um usuário autorizado —
+que nunca pode ser quem fez a solicitação.
+
+```
+Solicitante (ADMIN / GESTAO_INFORMACAO / RESPONSAVEL_SAUDE_BUCAL)
+        │
+        ▼
+   Realiza uma ação (criar/editar/alterar situação)
+        │
+        ▼
+  Alteracao registrada — status PENDENTE
+        │
+        ▼
+  ADMINISTRADOR ou GESTAO_INFORMACAO (nunca o solicitante)
+        │
+     ┌──┴──┐
+     ▼     ▼
+ APROVAR  REJEITAR
+     │       │
+     ▼       ▼
+ Aplicada  Nada é alterado
+```
+
+**Quem solicita:** `ADMINISTRADOR`, `GESTAO_INFORMACAO`,
+`RESPONSAVEL_SAUDE_BUCAL`. `GESTOR` nunca solicita (é só leitura).
+
+**Quem aprova/rejeita:** somente `ADMINISTRADOR` e `GESTAO_INFORMACAO`
+— e nunca o próprio solicitante, mesmo que o perfil dele permita
+aprovar em geral. Essa regra é sempre verificada no backend
+(`app/services/alteracoes_service.py`), nunca só na interface.
+
+| Rota                              | Método | Quem acessa                              |
+|------------------------------------|--------|--------------------------------------------|
+| `/alteracoes`                      | GET    | Qualquer usuário autenticado                |
+| `/alteracoes/<id>`                 | GET    | Qualquer usuário autenticado                |
+| `/alteracoes/<id>/aprovar`         | POST   | ADMINISTRADOR, GESTAO_INFORMACAO (exceto o solicitante) |
+| `/alteracoes/<id>/rejeitar`        | POST   | ADMINISTRADOR, GESTAO_INFORMACAO (exceto o solicitante) |
+
+A listagem aceita filtro por `?status=` (`PENDENTE`/`APROVADO`/
+`REJEITADO`) e por `?tabela=` (`unidades`/`servicos`/`equipamentos`).
+
+**Como a aprovação aplica a mudança:** o model `Alteracao` ganhou dois
+campos nesta fase — `operacao` (CRIAR/EDITAR/ALTERAR_SITUACAO) e
+`dados_novos` (JSON com os valores necessários). Sem eles não haveria
+como saber, no momento da aprovação, o que fazer nem com quais
+valores — a alternativa seria aplicar a mudança na hora e "fingir"
+que está pendente, o que contraria exatamente o objetivo da fase. Por
+isso `registro_id` também passou a ser opcional: enquanto uma
+solicitação de **criação** está pendente, o registro ainda não
+existe.
+
+Aprovar e aplicar acontecem na mesma transação: se a aplicação falhar
+(por exemplo, duas solicitações pendentes de criação com o mesmo
+CNES — a segunda só conflita quando alguém tenta aprová-la), nada é
+salvo e a alteração continua `PENDENTE`, pronta para ser corrigida ou
+rejeitada.
+
 ## Usuário de teste
 
 Não existe usuário fixo/hardcoded no código. Para criar um usuário
@@ -435,7 +503,7 @@ ainda serão implementados nas próximas fases.
 
 ## Segurança implementada
 
-Até o momento (FASE 6):
+Até o momento (FASE 7):
 
 - Nenhuma credencial sensível fica hardcoded no código — tudo vem do `.env`
   via `python-dotenv`.
@@ -449,15 +517,21 @@ Até o momento (FASE 6):
 - Cookies de sessão com `HttpOnly` e `SameSite=Lax` (e `Secure` em
   produção); `SECRET_KEY` sempre lida do `.env`.
 - Proteção CSRF nativa do Flask-WTF em todos os formulários (login,
-  cadastro/edição de unidade/serviço/equipamento, alteração de situação).
+  cadastro/edição de unidade/serviço/equipamento, alteração de situação,
+  aprovação/rejeição de alterações).
 - Mensagem de erro de login sempre genérica ("Email ou senha inválidos."),
   sem revelar se o email existe, se a senha está errada ou se a conta
   está inativa.
 - Controle de acesso por perfil (RBAC) verificado sempre no backend
-  (`roles_required`), nunca apenas escondendo links/botões na interface —
-  segue o princípio de menor privilégio e prepara a segregação de
-  funções entre quem edita (`RESPONSAVEL_SAUDE_BUCAL`/`GESTAO_INFORMACAO`)
-  e quem, futuramente, aprova.
+  (`roles_required`), nunca apenas escondendo links/botões na interface.
+- Segregação de funções real: criar/editar/alterar situação de Unidade,
+  Serviço e Equipamento passa a exigir aprovação de um ADMINISTRADOR ou
+  GESTAO_INFORMACAO — e nunca do próprio solicitante, verificado sempre
+  no backend (`app/services/alteracoes_service.py`), nunca só na
+  interface.
+- Aprovação e aplicação da mudança acontecem na mesma transação: se a
+  aplicação falhar (ex.: conflito de CNES), nada é salvo e a alteração
+  continua PENDENTE.
 - Um usuário desativado perde o acesso imediatamente, mesmo que já
   tivesse uma sessão ativa antes de ser desativado.
 - Páginas dedicadas de "Acesso negado" (HTTP 403) e "Não encontrado"
@@ -471,8 +545,8 @@ Até o momento (FASE 6):
   backend: unidade sempre precisa existir, e um equipamento nunca pode
   ser associado a um serviço de outra unidade.
 
-Itens de segurança das próximas fases (fluxo de aprovação, auditoria
-detalhada, LGPD) serão documentados aqui conforme forem implementados.
+Itens de segurança das próximas fases (auditoria detalhada, LGPD)
+serão documentados aqui conforme forem implementados.
 
 ## Roadmap de fases
 
@@ -482,7 +556,7 @@ detalhada, LGPD) serão documentados aqui conforme forem implementados.
 - [x] FASE 4 — RBAC e gerenciamento de acesso
 - [x] FASE 5 — CRUD de Unidades
 - [x] FASE 6 — CRUD de Serviços e Equipamentos
-- [ ] FASE 7 — Fluxo de aprovação
+- [x] FASE 7 — Fluxo de alterações e aprovação
 - [ ] FASE 8 — Auditoria
 - [ ] FASE 9 — Dashboard
 - [ ] FASE 10 — Testes, segurança, acabamento, README final

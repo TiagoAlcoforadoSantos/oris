@@ -4,13 +4,26 @@ Testes da FASE 5 — CRUD de Unidades.
 Roda contra SQLite em memória (TestingConfig), reaproveitando o
 padrão de fixtures das fases anteriores. Cria um usuário para cada
 perfil e uma unidade de exemplo.
+
+ATUALIZADO NA FASE 7: criar/editar/alterar situação de uma Unidade
+não grava mais direto no banco — registra uma Alteracao PENDENTE que
+só é aplicada quando aprovada (ver tests/test_fase7_alteracoes.py
+para a cobertura completa do fluxo de aprovação). Os testes desta
+fase que antes verificavam a escrita imediata (#4, #5, #6 e o cenário
+de edição usado em #12) foram ajustados para refletir esse novo
+comportamento — continuam confirmando exatamente a mesma regra de
+autorização (quem pode ou não solicitar a operação), só que a
+verificação final passa a ser "uma Alteracao PENDENTE foi criada"
+(e, quando faz sentido, "e a aprovação realmente aplica a mudança")
+em vez de "o registro foi alterado na hora".
 """
 
 import pytest
 
 from app import create_app
 from app.extensions import db
-from app.models import PerfilUsuario, SituacaoUnidade, Unidade, Usuario
+from app.models import Alteracao, PerfilUsuario, SituacaoUnidade, Unidade, Usuario
+from app.services.alteracoes_service import aprovar_alteracao
 from app.utils.security import gerar_hash_senha
 from config import TestingConfig
 
@@ -79,6 +92,11 @@ def _unidade_exemplo_id(app):
         return Unidade.query.filter_by(cnes="1234567").first().id
 
 
+def _usuario(app, perfil):
+    with app.app_context():
+        return Usuario.query.filter_by(email=EMAILS[perfil]).first()
+
+
 DADOS_UNIDADE_NOVA = {
     "nome": "UBS Vila Feliz",
     "cnes": "7654321",
@@ -127,35 +145,56 @@ def test_usuario_autenticado_visualiza_unidade(client, app):
 
 
 # ----------------------------------------------------------------
-# 4. Usuário autorizado consegue criar unidade
+# 4. Usuário autorizado consegue SOLICITAR a criação de uma unidade
+#    (Fase 7: fica PENDENTE; só é criada de fato quando aprovada —
+#    ver test_fase7_alteracoes.py para o fluxo de aprovação completo)
 # ----------------------------------------------------------------
 
-def test_administrador_cria_unidade(client, app):
+def test_administrador_solicita_criacao_de_unidade(client, app):
     _login(client, PerfilUsuario.ADMINISTRADOR)
 
     resp = client.post("/unidades/nova", data=DADOS_UNIDADE_NOVA, follow_redirects=True)
     assert resp.status_code == 200
-    assert "cadastrada com sucesso" in resp.get_data(as_text=True)
+    assert "aguardando aprovação" in resp.get_data(as_text=True)
 
     with app.app_context():
+        # A unidade ainda NÃO existe — só a solicitação (Alteracao PENDENTE)
+        assert Unidade.query.filter_by(cnes="7654321").first() is None
+
+        alteracao = Alteracao.query.filter_by(tabela="unidades", operacao="CRIAR").first()
+        assert alteracao is not None
+        assert alteracao.status.value == "PENDENTE"
+        assert alteracao.registro_id is None
+
+
+def test_responsavel_saude_bucal_solicita_criacao_de_unidade(client):
+    _login(client, PerfilUsuario.RESPONSAVEL_SAUDE_BUCAL)
+    resp = client.post("/unidades/nova", data=DADOS_UNIDADE_NOVA, follow_redirects=True)
+    assert resp.status_code == 200
+    assert "aguardando aprovação" in resp.get_data(as_text=True)
+
+
+def test_aprovar_solicitacao_de_criacao_efetiva_a_unidade(client, app):
+    _login(client, PerfilUsuario.RESPONSAVEL_SAUDE_BUCAL)
+    client.post("/unidades/nova", data=DADOS_UNIDADE_NOVA)
+
+    with app.app_context():
+        alteracao = Alteracao.query.filter_by(tabela="unidades", operacao="CRIAR").first()
+        aprovador = _usuario(app, PerfilUsuario.ADMINISTRADOR)
+        ok, _ = aprovar_alteracao(alteracao, aprovador)
+        assert ok is True
+
         criada = Unidade.query.filter_by(cnes="7654321").first()
         assert criada is not None
         assert criada.nome == "UBS Vila Feliz"
         assert criada.uf == "PE"
 
 
-def test_responsavel_saude_bucal_cria_unidade(client):
-    _login(client, PerfilUsuario.RESPONSAVEL_SAUDE_BUCAL)
-    resp = client.post("/unidades/nova", data=DADOS_UNIDADE_NOVA, follow_redirects=True)
-    assert resp.status_code == 200
-    assert "cadastrada com sucesso" in resp.get_data(as_text=True)
-
-
 # ----------------------------------------------------------------
-# 5. Usuário autorizado consegue editar unidade
+# 5. Usuário autorizado consegue SOLICITAR a edição de uma unidade
 # ----------------------------------------------------------------
 
-def test_administrador_edita_unidade(client, app):
+def test_administrador_solicita_edicao_de_unidade(client, app):
     _login(client, PerfilUsuario.ADMINISTRADOR)
     unidade_id = _unidade_exemplo_id(app)
 
@@ -171,18 +210,49 @@ def test_administrador_edita_unidade(client, app):
     }
     resp = client.post(f"/unidades/{unidade_id}/editar", data=dados_editados, follow_redirects=True)
     assert resp.status_code == 200
-    assert "atualizada com sucesso" in resp.get_data(as_text=True)
+    assert "aguardando aprovação" in resp.get_data(as_text=True)
 
     with app.app_context():
+        # O nome ainda NÃO mudou — a edição está pendente de aprovação
+        unidade = db.session.get(Unidade, unidade_id)
+        assert unidade.nome == "UBS Bairro Novo"
+
+        alteracao = Alteracao.query.filter_by(tabela="unidades", operacao="EDITAR").first()
+        assert alteracao is not None
+        assert alteracao.registro_id == unidade_id
+
+
+def test_aprovar_solicitacao_de_edicao_aplica_a_mudanca(client, app):
+    _login(client, PerfilUsuario.ADMINISTRADOR)
+    unidade_id = _unidade_exemplo_id(app)
+
+    dados_editados = {
+        "nome": "UBS Bairro Novo (Reformada)",
+        "cnes": "1234567",
+        "tipo": "UBS",
+        "endereco": "Rua Teste, 100",
+        "bairro": "Bairro Novo",
+        "cidade": "Recife",
+        "uf": "PE",
+        "situacao": "ATIVA",
+    }
+    client.post(f"/unidades/{unidade_id}/editar", data=dados_editados)
+
+    with app.app_context():
+        alteracao = Alteracao.query.filter_by(tabela="unidades", operacao="EDITAR").first()
+        aprovador = _usuario(app, PerfilUsuario.GESTAO_INFORMACAO)
+        ok, _ = aprovar_alteracao(alteracao, aprovador)
+        assert ok is True
+
         editada = db.session.get(Unidade, unidade_id)
         assert editada.nome == "UBS Bairro Novo (Reformada)"
 
 
 # ----------------------------------------------------------------
-# 6. Usuário autorizado consegue alterar situação
+# 6. Usuário autorizado consegue SOLICITAR alteração de situação
 # ----------------------------------------------------------------
 
-def test_administrador_altera_situacao(client, app):
+def test_administrador_solicita_alteracao_de_situacao(client, app):
     _login(client, PerfilUsuario.ADMINISTRADOR)
     unidade_id = _unidade_exemplo_id(app)
 
@@ -192,9 +262,28 @@ def test_administrador_altera_situacao(client, app):
         follow_redirects=True,
     )
     assert resp.status_code == 200
-    assert "alterada para MANUTENCAO" in resp.get_data(as_text=True)
+    assert "aguardando aprovação" in resp.get_data(as_text=True)
 
     with app.app_context():
+        unidade = db.session.get(Unidade, unidade_id)
+        assert unidade.situacao == SituacaoUnidade.ATIVA  # ainda não mudou
+
+        alteracao = Alteracao.query.filter_by(tabela="unidades", operacao="ALTERAR_SITUACAO").first()
+        assert alteracao is not None
+
+
+def test_aprovar_alteracao_de_situacao_aplica_a_mudanca(client, app):
+    _login(client, PerfilUsuario.ADMINISTRADOR)
+    unidade_id = _unidade_exemplo_id(app)
+
+    client.post(f"/unidades/{unidade_id}/situacao", data={"situacao": "MANUTENCAO"})
+
+    with app.app_context():
+        alteracao = Alteracao.query.filter_by(tabela="unidades", operacao="ALTERAR_SITUACAO").first()
+        aprovador = _usuario(app, PerfilUsuario.GESTAO_INFORMACAO)
+        ok, _ = aprovar_alteracao(alteracao, aprovador)
+        assert ok is True
+
         unidade = db.session.get(Unidade, unidade_id)
         assert unidade.situacao == SituacaoUnidade.MANUTENCAO
 
@@ -271,6 +360,7 @@ def test_cadastro_sem_nome_falha(client, app):
 
     with app.app_context():
         assert Unidade.query.filter_by(cnes="7654321").first() is None
+        assert Alteracao.query.filter_by(tabela="unidades", operacao="CRIAR").first() is None
 
 
 def test_cadastro_sem_cnes_falha(client):
@@ -299,18 +389,31 @@ def test_cnes_duplicado_e_rejeitado_no_cadastro(client, app):
     assert "Já existe uma unidade cadastrada com o CNES" in resp.get_data(as_text=True)
 
     with app.app_context():
-        # Continua existindo só uma unidade com esse CNES
+        # Continua existindo só uma unidade com esse CNES, e nenhuma
+        # solicitação chegou a ser registrada.
         assert Unidade.query.filter_by(cnes="1234567").count() == 1
+        assert Alteracao.query.filter_by(tabela="unidades", operacao="CRIAR").first() is None
 
 
 def test_cnes_duplicado_e_rejeitado_na_edicao(client, app):
     _login(client, PerfilUsuario.ADMINISTRADOR)
 
-    # Cria uma segunda unidade
-    client.post("/unidades/nova", data=DADOS_UNIDADE_NOVA)
-
+    # Cria uma segunda unidade diretamente no banco (o cadastro via
+    # rota agora passa pelo fluxo de aprovação — ver testes acima —
+    # então, para testar a edição, criamos a unidade já existente
+    # diretamente, como o setup do teste faz com a unidade de exemplo).
     with app.app_context():
-        segunda_unidade_id = Unidade.query.filter_by(cnes="7654321").first().id
+        segunda_unidade = Unidade(
+            nome="UBS Vila Feliz",
+            cnes="7654321",
+            tipo="UBS",
+            cidade="Recife",
+            uf="PE",
+            situacao=SituacaoUnidade.ATIVA,
+        )
+        db.session.add(segunda_unidade)
+        db.session.commit()
+        segunda_unidade_id = segunda_unidade.id
 
     dados_editados = dict(DADOS_UNIDADE_NOVA)
     dados_editados["cnes"] = "1234567"  # CNES da primeira unidade
@@ -318,6 +421,9 @@ def test_cnes_duplicado_e_rejeitado_na_edicao(client, app):
     resp = client.post(f"/unidades/{segunda_unidade_id}/editar", data=dados_editados, follow_redirects=True)
     assert resp.status_code == 200
     assert "Já existe outra unidade cadastrada com o CNES" in resp.get_data(as_text=True)
+
+    with app.app_context():
+        assert Alteracao.query.filter_by(tabela="unidades", operacao="EDITAR").first() is None
 
 
 # ----------------------------------------------------------------
@@ -354,6 +460,7 @@ def test_situacao_invalida_e_rejeitada_no_cadastro(client, app):
 
     with app.app_context():
         assert Unidade.query.filter_by(cnes="7654321").first() is None
+        assert Alteracao.query.filter_by(tabela="unidades", operacao="CRIAR").first() is None
 
 
 def test_situacao_invalida_e_rejeitada_ao_alterar(client, app):
@@ -371,3 +478,4 @@ def test_situacao_invalida_e_rejeitada_ao_alterar(client, app):
     with app.app_context():
         unidade = db.session.get(Unidade, unidade_id)
         assert unidade.situacao == SituacaoUnidade.ATIVA  # não mudou
+        assert Alteracao.query.filter_by(tabela="unidades", operacao="ALTERAR_SITUACAO").first() is None

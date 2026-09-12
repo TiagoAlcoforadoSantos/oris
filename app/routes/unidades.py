@@ -1,30 +1,38 @@
 """
-CRUD de Unidades de Saúde Bucal (Fase 5).
+CRUD de Unidades de Saúde Bucal (Fase 5), com fluxo de aprovação
+integrado a partir da Fase 7.
 
 Regras de acesso (reaproveitando roles_required da Fase 4):
 
 - Consultar (listar/visualizar): qualquer usuário autenticado, dos 4
   perfis — inclusive GESTOR, que é só leitura.
-- Criar / editar / alterar situação: ADMINISTRADOR, GESTAO_INFORMACAO
-  e RESPONSAVEL_SAUDE_BUCAL (conforme a matriz de acesso definida na
-  Fase 4, onde "Alterar dados" é SIM/SIM*/SIM*/NÃO para
-  ADMIN/GESTAO/RESPONSAVEL/GESTOR). GESTOR nunca pode alterar dados.
+- Solicitar (criar / editar / alterar situação): ADMINISTRADOR,
+  GESTAO_INFORMACAO e RESPONSAVEL_SAUDE_BUCAL. GESTOR nunca altera
+  dados.
+
+A PARTIR DA FASE 7: criar, editar ou alterar a situação de uma
+Unidade não grava mais direto no banco — registra uma Alteracao
+PENDENTE (app.services.alteracoes_service.registrar_alteracao) e só
+é de fato aplicado quando um ADMINISTRADOR ou GESTAO_INFORMACAO
+(que não seja quem solicitou) aprova em /alteracoes. Isso é
+justamente o que muda em relação às Fases 5/6 — ver o relatório da
+Fase 7 para a explicação completa.
 
 Nenhuma exclusão física é feita — apenas alteração de situação
 (ATIVA/INATIVA/MANUTENCAO), preservando o histórico.
 """
 
 from flask import Blueprint, abort, flash, redirect, render_template, url_for
-from sqlalchemy.exc import IntegrityError
 
 from app.extensions import db
 from app.forms import AlterarSituacaoForm, UnidadeForm
 from app.models import PerfilUsuario, Unidade
-from app.utils.decorators import login_required, roles_required
+from app.services.alteracoes_service import registrar_alteracao
+from app.utils.decorators import login_required, roles_required, usuario_atual
 
 unidades_bp = Blueprint("unidades", __name__, url_prefix="/unidades")
 
-# Perfis autorizados a criar/editar/alterar situação de unidades.
+# Perfis autorizados a solicitar criação/edição/alteração de situação.
 PERFIS_QUE_ALTERAM_UNIDADES = (
     PerfilUsuario.ADMINISTRADOR.value,
     PerfilUsuario.GESTAO_INFORMACAO.value,
@@ -39,6 +47,15 @@ def _buscar_unidade_ou_404(unidade_id):
     if unidade is None:
         abort(404)
     return unidade
+
+
+def _usuario_pode_alterar():
+    """Indica, só para a interface (esconder/mostrar botões), se o
+    usuário atual pertence a um perfil que pode solicitar alteração
+    de unidades. A proteção de verdade é sempre feita pelos
+    decorators nas rotas de escrita abaixo."""
+    usuario = usuario_atual()
+    return usuario is not None and usuario.perfil.value in PERFIS_QUE_ALTERAM_UNIDADES
 
 
 # ----------------------------------------------------------------
@@ -68,19 +85,10 @@ def visualizar(unidade_id):
     )
 
 
-def _usuario_pode_alterar():
-    """Indica, só para a interface (esconder/mostrar botões), se o
-    usuário atual pertence a um perfil que pode alterar unidades. A
-    proteção de verdade é sempre feita pelos decorators nas rotas de
-    escrita abaixo."""
-    from app.utils.decorators import usuario_atual
-
-    usuario = usuario_atual()
-    return usuario is not None and usuario.perfil.value in PERFIS_QUE_ALTERAM_UNIDADES
-
-
 # ----------------------------------------------------------------
-# Escrita — ADMINISTRADOR, GESTAO_INFORMACAO, RESPONSAVEL_SAUDE_BUCAL
+# Solicitação de escrita — ADMINISTRADOR, GESTAO_INFORMACAO,
+# RESPONSAVEL_SAUDE_BUCAL. Nada é aplicado direto: uma Alteracao
+# PENDENTE é criada e aguarda aprovação em /alteracoes.
 # ----------------------------------------------------------------
 
 @unidades_bp.route("/nova", methods=["GET", "POST"])
@@ -95,29 +103,28 @@ def nova():
             flash(f"Já existe uma unidade cadastrada com o CNES '{cnes}'.", "danger")
             return render_template("unidades/form.html", form=form, titulo="Nova Unidade")
 
-        unidade = Unidade(
-            nome=form.nome.data.strip(),
-            cnes=cnes,
-            tipo=form.tipo.data.strip(),
-            endereco=(form.endereco.data or "").strip() or None,
-            bairro=(form.bairro.data or "").strip() or None,
-            cidade=form.cidade.data.strip(),
-            uf=form.uf.data.strip().upper(),
-            situacao=form.situacao.data,
+        dados = {
+            "nome": form.nome.data.strip(),
+            "cnes": cnes,
+            "tipo": form.tipo.data.strip(),
+            "endereco": (form.endereco.data or "").strip() or None,
+            "bairro": (form.bairro.data or "").strip() or None,
+            "cidade": form.cidade.data.strip(),
+            "uf": form.uf.data.strip().upper(),
+            "situacao": form.situacao.data,
+        }
+        descricao = f"Criação de nova Unidade: {dados['nome']} (CNES {cnes})"
+
+        alteracao = registrar_alteracao(
+            usuario_atual(), "unidades", None, "CRIAR", dados, descricao
         )
 
-        try:
-            db.session.add(unidade)
-            db.session.commit()
-        except IntegrityError:
-            # Segurança extra contra corrida entre a checagem acima e o
-            # commit — a constraint única do banco é o critério final.
-            db.session.rollback()
-            flash(f"Já existe uma unidade cadastrada com o CNES '{cnes}'.", "danger")
-            return render_template("unidades/form.html", form=form, titulo="Nova Unidade")
-
-        flash(f"Unidade '{unidade.nome}' cadastrada com sucesso.", "success")
-        return redirect(url_for("unidades.visualizar", unidade_id=unidade.id))
+        flash(
+            f"Solicitação de cadastro da unidade '{dados['nome']}' registrada "
+            f"(Alteração #{alteracao.id}) e aguardando aprovação.",
+            "info",
+        )
+        return redirect(url_for("alteracoes.visualizar", alteracao_id=alteracao.id))
 
     return render_template("unidades/form.html", form=form, titulo="Nova Unidade")
 
@@ -141,26 +148,40 @@ def editar(unidade_id):
                 "unidades/form.html", form=form, titulo=f"Editar Unidade — {unidade.nome}", unidade=unidade
             )
 
-        unidade.nome = form.nome.data.strip()
-        unidade.cnes = cnes
-        unidade.tipo = form.tipo.data.strip()
-        unidade.endereco = (form.endereco.data or "").strip() or None
-        unidade.bairro = (form.bairro.data or "").strip() or None
-        unidade.cidade = form.cidade.data.strip()
-        unidade.uf = form.uf.data.strip().upper()
-        unidade.situacao = form.situacao.data
+        dados_novos = {
+            "nome": form.nome.data.strip(),
+            "cnes": cnes,
+            "tipo": form.tipo.data.strip(),
+            "endereco": (form.endereco.data or "").strip() or None,
+            "bairro": (form.bairro.data or "").strip() or None,
+            "cidade": form.cidade.data.strip(),
+            "uf": form.uf.data.strip().upper(),
+            "situacao": form.situacao.data,
+        }
 
-        try:
-            db.session.commit()
-        except IntegrityError:
-            db.session.rollback()
-            flash(f"Já existe outra unidade cadastrada com o CNES '{cnes}'.", "danger")
+        campos_alterados = [
+            f"{campo} '{getattr(unidade, campo)}' → '{valor}'"
+            for campo, valor in dados_novos.items()
+            if str(getattr(unidade, campo)) != str(valor)
+        ]
+        if not campos_alterados:
+            flash("Nenhuma alteração foi detectada nos dados informados.", "warning")
             return render_template(
                 "unidades/form.html", form=form, titulo=f"Editar Unidade — {unidade.nome}", unidade=unidade
             )
 
-        flash(f"Unidade '{unidade.nome}' atualizada com sucesso.", "success")
-        return redirect(url_for("unidades.visualizar", unidade_id=unidade.id))
+        descricao = f"Edição da Unidade {unidade.id} ({unidade.nome}): " + "; ".join(campos_alterados)
+
+        alteracao = registrar_alteracao(
+            usuario_atual(), "unidades", unidade.id, "EDITAR", dados_novos, descricao
+        )
+
+        flash(
+            f"Solicitação de edição da unidade '{unidade.nome}' registrada "
+            f"(Alteração #{alteracao.id}) e aguardando aprovação.",
+            "info",
+        )
+        return redirect(url_for("alteracoes.visualizar", alteracao_id=alteracao.id))
 
     if not form.is_submitted():
         # Pré-carrega os valores atuais no formulário (GET).
@@ -182,14 +203,26 @@ def editar(unidade_id):
 @roles_required(*PERFIS_QUE_ALTERAM_UNIDADES)
 def alterar_situacao(unidade_id):
     unidade = _buscar_unidade_ou_404(unidade_id)
-
     form = AlterarSituacaoForm()
 
-    if form.validate_on_submit():
-        unidade.situacao = form.situacao.data
-        db.session.commit()
-        flash(f"Situação da unidade '{unidade.nome}' alterada para {unidade.situacao.value}.", "success")
-    else:
+    if not form.validate_on_submit():
         flash("Situação inválida.", "danger")
+        return redirect(url_for("unidades.visualizar", unidade_id=unidade.id))
 
-    return redirect(url_for("unidades.visualizar", unidade_id=unidade.id))
+    nova_situacao = form.situacao.data
+
+    if nova_situacao == unidade.situacao.value:
+        flash("A unidade já está nessa situação.", "warning")
+        return redirect(url_for("unidades.visualizar", unidade_id=unidade.id))
+
+    descricao = f"Alteração da Unidade {unidade.id} ({unidade.nome}): situação {unidade.situacao.value} → {nova_situacao}"
+
+    alteracao = registrar_alteracao(
+        usuario_atual(), "unidades", unidade.id, "ALTERAR_SITUACAO", {"situacao": nova_situacao}, descricao
+    )
+
+    flash(
+        f"Solicitação de alteração de situação registrada (Alteração #{alteracao.id}) e aguardando aprovação.",
+        "info",
+    )
+    return redirect(url_for("alteracoes.visualizar", alteracao_id=alteracao.id))

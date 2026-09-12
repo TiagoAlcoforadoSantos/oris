@@ -150,6 +150,7 @@ def test_relacionamento_unidade_servicos_equipamentos(app):
 
 def test_relacionamento_alteracao_usuario_criador_e_aprovador(app):
     from app.models import Usuario, Alteracao, PerfilUsuario, StatusAlteracao
+    from app.models.enums import TipoOperacaoAlteracao
 
     criador = Usuario(
         nome="Criador",
@@ -170,6 +171,7 @@ def test_relacionamento_alteracao_usuario_criador_e_aprovador(app):
         usuario_id=criador.id,
         tabela="unidades",
         registro_id=1,
+        operacao=TipoOperacaoAlteracao.ALTERAR_SITUACAO,  # campo obrigatório desde a Fase 7
         descricao="Alteração de teste",
         status=StatusAlteracao.APROVADO,
         approved_by=aprovador.id,

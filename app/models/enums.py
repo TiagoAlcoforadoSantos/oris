@@ -39,12 +39,21 @@ class SituacaoAtivoInativo(str, enum.Enum):
 
 
 class StatusAlteracao(str, enum.Enum):
-    """Status do fluxo de aprovação de uma Alteração.
-
-    O FLUXO em si (quem aprova, quando, notificações etc.) será
-    implementado na Fase 7 — aqui apenas os valores possíveis existem.
-    """
+    """Status do fluxo de aprovação de uma Alteração."""
 
     PENDENTE = "PENDENTE"
     APROVADO = "APROVADO"
     REJEITADO = "REJEITADO"
+
+
+class TipoOperacaoAlteracao(str, enum.Enum):
+    """Tipo de operação que uma Alteração pendente representa (Fase 7).
+
+    Necessário para saber COMO aplicar a alteração no momento da
+    aprovação: criar um novo registro, editar campos de um registro
+    existente, ou só trocar a situação dele.
+    """
+
+    CRIAR = "CRIAR"
+    EDITAR = "EDITAR"
+    ALTERAR_SITUACAO = "ALTERAR_SITUACAO"

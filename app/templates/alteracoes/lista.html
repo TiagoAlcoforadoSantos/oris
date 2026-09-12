@@ -1,0 +1,90 @@
+{% extends "base.html" %}
+
+{% block title %}Alterações — ORIS{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="h3 mb-0">Alterações</h1>
+    <a href="{{ url_for('main.index') }}" class="btn btn-outline-secondary btn-sm">Início</a>
+</div>
+
+<form method="GET" class="row g-2 mb-3">
+    <div class="col-auto">
+        <select name="status" class="form-select form-select-sm" onchange="this.form.submit()">
+            <option value="">Todos os status</option>
+            <option value="PENDENTE" {% if filtro_status == "PENDENTE" %}selected{% endif %}>Pendente</option>
+            <option value="APROVADO" {% if filtro_status == "APROVADO" %}selected{% endif %}>Aprovado</option>
+            <option value="REJEITADO" {% if filtro_status == "REJEITADO" %}selected{% endif %}>Rejeitado</option>
+        </select>
+    </div>
+    <div class="col-auto">
+        <select name="tabela" class="form-select form-select-sm" onchange="this.form.submit()">
+            <option value="">Todas as entidades</option>
+            <option value="unidades" {% if filtro_tabela == "unidades" %}selected{% endif %}>Unidades</option>
+            <option value="servicos" {% if filtro_tabela == "servicos" %}selected{% endif %}>Serviços</option>
+            <option value="equipamentos" {% if filtro_tabela == "equipamentos" %}selected{% endif %}>Equipamentos</option>
+        </select>
+    </div>
+</form>
+
+{% if alteracoes %}
+<div class="table-responsive">
+    <table class="table table-striped align-middle">
+        <thead>
+            <tr>
+                <th>#</th>
+                <th>Solicitante</th>
+                <th>Entidade</th>
+                <th>Descrição</th>
+                <th>Status</th>
+                <th>Data</th>
+                <th>Aprovador</th>
+                <th class="text-end">Ações</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for alteracao in alteracoes %}
+            <tr>
+                <td>{{ alteracao.id }}</td>
+                <td>{{ alteracao.usuario_criador.nome }}</td>
+                <td>{{ alteracao.tabela }}</td>
+                <td>{{ alteracao.descricao }}</td>
+                <td>
+                    {% if alteracao.status.value == "PENDENTE" %}
+                        <span class="badge bg-warning text-dark">Pendente</span>
+                    {% elif alteracao.status.value == "APROVADO" %}
+                        <span class="badge bg-success">Aprovado</span>
+                    {% else %}
+                        <span class="badge bg-secondary">Rejeitado</span>
+                    {% endif %}
+                </td>
+                <td>{{ alteracao.created_at.strftime("%d/%m/%Y %H:%M") }}</td>
+                <td>{{ alteracao.usuario_aprovador.nome if alteracao.usuario_aprovador else "—" }}</td>
+                <td class="text-end">
+                    <a href="{{ url_for('alteracoes.visualizar', alteracao_id=alteracao.id) }}" class="btn btn-sm btn-outline-secondary">Visualizar</a>
+                    {% if pode_decidir and alteracao.status.value == "PENDENTE" and alteracao.usuario_id != usuario_atual_id %}
+                        <form method="POST" action="{{ url_for('alteracoes.aprovar', alteracao_id=alteracao.id) }}" class="d-inline">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <button type="submit" class="btn btn-sm btn-outline-success">Aprovar</button>
+                        </form>
+                        <form method="POST" action="{{ url_for('alteracoes.rejeitar', alteracao_id=alteracao.id) }}" class="d-inline">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <button type="submit" class="btn btn-sm btn-outline-danger">Rejeitar</button>
+                        </form>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% else %}
+<p class="text-muted">Nenhuma alteração encontrada.</p>
+{% endif %}
+
+<p class="text-muted small mt-3">
+    Aprovar/Rejeitar só aparece para ADMINISTRADOR e GESTAO_INFORMACAO,
+    e nunca para quem solicitou a própria alteração — mas a proteção
+    real acontece sempre no backend.
+</p>
+{% endblock %}
