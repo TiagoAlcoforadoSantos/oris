@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+
+{% block title %}{{ titulo }} — ORIS{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="h3 mb-0">{{ titulo }}</h1>
+    <a href="{{ url_for('servicos.listar') }}" class="btn btn-outline-secondary btn-sm">Voltar para a lista</a>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        <form method="POST" novalidate>
+            {{ form.hidden_tag() }}
+
+            <div class="row g-3">
+                <div class="col-md-6">
+                    {{ form.nome.label(class="form-label") }}
+                    {{ form.nome(class="form-control") }}
+                    {% for erro in form.nome.errors %}
+                        <div class="text-danger small">{{ erro }}</div>
+                    {% endfor %}
+                </div>
+
+                <div class="col-md-4">
+                    {{ form.unidade_id.label(class="form-label") }}
+                    {{ form.unidade_id(class="form-select") }}
+                    {% for erro in form.unidade_id.errors %}
+                        <div class="text-danger small">{{ erro }}</div>
+                    {% endfor %}
+                </div>
+
+                <div class="col-md-2">
+                    {{ form.situacao.label(class="form-label") }}
+                    {{ form.situacao(class="form-select") }}
+                    {% for erro in form.situacao.errors %}
+                        <div class="text-danger small">{{ erro }}</div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <div class="mt-4">
+                {{ form.submit(class="btn btn-primary") }}
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

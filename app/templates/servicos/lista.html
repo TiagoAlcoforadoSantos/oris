@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+
+{% block title %}Serviços — ORIS{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="h3 mb-0">Serviços de Saúde Bucal</h1>
+    <div>
+        <a href="{{ url_for('main.index') }}" class="btn btn-outline-secondary btn-sm">Início</a>
+        {% if pode_alterar %}
+            <a href="{{ url_for('servicos.novo') }}" class="btn btn-primary btn-sm">+ Novo serviço</a>
+        {% endif %}
+    </div>
+</div>
+
+<form method="GET" class="row g-2 mb-3">
+    <div class="col-auto">
+        <select name="unidade_id" class="form-select form-select-sm" onchange="this.form.submit()">
+            <option value="">Todas as unidades</option>
+            {% for unidade in unidades %}
+                <option value="{{ unidade.id }}" {% if unidade_id_filtro == unidade.id %}selected{% endif %}>
+                    {{ unidade.nome }}
+                </option>
+            {% endfor %}
+        </select>
+    </div>
+    <div class="col-auto">
+        <select name="situacao" class="form-select form-select-sm" onchange="this.form.submit()">
+            <option value="">Todas as situações</option>
+            <option value="ATIVO" {% if situacao_filtro == "ATIVO" %}selected{% endif %}>Ativo</option>
+            <option value="INATIVO" {% if situacao_filtro == "INATIVO" %}selected{% endif %}>Inativo</option>
+        </select>
+    </div>
+</form>
+
+{% if servicos %}
+<div class="table-responsive">
+    <table class="table table-striped align-middle">
+        <thead>
+            <tr>
+                <th>Nome</th>
+                <th>Unidade</th>
+                <th>Situação</th>
+                <th class="text-end">Ações</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for servico in servicos %}
+            <tr>
+                <td>{{ servico.nome }}</td>
+                <td>{{ servico.unidade.nome }}</td>
+                <td>
+                    {% if servico.situacao.value == "ATIVO" %}
+                        <span class="badge bg-success">Ativo</span>
+                    {% else %}
+                        <span class="badge bg-secondary">Inativo</span>
+                    {% endif %}
+                </td>
+                <td class="text-end">
+                    <a href="{{ url_for('servicos.visualizar', servico_id=servico.id) }}" class="btn btn-sm btn-outline-secondary">Visualizar</a>
+                    {% if pode_alterar %}
+                        <a href="{{ url_for('servicos.editar', servico_id=servico.id) }}" class="btn btn-sm btn-outline-primary">Editar</a>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% else %}
+<p class="text-muted">Nenhum serviço encontrado.</p>
+{% endif %}
+{% endblock %}

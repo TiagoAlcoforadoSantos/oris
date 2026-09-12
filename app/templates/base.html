@@ -10,7 +10,20 @@
     >
 </head>
 <body class="bg-light">
-    <div class="container py-5">
+    {% if session.autenticado %}
+    <nav class="navbar navbar-expand navbar-dark bg-dark mb-4">
+        <div class="container">
+            <a class="navbar-brand" href="{{ url_for('main.index') }}">ORIS</a>
+            <div class="navbar-nav">
+                <a class="nav-link" href="{{ url_for('unidades.listar') }}">Unidades</a>
+                <a class="nav-link" href="{{ url_for('servicos.listar') }}">Serviços</a>
+                <a class="nav-link" href="{{ url_for('equipamentos.listar') }}">Equipamentos</a>
+            </div>
+        </div>
+    </nav>
+    {% endif %}
+
+    <div class="container pb-5">
         {% with mensagens = get_flashed_messages(with_categories=true) %}
             {% if mensagens %}
                 {% for categoria, mensagem in mensagens %}

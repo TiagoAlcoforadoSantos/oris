@@ -98,3 +98,101 @@ class AlterarSituacaoForm(FlaskForm):
         validators=[DataRequired(message="Selecione uma situação.")],
     )
     submit = SubmitField("Alterar situação")
+
+
+def _coerce_opcional_int(valor):
+    """Converte o valor de um SelectField para int, tratando string
+    vazia (opção "Nenhum") como None. Usado no campo `servico_id` de
+    Equipamento, que é opcional."""
+    if valor in (None, "", "None"):
+        return None
+    return int(valor)
+
+
+class ServicoForm(FlaskForm):
+    """Formulário de cadastro/edição de Serviço de Saúde Bucal.
+
+    A lista de unidades disponíveis (`unidade_id.choices`) é
+    preenchida na rota (app/routes/servicos.py), com as unidades
+    existentes no momento da requisição — isso faz o próprio
+    WTForms rejeitar automaticamente uma unidade inexistente (ela
+    simplesmente não está entre as opções válidas).
+    """
+
+    nome = StringField(
+        "Nome",
+        validators=[DataRequired(message="Informe o nome do serviço."), Length(max=150)],
+    )
+
+    unidade_id = SelectField(
+        "Unidade",
+        choices=[],
+        coerce=int,
+        validators=[DataRequired(message="Selecione a unidade.")],
+    )
+
+    situacao = SelectField(
+        "Situação",
+        choices=[("ATIVO", "Ativo"), ("INATIVO", "Inativo")],
+        validators=[DataRequired(message="Selecione uma situação.")],
+    )
+
+    submit = SubmitField("Salvar")
+
+
+class EquipamentoForm(FlaskForm):
+    """Formulário de cadastro/edição de Equipamento.
+
+    `unidade_id.choices` e `servico_id.choices` são preenchidos na
+    rota (app/routes/equipamentos.py) com os dados existentes no
+    momento da requisição. `servico_id` é opcional — a opção
+    "Nenhum" equivale a None.
+
+    A regra de que o serviço selecionado precisa pertencer à unidade
+    selecionada depende dos dois campos ao mesmo tempo, então é
+    validada na rota, e não aqui no formulário.
+    """
+
+    nome = StringField(
+        "Nome",
+        validators=[DataRequired(message="Informe o nome do equipamento."), Length(max=150)],
+    )
+
+    tipo = StringField(
+        "Tipo",
+        validators=[DataRequired(message="Informe o tipo do equipamento."), Length(max=100)],
+    )
+
+    unidade_id = SelectField(
+        "Unidade",
+        choices=[],
+        coerce=int,
+        validators=[DataRequired(message="Selecione a unidade.")],
+    )
+
+    servico_id = SelectField(
+        "Serviço (opcional)",
+        choices=[],
+        coerce=_coerce_opcional_int,
+        validate_choice=True,
+    )
+
+    situacao = SelectField(
+        "Situação",
+        choices=[("ATIVO", "Ativo"), ("INATIVO", "Inativo")],
+        validators=[DataRequired(message="Selecione uma situação.")],
+    )
+
+    submit = SubmitField("Salvar")
+
+
+class AlterarSituacaoAtivoInativoForm(FlaskForm):
+    """Formulário simples para alterar a situação (ATIVO/INATIVO) de
+    um Serviço ou Equipamento já existente."""
+
+    situacao = SelectField(
+        "Nova situação",
+        choices=[("ATIVO", "Ativo"), ("INATIVO", "Inativo")],
+        validators=[DataRequired(message="Selecione uma situação.")],
+    )
+    submit = SubmitField("Alterar situação")

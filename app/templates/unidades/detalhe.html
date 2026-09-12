@@ -52,7 +52,7 @@
 </div>
 
 {% if pode_alterar %}
-<div class="card">
+<div class="card mb-4">
     <div class="card-body">
         <h2 class="h6">Alterar situação</h2>
         <form method="POST" action="{{ url_for('unidades.alterar_situacao', unidade_id=unidade.id) }}" class="row g-2 align-items-end">
@@ -68,8 +68,55 @@
 </div>
 {% endif %}
 
-<p class="text-muted small mt-4">
-    Serviços e equipamentos desta unidade serão exibidos aqui a partir
-    da Fase 6.
-</p>
+<div class="row">
+    <div class="col-md-6 mb-4">
+        <div class="card h-100">
+            <div class="card-body">
+                <h2 class="h6">Serviços desta unidade</h2>
+                {% if unidade.servicos.all() %}
+                    <ul class="list-group list-group-flush">
+                        {% for servico in unidade.servicos %}
+                            <li class="list-group-item px-0 d-flex justify-content-between">
+                                <a href="{{ url_for('servicos.visualizar', servico_id=servico.id) }}">{{ servico.nome }}</a>
+                                {% if servico.situacao.value == "ATIVO" %}
+                                    <span class="badge bg-success">Ativo</span>
+                                {% else %}
+                                    <span class="badge bg-secondary">Inativo</span>
+                                {% endif %}
+                            </li>
+                        {% endfor %}
+                    </ul>
+                {% else %}
+                    <p class="text-muted small mb-0">Nenhum serviço cadastrado.</p>
+                {% endif %}
+                <a href="{{ url_for('servicos.listar', unidade_id=unidade.id) }}" class="small">Ver todos na listagem de serviços</a>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-6 mb-4">
+        <div class="card h-100">
+            <div class="card-body">
+                <h2 class="h6">Equipamentos desta unidade</h2>
+                {% if unidade.equipamentos.all() %}
+                    <ul class="list-group list-group-flush">
+                        {% for equipamento in unidade.equipamentos %}
+                            <li class="list-group-item px-0 d-flex justify-content-between">
+                                <a href="{{ url_for('equipamentos.visualizar', equipamento_id=equipamento.id) }}">{{ equipamento.nome }}</a>
+                                {% if equipamento.situacao.value == "ATIVO" %}
+                                    <span class="badge bg-success">Ativo</span>
+                                {% else %}
+                                    <span class="badge bg-secondary">Inativo</span>
+                                {% endif %}
+                            </li>
+                        {% endfor %}
+                    </ul>
+                {% else %}
+                    <p class="text-muted small mb-0">Nenhum equipamento cadastrado.</p>
+                {% endif %}
+                <a href="{{ url_for('equipamentos.listar', unidade_id=unidade.id) }}" class="small">Ver todos na listagem de equipamentos</a>
+            </div>
+        </div>
+    </div>
+</div>
 {% endblock %}

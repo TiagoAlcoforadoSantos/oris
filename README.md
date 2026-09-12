@@ -1,6 +1,6 @@
 # ORIS — Plataforma de Governança da Rede de Saúde Bucal
 
-> ⚠️ **Status do projeto:** em desenvolvimento — FASE 5 concluída (CRUD de Unidades).
+> ⚠️ **Status do projeto:** em desenvolvimento — FASE 6 concluída (CRUD de Serviços e Equipamentos).
 > Este README será expandido a cada fase concluída.
 
 ## O que é o ORIS
@@ -57,7 +57,9 @@ ORIS/
 │   │   ├── auth.py               # /login, /logout
 │   │   ├── main.py               # "/" (rota protegida)
 │   │   ├── areas.py              # /admin, /gestao, /responsavel, /gestor (RBAC)
-│   │   └── unidades.py           # CRUD de Unidades de Saúde Bucal
+│   │   ├── unidades.py           # CRUD de Unidades de Saúde Bucal
+│   │   ├── servicos.py           # CRUD de Serviços
+│   │   └── equipamentos.py       # CRUD de Equipamentos
 │   ├── models/
 │   │   ├── enums.py             # PerfilUsuario, situações, status
 │   │   ├── mixins.py            # TimestampMixin (created_at/updated_at)
@@ -74,10 +76,12 @@ ORIS/
 │   │   ├── area_perfil.html     # áreas de teste do RBAC
 │   │   ├── acesso_negado.html   # página de erro 403
 │   │   ├── nao_encontrado.html  # página de erro 404
-│   │   └── unidades/
-│   │       ├── lista.html
-│   │       ├── form.html         # cadastro e edição
-│   │       └── detalhe.html
+│   │   ├── unidades/
+│   │   │   ├── lista.html
+│   │   │   ├── form.html         # cadastro e edição
+│   │   │   └── detalhe.html
+│   │   ├── servicos/              # mesmo padrão de unidades/
+│   │   └── equipamentos/          # mesmo padrão de unidades/
 │   ├── static/
 │   │   ├── css/
 │   │   ├── js/
@@ -97,7 +101,8 @@ ORIS/
 │   ├── test_fase2_models.py
 │   ├── test_fase3_autenticacao.py
 │   ├── test_fase4_rbac.py
-│   └── test_fase5_unidades.py
+│   ├── test_fase5_unidades.py
+│   └── test_fase6_servicos_equipamentos.py
 │
 ├── .env                     # configuração local (NÃO versionar)
 ├── .env.example             # modelo de configuração
@@ -245,7 +250,7 @@ Resposta esperada:
 {
   "status": "ok",
   "app": "ORIS",
-  "fase": "5 - crud de unidades"
+  "fase": "6 - crud de servicos e equipamentos"
 }
 ```
 
@@ -344,6 +349,46 @@ A interface esconde os botões de criar/editar de quem não tem
 permissão (só por usabilidade) — a proteção de verdade está sempre no
 backend, através do `roles_required` já existente desde a Fase 4.
 
+## CRUD de Serviços e Equipamentos (FASE 6)
+
+Segue exatamente o mesmo padrão do CRUD de Unidades (Fase 5).
+
+| Rota                            | Método    | Quem acessa                                              |
+|----------------------------------|-----------|-----------------------------------------------------------|
+| `/servicos`                      | GET       | Qualquer usuário autenticado (inclusive GESTOR)             |
+| `/servicos/<id>`                 | GET       | Qualquer usuário autenticado (inclusive GESTOR)             |
+| `/servicos/novo`                  | GET, POST | ADMINISTRADOR, GESTAO_INFORMACAO, RESPONSAVEL_SAUDE_BUCAL   |
+| `/servicos/<id>/editar`           | GET, POST | ADMINISTRADOR, GESTAO_INFORMACAO, RESPONSAVEL_SAUDE_BUCAL   |
+| `/servicos/<id>/situacao`         | POST      | ADMINISTRADOR, GESTAO_INFORMACAO, RESPONSAVEL_SAUDE_BUCAL   |
+| `/equipamentos`                   | GET       | Qualquer usuário autenticado (inclusive GESTOR)             |
+| `/equipamentos/<id>`              | GET       | Qualquer usuário autenticado (inclusive GESTOR)             |
+| `/equipamentos/novo`               | GET, POST | ADMINISTRADOR, GESTAO_INFORMACAO, RESPONSAVEL_SAUDE_BUCAL   |
+| `/equipamentos/<id>/editar`        | GET, POST | ADMINISTRADOR, GESTAO_INFORMACAO, RESPONSAVEL_SAUDE_BUCAL   |
+| `/equipamentos/<id>/situacao`      | POST      | ADMINISTRADOR, GESTAO_INFORMACAO, RESPONSAVEL_SAUDE_BUCAL   |
+
+Diferente da Fase 5 (onde havia ambiguidade), aqui a Fase 6 definiu
+explicitamente que GESTAO_INFORMACAO também cria/edita/altera situação
+de Serviços e Equipamentos — igual a ADMINISTRADOR e
+RESPONSAVEL_SAUDE_BUCAL. GESTOR continua só leitura.
+
+**Relacionamentos e validações:**
+
+- Todo Serviço pertence obrigatoriamente a uma Unidade existente — o
+  formulário só lista unidades que existem no banco no momento da
+  requisição, e o backend confere de novo antes de salvar.
+- Todo Equipamento pertence obrigatoriamente a uma Unidade.
+- A associação de um Equipamento a um Serviço é opcional — mas, se
+  informada, o Serviço precisa existir **e** pertencer à mesma Unidade
+  selecionada para o equipamento. Um serviço de outra unidade é
+  bloqueado com mensagem amigável.
+- Situação de Serviço/Equipamento aceita apenas `ATIVO` ou `INATIVO`.
+- Nenhuma exclusão física — apenas alteração de situação.
+
+A página de detalhes de uma Unidade lista os Serviços e Equipamentos
+associados a ela. A listagem de Serviços e Equipamentos aceita filtros
+simples via querystring (`?unidade_id=`, `?situacao=`, e também
+`?servico_id=` para equipamentos).
+
 ## Usuário de teste
 
 Não existe usuário fixo/hardcoded no código. Para criar um usuário
@@ -390,7 +435,7 @@ ainda serão implementados nas próximas fases.
 
 ## Segurança implementada
 
-Até o momento (FASE 5):
+Até o momento (FASE 6):
 
 - Nenhuma credencial sensível fica hardcoded no código — tudo vem do `.env`
   via `python-dotenv`.
@@ -404,15 +449,15 @@ Até o momento (FASE 5):
 - Cookies de sessão com `HttpOnly` e `SameSite=Lax` (e `Secure` em
   produção); `SECRET_KEY` sempre lida do `.env`.
 - Proteção CSRF nativa do Flask-WTF em todos os formulários (login,
-  cadastro/edição de unidade, alteração de situação).
+  cadastro/edição de unidade/serviço/equipamento, alteração de situação).
 - Mensagem de erro de login sempre genérica ("Email ou senha inválidos."),
   sem revelar se o email existe, se a senha está errada ou se a conta
   está inativa.
 - Controle de acesso por perfil (RBAC) verificado sempre no backend
   (`roles_required`), nunca apenas escondendo links/botões na interface —
   segue o princípio de menor privilégio e prepara a segregação de
-  funções entre quem edita (`RESPONSAVEL_SAUDE_BUCAL`) e quem aprova
-  (`GESTAO_INFORMACAO`).
+  funções entre quem edita (`RESPONSAVEL_SAUDE_BUCAL`/`GESTAO_INFORMACAO`)
+  e quem, futuramente, aprova.
 - Um usuário desativado perde o acesso imediatamente, mesmo que já
   tivesse uma sessão ativa antes de ser desativado.
 - Páginas dedicadas de "Acesso negado" (HTTP 403) e "Não encontrado"
@@ -422,6 +467,9 @@ Até o momento (FASE 5):
   proteção nativa contra SQL Injection.
 - Unicidade de CNES validada tanto na aplicação (mensagem amigável)
   quanto no banco (constraint), cobrindo também condições de corrida.
+- Integridade referencial de Serviços/Equipamentos validada no
+  backend: unidade sempre precisa existir, e um equipamento nunca pode
+  ser associado a um serviço de outra unidade.
 
 Itens de segurança das próximas fases (fluxo de aprovação, auditoria
 detalhada, LGPD) serão documentados aqui conforme forem implementados.
@@ -433,7 +481,7 @@ detalhada, LGPD) serão documentados aqui conforme forem implementados.
 - [x] FASE 3 — Login, bcrypt, sessão, logout
 - [x] FASE 4 — RBAC e gerenciamento de acesso
 - [x] FASE 5 — CRUD de Unidades
-- [ ] FASE 6 — Serviços e equipamentos
+- [x] FASE 6 — CRUD de Serviços e Equipamentos
 - [ ] FASE 7 — Fluxo de aprovação
 - [ ] FASE 8 — Auditoria
 - [ ] FASE 9 — Dashboard

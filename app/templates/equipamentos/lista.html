@@ -1,0 +1,87 @@
+{% extends "base.html" %}
+
+{% block title %}Equipamentos — ORIS{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="h3 mb-0">Equipamentos</h1>
+    <div>
+        <a href="{{ url_for('main.index') }}" class="btn btn-outline-secondary btn-sm">Início</a>
+        {% if pode_alterar %}
+            <a href="{{ url_for('equipamentos.novo') }}" class="btn btn-primary btn-sm">+ Novo equipamento</a>
+        {% endif %}
+    </div>
+</div>
+
+<form method="GET" class="row g-2 mb-3">
+    <div class="col-auto">
+        <select name="unidade_id" class="form-select form-select-sm" onchange="this.form.submit()">
+            <option value="">Todas as unidades</option>
+            {% for unidade in unidades %}
+                <option value="{{ unidade.id }}" {% if unidade_id_filtro == unidade.id %}selected{% endif %}>
+                    {{ unidade.nome }}
+                </option>
+            {% endfor %}
+        </select>
+    </div>
+    <div class="col-auto">
+        <select name="servico_id" class="form-select form-select-sm" onchange="this.form.submit()">
+            <option value="">Todos os serviços</option>
+            {% for servico in servicos %}
+                <option value="{{ servico.id }}" {% if servico_id_filtro == servico.id %}selected{% endif %}>
+                    {{ servico.nome }} — {{ servico.unidade.nome }}
+                </option>
+            {% endfor %}
+        </select>
+    </div>
+    <div class="col-auto">
+        <select name="situacao" class="form-select form-select-sm" onchange="this.form.submit()">
+            <option value="">Todas as situações</option>
+            <option value="ATIVO" {% if situacao_filtro == "ATIVO" %}selected{% endif %}>Ativo</option>
+            <option value="INATIVO" {% if situacao_filtro == "INATIVO" %}selected{% endif %}>Inativo</option>
+        </select>
+    </div>
+</form>
+
+{% if equipamentos %}
+<div class="table-responsive">
+    <table class="table table-striped align-middle">
+        <thead>
+            <tr>
+                <th>Nome</th>
+                <th>Tipo</th>
+                <th>Unidade</th>
+                <th>Serviço</th>
+                <th>Situação</th>
+                <th class="text-end">Ações</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for equipamento in equipamentos %}
+            <tr>
+                <td>{{ equipamento.nome }}</td>
+                <td>{{ equipamento.tipo }}</td>
+                <td>{{ equipamento.unidade.nome }}</td>
+                <td>{{ equipamento.servico.nome if equipamento.servico else "—" }}</td>
+                <td>
+                    {% if equipamento.situacao.value == "ATIVO" %}
+                        <span class="badge bg-success">Ativo</span>
+                    {% else %}
+                        <span class="badge bg-secondary">Inativo</span>
+                    {% endif %}
+                </td>
+                <td class="text-end">
+                    <a href="{{ url_for('equipamentos.visualizar', equipamento_id=equipamento.id) }}" class="btn btn-sm btn-outline-secondary">Visualizar</a>
+                    {% if pode_alterar %}
+                        <a href="{{ url_for('equipamentos.editar', equipamento_id=equipamento.id) }}" class="btn btn-sm btn-outline-primary">Editar</a>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% else %}
+<p class="text-muted">Nenhum equipamento encontrado.</p>
+{% endif %}
+{% endblock %}

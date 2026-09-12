@@ -1,11 +1,11 @@
 """
 Application factory do ORIS.
 
-Nesta FASE 5, a aplicação ganha sua primeira funcionalidade de
-negócio completa: o CRUD de Unidades de Saúde Bucal, protegido pelo
-RBAC da Fase 4 e pela autenticação da Fase 3. Ainda NÃO possui
-Serviços, Equipamentos, fluxo de aprovação, auditoria completa ou
-dashboard real — isso fica para as próximas fases.
+Nesta FASE 6, o ORIS ganha o CRUD de Serviços e Equipamentos,
+seguindo o mesmo padrão de Unidades (Fase 5), reaproveitando
+autenticação (Fase 3) e RBAC (Fase 4). Ainda NÃO possui fluxo de
+aprovação, auditoria completa ou dashboard real — isso fica para as
+próximas fases.
 """
 
 from flask import Flask, render_template
@@ -30,16 +30,21 @@ def create_app(config_object=None):
         from app import models  # noqa: F401
 
     # Registra os blueprints: autenticação (login/logout), rota
-    # protegida inicial, áreas de teste do RBAC e o CRUD de Unidades.
+    # protegida inicial, áreas de teste do RBAC e os CRUDs de
+    # Unidades, Serviços e Equipamentos.
     from app.routes.auth import auth_bp
     from app.routes.main import main_bp
     from app.routes.areas import areas_bp
     from app.routes.unidades import unidades_bp
+    from app.routes.servicos import servicos_bp
+    from app.routes.equipamentos import equipamentos_bp
 
     app.register_blueprint(auth_bp)
     app.register_blueprint(main_bp)
     app.register_blueprint(areas_bp)
     app.register_blueprint(unidades_bp)
+    app.register_blueprint(servicos_bp)
+    app.register_blueprint(equipamentos_bp)
 
     # Registra o comando de CLI para criar usuários (ver app/cli.py).
     from app.cli import register_cli_commands
@@ -52,8 +57,9 @@ def create_app(config_object=None):
     def acesso_negado(erro):
         return render_template("acesso_negado.html"), 403
 
-    # Página amigável para registros/URLs inexistentes (ex.: unidade
-    # com id que não existe), sem expor detalhes internos.
+    # Página amigável para registros/URLs inexistentes (ex.: unidade,
+    # serviço ou equipamento com id que não existe), sem expor
+    # detalhes internos.
     @app.errorhandler(404)
     def nao_encontrado(erro):
         return render_template("nao_encontrado.html"), 404
@@ -65,7 +71,7 @@ def create_app(config_object=None):
         return {
             "status": "ok",
             "app": "ORIS",
-            "fase": "5 - crud de unidades",
+            "fase": "6 - crud de servicos e equipamentos",
         }
 
     return app
