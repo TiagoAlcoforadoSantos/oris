@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+
+{% block title %}Unidades — ORIS{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="h3 mb-0">Unidades de Saúde Bucal</h1>
+    <div>
+        <a href="{{ url_for('main.index') }}" class="btn btn-outline-secondary btn-sm">Início</a>
+        {% if pode_alterar %}
+            <a href="{{ url_for('unidades.nova') }}" class="btn btn-primary btn-sm">+ Nova unidade</a>
+        {% endif %}
+    </div>
+</div>
+
+{% if unidades %}
+<div class="table-responsive">
+    <table class="table table-striped align-middle">
+        <thead>
+            <tr>
+                <th>Nome</th>
+                <th>CNES</th>
+                <th>Tipo</th>
+                <th>Cidade/UF</th>
+                <th>Situação</th>
+                <th class="text-end">Ações</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for unidade in unidades %}
+            <tr>
+                <td>{{ unidade.nome }}</td>
+                <td>{{ unidade.cnes }}</td>
+                <td>{{ unidade.tipo }}</td>
+                <td>{{ unidade.cidade }}/{{ unidade.uf }}</td>
+                <td>
+                    {% if unidade.situacao.value == "ATIVA" %}
+                        <span class="badge bg-success">Ativa</span>
+                    {% elif unidade.situacao.value == "MANUTENCAO" %}
+                        <span class="badge bg-warning text-dark">Manutenção</span>
+                    {% else %}
+                        <span class="badge bg-secondary">Inativa</span>
+                    {% endif %}
+                </td>
+                <td class="text-end">
+                    <a href="{{ url_for('unidades.visualizar', unidade_id=unidade.id) }}" class="btn btn-sm btn-outline-secondary">Visualizar</a>
+                    {% if pode_alterar %}
+                        <a href="{{ url_for('unidades.editar', unidade_id=unidade.id) }}" class="btn btn-sm btn-outline-primary">Editar</a>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% else %}
+<p class="text-muted">Nenhuma unidade cadastrada ainda.</p>
+{% endif %}
+
+<p class="text-muted small mt-3">
+    As ações de edição só aparecem para os perfis autorizados — mas a
+    proteção de verdade acontece no backend (RBAC), mesmo que alguém
+    tente acessar a URL diretamente.
+</p>
+{% endblock %}

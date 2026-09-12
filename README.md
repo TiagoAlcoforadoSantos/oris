@@ -1,6 +1,6 @@
 # ORIS — Plataforma de Governança da Rede de Saúde Bucal
 
-> ⚠️ **Status do projeto:** em desenvolvimento — FASE 4 concluída (RBAC e gerenciamento de acesso).
+> ⚠️ **Status do projeto:** em desenvolvimento — FASE 5 concluída (CRUD de Unidades).
 > Este README será expandido a cada fase concluída.
 
 ## O que é o ORIS
@@ -56,7 +56,8 @@ ORIS/
 │   ├── routes/
 │   │   ├── auth.py               # /login, /logout
 │   │   ├── main.py               # "/" (rota protegida)
-│   │   └── areas.py              # /admin, /gestao, /responsavel, /gestor (RBAC)
+│   │   ├── areas.py              # /admin, /gestao, /responsavel, /gestor (RBAC)
+│   │   └── unidades.py           # CRUD de Unidades de Saúde Bucal
 │   ├── models/
 │   │   ├── enums.py             # PerfilUsuario, situações, status
 │   │   ├── mixins.py            # TimestampMixin (created_at/updated_at)
@@ -71,7 +72,12 @@ ORIS/
 │   │   ├── login.html
 │   │   ├── index.html           # página protegida provisória
 │   │   ├── area_perfil.html     # áreas de teste do RBAC
-│   │   └── acesso_negado.html   # página de erro 403
+│   │   ├── acesso_negado.html   # página de erro 403
+│   │   ├── nao_encontrado.html  # página de erro 404
+│   │   └── unidades/
+│   │       ├── lista.html
+│   │       ├── form.html         # cadastro e edição
+│   │       └── detalhe.html
 │   ├── static/
 │   │   ├── css/
 │   │   ├── js/
@@ -90,7 +96,8 @@ ORIS/
 │   ├── test_fase1_estrutura.py
 │   ├── test_fase2_models.py
 │   ├── test_fase3_autenticacao.py
-│   └── test_fase4_rbac.py
+│   ├── test_fase4_rbac.py
+│   └── test_fase5_unidades.py
 │
 ├── .env                     # configuração local (NÃO versionar)
 ├── .env.example             # modelo de configuração
@@ -238,7 +245,7 @@ Resposta esperada:
 {
   "status": "ok",
   "app": "ORIS",
-  "fase": "4 - rbac e gerenciamento de acesso"
+  "fase": "5 - crud de unidades"
 }
 ```
 
@@ -304,6 +311,39 @@ backend, mesmo que alguém digite a URL diretamente.
 Quando um usuário autenticado tenta acessar uma área sem permissão, vê a
 página "403 — Acesso negado", sem detalhes internos do sistema.
 
+## CRUD de Unidades (FASE 5)
+
+Primeira funcionalidade de negócio completa do ORIS — cadastro,
+consulta, edição e alteração de situação das Unidades de Saúde Bucal.
+Nenhuma exclusão física é feita: a situação (`ATIVA`/`INATIVA`/
+`MANUTENCAO`) é o que muda, preservando o histórico.
+
+| Rota                          | Método    | Quem acessa                                              |
+|-------------------------------|-----------|-----------------------------------------------------------|
+| `/unidades`                   | GET       | Qualquer usuário autenticado (inclusive GESTOR)             |
+| `/unidades/<id>`              | GET       | Qualquer usuário autenticado (inclusive GESTOR)             |
+| `/unidades/nova`               | GET, POST | ADMINISTRADOR, GESTAO_INFORMACAO, RESPONSAVEL_SAUDE_BUCAL   |
+| `/unidades/<id>/editar`        | GET, POST | ADMINISTRADOR, GESTAO_INFORMACAO, RESPONSAVEL_SAUDE_BUCAL   |
+| `/unidades/<id>/situacao`      | POST      | ADMINISTRADOR, GESTAO_INFORMACAO, RESPONSAVEL_SAUDE_BUCAL   |
+
+GESTOR nunca altera dados — só consulta. A permissão para
+GESTAO_INFORMACAO criar/editar segue a matriz de "Alterar dados"
+definida na Fase 4 (`SIM*`, já que o fluxo de aprovação em si ainda
+não existe — chega na Fase 7).
+
+**Validações no backend:**
+
+- Nome, CNES, tipo, cidade e UF são obrigatórios.
+- CNES precisa ter só números (7 a 15 dígitos).
+- CNES duplicado é bloqueado com mensagem amigável — tanto no cadastro
+  quanto na edição — sem expor erro interno do banco.
+- Situação só aceita `ATIVA`, `INATIVA` ou `MANUTENCAO`.
+- Unidade inexistente retorna a página amigável "404 — Não encontrado".
+
+A interface esconde os botões de criar/editar de quem não tem
+permissão (só por usabilidade) — a proteção de verdade está sempre no
+backend, através do `roles_required` já existente desde a Fase 4.
+
 ## Usuário de teste
 
 Não existe usuário fixo/hardcoded no código. Para criar um usuário
@@ -350,7 +390,7 @@ ainda serão implementados nas próximas fases.
 
 ## Segurança implementada
 
-Até o momento (FASE 4):
+Até o momento (FASE 5):
 
 - Nenhuma credencial sensível fica hardcoded no código — tudo vem do `.env`
   via `python-dotenv`.
@@ -363,19 +403,25 @@ Até o momento (FASE 4):
   senha ou o hash.
 - Cookies de sessão com `HttpOnly` e `SameSite=Lax` (e `Secure` em
   produção); `SECRET_KEY` sempre lida do `.env`.
-- Proteção CSRF nativa do Flask-WTF no formulário de login.
+- Proteção CSRF nativa do Flask-WTF em todos os formulários (login,
+  cadastro/edição de unidade, alteração de situação).
 - Mensagem de erro de login sempre genérica ("Email ou senha inválidos."),
   sem revelar se o email existe, se a senha está errada ou se a conta
   está inativa.
 - Controle de acesso por perfil (RBAC) verificado sempre no backend
-  (`roles_required`), nunca apenas escondendo links na interface —
+  (`roles_required`), nunca apenas escondendo links/botões na interface —
   segue o princípio de menor privilégio e prepara a segregação de
   funções entre quem edita (`RESPONSAVEL_SAUDE_BUCAL`) e quem aprova
   (`GESTAO_INFORMACAO`).
 - Um usuário desativado perde o acesso imediatamente, mesmo que já
   tivesse uma sessão ativa antes de ser desativado.
-- Página dedicada de "Acesso negado" (HTTP 403), sem expor detalhes
-  internos do sistema.
+- Páginas dedicadas de "Acesso negado" (HTTP 403) e "Não encontrado"
+  (HTTP 404), sem expor detalhes internos do sistema (ex.: erro de
+  banco de dados) para o usuário.
+- Todo acesso ao banco passa pelo ORM (SQLAlchemy), sem SQL manual —
+  proteção nativa contra SQL Injection.
+- Unicidade de CNES validada tanto na aplicação (mensagem amigável)
+  quanto no banco (constraint), cobrindo também condições de corrida.
 
 Itens de segurança das próximas fases (fluxo de aprovação, auditoria
 detalhada, LGPD) serão documentados aqui conforme forem implementados.
@@ -386,7 +432,7 @@ detalhada, LGPD) serão documentados aqui conforme forem implementados.
 - [x] FASE 2 — Banco de dados, models, usuários, perfis
 - [x] FASE 3 — Login, bcrypt, sessão, logout
 - [x] FASE 4 — RBAC e gerenciamento de acesso
-- [ ] FASE 5 — Unidades
+- [x] FASE 5 — CRUD de Unidades
 - [ ] FASE 6 — Serviços e equipamentos
 - [ ] FASE 7 — Fluxo de aprovação
 - [ ] FASE 8 — Auditoria

@@ -1,11 +1,10 @@
 """
 Application factory do ORIS.
 
-Nesta FASE 4, a aplicação passa a ter controle de acesso por perfil
-(RBAC): rotas podem ser restritas a um ou mais perfis com o
-decorator `roles_required`, e tentativas de acesso sem permissão
-resultam em HTTP 403 (página "Acesso negado"). Ainda NÃO possui
-CRUDs de negócio, fluxo de aprovação, auditoria completa ou
+Nesta FASE 5, a aplicação ganha sua primeira funcionalidade de
+negócio completa: o CRUD de Unidades de Saúde Bucal, protegido pelo
+RBAC da Fase 4 e pela autenticação da Fase 3. Ainda NÃO possui
+Serviços, Equipamentos, fluxo de aprovação, auditoria completa ou
 dashboard real — isso fica para as próximas fases.
 """
 
@@ -31,14 +30,16 @@ def create_app(config_object=None):
         from app import models  # noqa: F401
 
     # Registra os blueprints: autenticação (login/logout), rota
-    # protegida inicial e as áreas de teste do RBAC.
+    # protegida inicial, áreas de teste do RBAC e o CRUD de Unidades.
     from app.routes.auth import auth_bp
     from app.routes.main import main_bp
     from app.routes.areas import areas_bp
+    from app.routes.unidades import unidades_bp
 
     app.register_blueprint(auth_bp)
     app.register_blueprint(main_bp)
     app.register_blueprint(areas_bp)
+    app.register_blueprint(unidades_bp)
 
     # Registra o comando de CLI para criar usuários (ver app/cli.py).
     from app.cli import register_cli_commands
@@ -51,6 +52,12 @@ def create_app(config_object=None):
     def acesso_negado(erro):
         return render_template("acesso_negado.html"), 403
 
+    # Página amigável para registros/URLs inexistentes (ex.: unidade
+    # com id que não existe), sem expor detalhes internos.
+    @app.errorhandler(404)
+    def nao_encontrado(erro):
+        return render_template("nao_encontrado.html"), 404
+
     # Rota simples só para confirmar que a aplicação está de pé
     # e que a configuração foi carregada corretamente.
     @app.get("/health")
@@ -58,7 +65,7 @@ def create_app(config_object=None):
         return {
             "status": "ok",
             "app": "ORIS",
-            "fase": "4 - rbac e gerenciamento de acesso",
+            "fase": "5 - crud de unidades",
         }
 
     return app

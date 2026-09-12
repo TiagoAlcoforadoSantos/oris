@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+
+{% block title %}Não encontrado — ORIS{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6 text-center">
+        <h1 class="display-6">404 — Não encontrado</h1>
+        <p class="text-muted mt-3">
+            O registro ou a página que você tentou acessar não existe ou
+            já não está mais disponível.
+        </p>
+        <a href="{{ url_for('main.index') }}" class="btn btn-primary mt-2">Voltar ao início</a>
+    </div>
+</div>
+{% endblock %}
