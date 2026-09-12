@@ -9,6 +9,11 @@ from flask_wtf import FlaskForm
 from wtforms import PasswordField, SelectField, StringField, SubmitField
 from wtforms.validators import DataRequired, Email, Length, Regexp
 
+# Regex do CNES, compartilhada com o importador de planilhas (Fase 10)
+# em app/services/importacao_service.py — mantida em um único lugar
+# para nunca divergir da validação usada no cadastro manual.
+CNES_REGEX = r"^\d{7,15}$"
+
 
 class LoginForm(FlaskForm):
     email = StringField(
@@ -44,7 +49,7 @@ class UnidadeForm(FlaskForm):
         validators=[
             DataRequired(message="Informe o código CNES."),
             Regexp(
-                r"^\d{7,15}$",
+                CNES_REGEX,
                 message="CNES deve conter apenas números (entre 7 e 15 dígitos).",
             ),
         ],

@@ -8,5 +8,9 @@ Flask-WTF==1.2.1
 cryptography==43.0.1
 email_validator==2.3.0
 
+# Importação de planilhas (Fase 10)
+pandas==3.0.5
+openpyxl==3.1.5
+
 # Dependência de desenvolvimento/testes
 pytest==8.3.3

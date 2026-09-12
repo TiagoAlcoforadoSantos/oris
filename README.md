@@ -1,6 +1,6 @@
 # ORIS — Plataforma de Governança da Rede de Saúde Bucal
 
-> ⚠️ **Status do projeto:** em desenvolvimento — FASE 9 concluída (Dashboard).
+> ⚠️ **Status do projeto:** em desenvolvimento — FASE 10 concluída (Importador de Planilhas).
 > Este README será expandido a cada fase concluída.
 
 ## O que é o ORIS
@@ -41,7 +41,8 @@ hospitalar, laudos ou qualquer módulo assistencial ao paciente.
 - **Banco de dados:** MySQL
 - **Frontend:** HTML, CSS, Bootstrap, JavaScript
 - **Segurança:** bcrypt (hash de senha), sessões do Flask, controle de acesso
-  baseado em perfil, `.env` para configurações sensíveis
+  baseado em perfil, `.env` para configurações sensíveis, `CSRFProtect` global
+- **Planilhas:** `pandas` + `openpyxl` (leitura de `.xlsx`/`.csv` no importador)
 
 ## Estrutura do projeto
 
@@ -62,7 +63,8 @@ ORIS/
 │   │   ├── equipamentos.py       # CRUD de Equipamentos (com fluxo de aprovação)
 │   │   ├── alteracoes.py         # listar, visualizar, aprovar, rejeitar
 │   │   ├── auditoria.py          # /auditoria (somente leitura)
-│   │   └── dashboard.py          # /dashboard
+│   │   ├── dashboard.py          # /dashboard
+│   │   └── importacao.py         # importador de planilhas (.xlsx/.csv)
 │   ├── models/
 │   │   ├── enums.py             # PerfilUsuario, situações, status, TipoOperacaoAlteracao
 │   │   ├── mixins.py            # TimestampMixin (created_at/updated_at)
@@ -89,9 +91,15 @@ ORIS/
 │   │   ├── alteracoes/
 │   │   │   ├── lista.html
 │   │   │   └── detalhe.html
-│   │   └── auditoria/
-│   │       ├── lista.html
-│   │       └── detalhe.html
+│   │   ├── auditoria/
+│   │   │   ├── lista.html
+│   │   │   └── detalhe.html
+│   │   └── importacao/
+│   │       ├── index.html
+│   │       ├── nova.html
+│   │       ├── mapeamento.html
+│   │       ├── validacao_erros.html
+│   │       └── previa.html
 │   ├── static/
 │   │   ├── css/
 │   │   ├── js/
@@ -99,7 +107,8 @@ ORIS/
 │   ├── services/
 │   │   ├── alteracoes_service.py  # registrar/aplicar/aprovar/rejeitar (Fase 7)
 │   │   ├── auditoria_service.py   # registrar_auditoria (Fase 8)
-│   │   └── dashboard_service.py   # indicadores e listagens do dashboard (Fase 9)
+│   │   ├── dashboard_service.py   # indicadores e listagens do dashboard (Fase 9)
+│   │   └── importacao_service.py  # leitura, mapeamento e validação de planilhas (Fase 10)
 │   └── utils/
 │       ├── datetime_utils.py    # helper de data/hora (UTC)
 │       ├── security.py          # hash/verificação de senha (bcrypt)
@@ -118,7 +127,8 @@ ORIS/
 │   ├── test_fase6_servicos_equipamentos.py
 │   ├── test_fase7_alteracoes.py
 │   ├── test_fase8_auditoria.py
-│   └── test_fase9_dashboard.py
+│   ├── test_fase9_dashboard.py
+│   └── test_fase10_importacao.py
 │
 ├── .env                     # configuração local (NÃO versionar)
 ├── .env.example             # modelo de configuração
@@ -266,7 +276,7 @@ Resposta esperada:
 {
   "status": "ok",
   "app": "ORIS",
-  "fase": "9 - dashboard"
+  "fase": "10 - importador de planilhas"
 }
 ```
 
@@ -538,6 +548,111 @@ o dashboard avisa isso explicitamente), já que esses dois perfis não
 têm acesso à auditoria administrativa completa. Nunca exibe senha ou
 hash — o model `Auditoria` nunca armazena esses dados.
 
+## Importador de Planilhas (FASE 10)
+
+Importa Unidades, Serviços e Equipamentos a partir de planilhas
+**.xlsx** ou **.csv** (`pandas` + `openpyxl`), sem nunca escrever
+direto nas tabelas de negócio — cada linha nova ou alterada vira uma
+solicitação de alteração comum, passando pelo mesmo mecanismo de
+aprovação da Fase 7.
+
+**Fluxo:** upload → leitura → mapeamento de colunas → validação →
+pré-visualização → confirmação → solicitação `PENDENTE` → aprovação
+(Fase 7) → aplicação → auditoria (Fase 8).
+
+| Rota                          | Método | Quem acessa                                            |
+|--------------------------------|--------|----------------------------------------------------------|
+| `/importacao`                   | GET    | Qualquer usuário autenticado (GESTOR só consulta)         |
+| `/importacao/template/<entidade>` | GET  | ADMINISTRADOR, GESTAO_INFORMACAO, RESPONSAVEL_SAUDE_BUCAL |
+| `/importacao/nova`               | GET   | ADMINISTRADOR, GESTAO_INFORMACAO, RESPONSAVEL_SAUDE_BUCAL |
+| `/importacao/mapear`             | POST  | ADMINISTRADOR, GESTAO_INFORMACAO, RESPONSAVEL_SAUDE_BUCAL |
+| `/importacao/validar`            | POST  | ADMINISTRADOR, GESTAO_INFORMACAO, RESPONSAVEL_SAUDE_BUCAL |
+| `/importacao/confirmar`          | POST  | ADMINISTRADOR, GESTAO_INFORMACAO, RESPONSAVEL_SAUDE_BUCAL |
+
+`GESTOR` nunca importa — apenas consulta a tela principal, coerente
+com a matriz de RBAC já estabelecida (é sempre somente leitura).
+
+**Entidades importáveis e campos:**
+
+- **Unidades:** nome, CNES, tipo, endereço, bairro, cidade, UF,
+  situação — mesmas validações do cadastro manual (Fase 5): CNES
+  numérico de 7 a 15 dígitos, UF com 2 letras, situação em
+  `ATIVA`/`INATIVA`/`MANUTENCAO`.
+- **Serviços:** nome, **CNES da unidade** (identifica a unidade já
+  cadastrada — não se inventou um novo identificador), situação em
+  `ATIVO`/`INATIVO`.
+- **Equipamentos:** nome, tipo, CNES da unidade, nome do serviço
+  (opcional), situação. Mantém a regra já existente (Fase 6): se um
+  serviço for informado, ele precisa pertencer à mesma unidade.
+
+**Mapeamento de colunas:** a planilha não precisa ter os mesmos nomes
+de coluna do ORIS — o sistema sugere automaticamente por sinônimos
+exatos (ex.: "Código CNES", "Município", "Estado"), mas sempre permite
+conferência e correção manual antes de validar.
+
+**Validação:** todas as linhas são validadas de uma vez. Se houver
+qualquer linha inválida, a planilha inteira é rejeitada (nenhuma
+importação parcial nesta versão) — o usuário corrige o arquivo e
+envia novamente. O resumo mostra total/válidos/com erros, e cada erro
+aponta linha, campo, valor recebido e o motivo.
+
+**Novo vs. existente vs. alterado:** Unidades são reconciliadas pelo
+CNES (campo único já existente); Serviços e Equipamentos, por
+nome + unidade (não têm um código próprio). Se o CNES/nome já existe
+no banco, a linha é uma **atualização** (comparando campo a campo);
+se não muda nada, é marcada "sem alteração" e não gera solicitação
+nenhuma. Um **CNES duplicado dentro da própria planilha** (não no
+banco) é tratado como erro, já que não haveria como saber qual das
+duas linhas deveria prevalecer — essa é a leitura adotada para
+conciliar o exemplo de erro do enunciado ("CNES já cadastrado") com o
+pedido de diferenciar novo/existente/alterado usando o CNES; os dois
+pedidos juntos só fazem sentido dessa forma, e essa decisão está
+documentada em `app/services/importacao_service.py`.
+
+**Integração com a Fase 7:** a confirmação nunca insere/atualiza
+direto — cada linha nova ou alterada vira uma `Alteracao` `PENDENTE`
+(via o mesmo `app.services.alteracoes_service.registrar_alteracao`
+usado pelos formulários manuais). Quem importou não pode aprovar a
+própria importação — a mesma segregação de funções da Fase 7 se
+aplica integralmente, sem nenhum mecanismo de aprovação paralelo.
+
+**Integração com a Fase 8:** a solicitação, a aprovação/rejeição e a
+mudança efetivamente aplicada geram os mesmos tipos de registro de
+auditoria de qualquer outra alteração (`SOLICITAR_ALTERACAO`,
+`APROVAR_ALTERACAO`/`REJEITAR_ALTERACAO`, `CRIAR`/`EDITAR`). Além
+disso, a confirmação do lote inteiro gera um registro extra
+`IMPORTAR_PLANILHA`, com um resumo (quantas linhas novas, alteradas e
+sem alteração). Nenhuma senha, hash ou conteúdo bruto do arquivo é
+registrado.
+
+**Segurança do upload:** extensão validada contra uma lista fechada
+(`.csv`/`.xlsx`); tamanho máximo de 5 MB; até 2000 linhas por
+planilha; o nome do arquivo em disco é sempre gerado pelo servidor
+(nunca o nome enviado pelo usuário); armazenamento em uma pasta
+temporária dedicada, fora de `static`/`templates`; nenhum arquivo é
+executado; o arquivo é removido assim que deixa de ser necessário
+(falha de validação ou confirmação concluída).
+
+**Template de planilha:** cada entidade tem um modelo `.csv` para
+download (`/importacao/template/<entidade>`), só com os cabeçalhos
+esperados — sem nenhum dado de exemplo, para nunca acabar sendo
+importado por engano como um registro real.
+
+**Limitações atuais:** não há importação parcial (tudo ou nada); um
+arquivo cuja aba/pré-visualização foi aberta mas nunca confirmada nem
+rejeitada fica temporariamente em disco até ser processado ou até uma
+limpeza manual — não há um job de limpeza automática (fora do escopo
+desta fase, que evita processamento assíncrono); não há integração
+real com o CNES (a validação do código é só de formato).
+
+**Correção de segurança feita nesta fase:** `CSRFProtect` passou a ser
+inicializado globalmente na aplicação. Antes, `{{ csrf_token() }}` só
+funcionava dentro de páginas que recebiam uma `FlaskForm` — o que
+quebrava silenciosamente a listagem de alterações (Fase 7) sempre que
+um aprovador de verdade (diferente de quem solicitou) via a lista com
+itens pendentes. Registrar `CSRFProtect` corrige isso e também
+protege, de forma consistente, os novos formulários do importador.
+
 ## Usuário de teste
 
 Não existe usuário fixo/hardcoded no código. Para criar um usuário
@@ -584,7 +699,7 @@ ainda serão implementados nas próximas fases.
 
 ## Segurança implementada
 
-Até o momento (FASE 9):
+Até o momento (FASE 10):
 
 - Nenhuma credencial sensível fica hardcoded no código — tudo vem do `.env`
   via `python-dotenv`.
@@ -597,19 +712,19 @@ Até o momento (FASE 9):
   senha ou o hash.
 - Cookies de sessão com `HttpOnly` e `SameSite=Lax` (e `Secure` em
   produção); `SECRET_KEY` sempre lida do `.env`.
-- Proteção CSRF nativa do Flask-WTF em todos os formulários (login,
-  cadastro/edição de unidade/serviço/equipamento, alteração de situação,
-  aprovação/rejeição de alterações).
+- `CSRFProtect` inicializado globalmente (Fase 10) — cobre tanto os
+  formulários baseados em `FlaskForm` quanto as telas do importador,
+  que usam formulários simples com campos dinâmicos por entidade.
 - Mensagem de erro de login sempre genérica ("Email ou senha inválidos."),
   sem revelar se o email existe, se a senha está errada ou se a conta
   está inativa.
 - Controle de acesso por perfil (RBAC) verificado sempre no backend
   (`roles_required`), nunca apenas escondendo links/botões na interface.
 - Segregação de funções real: criar/editar/alterar situação de Unidade,
-  Serviço e Equipamento passa a exigir aprovação de um ADMINISTRADOR ou
-  GESTAO_INFORMACAO — e nunca do próprio solicitante, verificado sempre
-  no backend (`app/services/alteracoes_service.py`), nunca só na
-  interface.
+  Serviço e Equipamento (manualmente ou via importação de planilha)
+  passa a exigir aprovação de um ADMINISTRADOR ou GESTAO_INFORMACAO —
+  e nunca do próprio solicitante, verificado sempre no backend
+  (`app/services/alteracoes_service.py`), nunca só na interface.
 - Aprovação e aplicação da mudança acontecem na mesma transação: se a
   aplicação falhar (ex.: conflito de CNES), nada é salvo e a alteração
   continua PENDENTE.
@@ -623,6 +738,10 @@ Até o momento (FASE 9):
   recente" só mostra o histórico completo para ADMINISTRADOR/
   GESTAO_INFORMACAO — RESPONSAVEL_SAUDE_BUCAL e GESTOR veem apenas a
   própria atividade, nunca a de outros usuários.
+- Upload de planilhas com extensão validada, tamanho e número de
+  linhas limitados, nome de arquivo gerado pelo servidor (nunca o do
+  usuário), armazenamento temporário fora de `static`/`templates`, e
+  remoção do arquivo assim que deixa de ser necessário.
 - Um usuário desativado perde o acesso imediatamente, mesmo que já
   tivesse uma sessão ativa antes de ser desativado.
 - Páginas dedicadas de "Acesso negado" (HTTP 403) e "Não encontrado"
@@ -634,7 +753,8 @@ Até o momento (FASE 9):
   quanto no banco (constraint), cobrindo também condições de corrida.
 - Integridade referencial de Serviços/Equipamentos validada no
   backend: unidade sempre precisa existir, e um equipamento nunca pode
-  ser associado a um serviço de outra unidade.
+  ser associado a um serviço de outra unidade — inclusive quando os
+  dados vêm de uma planilha importada.
 
 Itens de segurança das próximas fases (LGPD, acabamento geral) serão
 documentados aqui conforme forem implementados.
@@ -650,7 +770,9 @@ documentados aqui conforme forem implementados.
 - [x] FASE 7 — Fluxo de alterações e aprovação
 - [x] FASE 8 — Auditoria e rastreabilidade
 - [x] FASE 9 — Dashboard
-- [ ] FASE 10 — Testes, segurança, acabamento, README final
+- [x] FASE 10 — Importador de Planilhas (.xlsx/.csv)
+- [ ] Próximas fases — administração de usuários, LGPD/criptografia
+      final, acabamento de UX/UI, testes e polimento final
 
 ## Dados de demonstração
 

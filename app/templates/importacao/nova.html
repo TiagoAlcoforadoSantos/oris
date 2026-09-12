@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+
+{% block title %}Nova Importação — ORIS{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="h3 mb-0">Nova Importação</h1>
+    <a href="{{ url_for('importacao.index') }}" class="btn btn-outline-secondary btn-sm">Voltar</a>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        <form method="POST" action="{{ url_for('importacao.mapear') }}" enctype="multipart/form-data">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <div class="mb-3">
+                <label class="form-label">Entidade</label>
+                <select name="entidade" class="form-select">
+                    {% for opcao in entidades %}
+                        <option value="{{ opcao }}" {% if opcao == entidade %}selected{% endif %}>
+                            {{ opcao|capitalize }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">Arquivo (.csv ou .xlsx)</label>
+                <input type="file" name="arquivo" class="form-control" accept=".csv,.xlsx" required>
+                <div class="form-text">
+                    Formatos aceitos: {{ extensoes_aceitas|join(", ") }}. Tamanho máximo:
+                    {{ limite_tamanho_mb }} MB. Limite de {{ limite_linhas }} linhas por planilha.
+                </div>
+            </div>
+
+            <a href="{{ url_for('importacao.template', entidade=entidade) }}" class="btn btn-outline-secondary btn-sm mb-3">
+                Baixar modelo de planilha
+            </a>
+
+            <div>
+                <button type="submit" class="btn btn-primary">Continuar para o mapeamento</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<p class="text-muted small mt-3">
+    Nenhum dado é gravado no banco nesta etapa — o arquivo só é lido
+    para o próximo passo (mapeamento de colunas).
+</p>
+{% endblock %}

@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+
+{% block title %}Importação de Planilhas — ORIS{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="h3 mb-0">Importação de Planilhas</h1>
+    <a href="{{ url_for('main.index') }}" class="btn btn-outline-secondary btn-sm">Início</a>
+</div>
+
+<p class="text-muted">
+    Importe Unidades, Serviços ou Equipamentos a partir de uma planilha
+    <strong>.xlsx</strong> ou <strong>.csv</strong> (até {{ limite_tamanho_mb }} MB,
+    {{ limite_linhas }} linhas). Nenhum dado é gravado diretamente — cada
+    linha nova ou alterada vira uma solicitação de alteração
+    <strong>pendente de aprovação</strong>, exatamente como um cadastro
+    manual (Fase 7).
+</p>
+
+{% if pode_importar %}
+<div class="row row-cols-1 row-cols-md-3 g-3 mb-4">
+    <div class="col">
+        <div class="card h-100">
+            <div class="card-body">
+                <h2 class="h5">Unidades</h2>
+                <p class="text-muted small">Nome, CNES, tipo, endereço, cidade, UF, situação.</p>
+                <a href="{{ url_for('importacao.nova', entidade='unidades') }}" class="btn btn-primary btn-sm">Importar</a>
+                <a href="{{ url_for('importacao.template', entidade='unidades') }}" class="btn btn-outline-secondary btn-sm">Baixar modelo</a>
+            </div>
+        </div>
+    </div>
+    <div class="col">
+        <div class="card h-100">
+            <div class="card-body">
+                <h2 class="h5">Serviços</h2>
+                <p class="text-muted small">Nome, CNES da unidade, situação.</p>
+                <a href="{{ url_for('importacao.nova', entidade='servicos') }}" class="btn btn-primary btn-sm">Importar</a>
+                <a href="{{ url_for('importacao.template', entidade='servicos') }}" class="btn btn-outline-secondary btn-sm">Baixar modelo</a>
+            </div>
+        </div>
+    </div>
+    <div class="col">
+        <div class="card h-100">
+            <div class="card-body">
+                <h2 class="h5">Equipamentos</h2>
+                <p class="text-muted small">Nome, tipo, CNES da unidade, serviço (opcional), situação.</p>
+                <a href="{{ url_for('importacao.nova', entidade='equipamentos') }}" class="btn btn-primary btn-sm">Importar</a>
+                <a href="{{ url_for('importacao.template', entidade='equipamentos') }}" class="btn btn-outline-secondary btn-sm">Baixar modelo</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% else %}
+<p class="text-muted">
+    Seu perfil não realiza importações — apenas consulta. Fale com um
+    ADMINISTRADOR, GESTAO_INFORMACAO ou RESPONSAVEL_SAUDE_BUCAL se
+    precisar importar uma planilha.
+</p>
+{% endif %}
+
+<a href="{{ url_for('alteracoes.listar') }}" class="btn btn-outline-secondary btn-sm">
+    Ver solicitações de alteração
+</a>
+{% endblock %}
