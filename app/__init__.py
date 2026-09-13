@@ -1,19 +1,20 @@
 """
 Application factory do ORIS.
 
-Nesta FASE 13A, o ORIS ganha um Design System / identidade visual —
-tokens de cor, tipografia e componentes básicos (ver
-app/static/css/tokens.css e docs/DESIGN_SYSTEM.md), aplicados ao
-chrome compartilhado (navegação, botões, badges, alertas,
-formulários). Nenhuma regra de negócio, model, autenticação, RBAC,
-aprovação, auditoria, importação ou segurança foi alterada — só a
-camada visual. Uma página de referência (`/design-system`) documenta
-os tokens vivos, sem redesenhar ainda cada tela de negócio (Fase 13B).
+Nesta FASE 13B (Etapa 1), o ORIS aplica o Design System da Fase 13A à
+estrutura global da aplicação: sidebar, header, breadcrumb e o
+Dashboard — a primeira tela realmente redesenhada. Nenhuma regra de
+negócio, model, autenticação, RBAC, aprovação, auditoria, importação
+ou segurança foi alterada — só a camada visual/estrutural. As demais
+telas (Unidades, Serviços, Equipamentos, Aprovações, Auditoria,
+Importação, Usuários, Privacidade, Login) ainda não foram
+redesenhadas — ficam para as próximas etapas da Fase 13B.
 
 Fases anteriores continuam intactas: autenticação (Fase 3), RBAC
 (Fase 4), fluxo de aprovação (Fase 7), auditoria (Fase 8), Dashboard
-(Fase 9), Importador (Fase 10), Administração de Usuários (Fase 11) e
-segurança/LGPD (Fase 12) — ver docs/SEGURANCA.md.
+(Fase 9 — lógica), Importador (Fase 10), Administração de Usuários
+(Fase 11), segurança/LGPD (Fase 12 — ver docs/SEGURANCA.md) e o
+Design System (Fase 13A — ver app/static/css/tokens.css).
 """
 
 from flask import Flask, render_template
@@ -107,7 +108,7 @@ def create_app(config_object=None):
             "Content-Security-Policy",
             "default-src 'self'; "
             "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://fonts.googleapis.com; "
-            "font-src 'self' https://fonts.gstatic.com; "
+            "font-src 'self' https://fonts.gstatic.com https://cdn.jsdelivr.net; "
             "script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; "
             "img-src 'self' data:; "
             "frame-ancestors 'none'",
@@ -146,7 +147,7 @@ def create_app(config_object=None):
         return {
             "status": "ok",
             "app": "ORIS",
-            "fase": "13a - design system e identidade visual",
+            "fase": "13b-etapa1 - estrutura global e dashboard",
         }
 
     return app

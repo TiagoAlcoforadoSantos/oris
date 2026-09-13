@@ -2,247 +2,208 @@
 
 {% block title %}Dashboard — ORIS{% endblock %}
 
+{% block breadcrumb %}
+    <a href="{{ url_for('dashboard.index') }}">Início</a>
+    <span aria-hidden="true">/</span>
+    <span class="oris-breadcrumb-current">Dashboard</span>
+{% endblock %}
+
+{% block extra_css %}
+<link href="{{ url_for('static', filename='css/dashboard.css') }}" rel="stylesheet">
+{% endblock %}
+
 {% block content %}
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <h1 class="h3 mb-0">Dashboard</h1>
-    <a href="{{ url_for('main.index') }}" class="btn btn-outline-secondary btn-sm">Início</a>
+<section class="oris-hero">
+    <div class="oris-hero-text">
+        <h1>Olá, {{ usuario_logado.nome.split(" ")[0] if usuario_logado else "" }}</h1>
+        <p class="oris-hero-subtitle">Visão geral da Rede de Saúde Bucal</p>
+        <p class="oris-hero-description">
+            Tenha uma visão consolidada das unidades, serviços, equipamentos e
+            alterações da rede.
+        </p>
+    </div>
+    <div class="oris-hero-graphic" aria-hidden="true">
+        <svg viewBox="0 0 180 140" xmlns="http://www.w3.org/2000/svg" fill="none">
+            <circle cx="30" cy="100" r="5" fill="#39C6D3" />
+            <circle cx="90" cy="40" r="6" fill="#18B7B0" />
+            <circle cx="150" cy="90" r="5" fill="#39C6D3" />
+            <circle cx="120" cy="30" r="4" fill="#DDF4F5" />
+            <circle cx="55" cy="55" r="4" fill="#DDF4F5" />
+            <circle cx="150" cy="30" r="3.5" fill="#39C6D3" />
+            <path d="M30 100 L90 40 L150 90 L120 30 M90 40 L55 55 M150 90 L150 30"
+                  stroke="#39C6D3" stroke-opacity="0.55" stroke-width="1.4" />
+        </svg>
+    </div>
+</section>
+
+<div class="oris-kpi-grid">
+    <article class="oris-kpi-card">
+        <div class="oris-kpi-icon"><i class="bi bi-hospital"></i></div>
+        <div>
+            <span class="oris-kpi-label">Unidades</span>
+            <span class="oris-kpi-value">{{ indicadores.unidades_total }}</span>
+            <span class="oris-kpi-meta">
+                {{ indicadores.unidades_ativas }} ativas · {{ indicadores.unidades_inativas }} inativas · {{ indicadores.unidades_manutencao }} em manutenção
+            </span>
+        </div>
+    </article>
+
+    <article class="oris-kpi-card">
+        <div class="oris-kpi-icon"><i class="bi bi-clipboard2-pulse"></i></div>
+        <div>
+            <span class="oris-kpi-label">Serviços</span>
+            <span class="oris-kpi-value">{{ indicadores.servicos_total }}</span>
+            <span class="oris-kpi-meta">{{ indicadores.servicos_ativos }} ativos · {{ indicadores.servicos_inativos }} inativos</span>
+        </div>
+    </article>
+
+    <article class="oris-kpi-card">
+        <div class="oris-kpi-icon"><i class="bi bi-tools"></i></div>
+        <div>
+            <span class="oris-kpi-label">Equipamentos</span>
+            <span class="oris-kpi-value">{{ indicadores.equipamentos_total }}</span>
+            <span class="oris-kpi-meta">{{ indicadores.equipamentos_ativos }} ativos · {{ indicadores.equipamentos_inativos }} inativos</span>
+        </div>
+    </article>
+
+    <article class="oris-kpi-card oris-kpi-card--highlight">
+        <div class="oris-kpi-icon"><i class="bi bi-hourglass-split"></i></div>
+        <div>
+            <span class="oris-kpi-label">Alterações pendentes</span>
+            <span class="oris-kpi-value">{{ indicadores.alteracoes_pendentes }}</span>
+            <span class="oris-kpi-meta">{{ indicadores.alteracoes_aprovadas }} aprovadas · {{ indicadores.alteracoes_rejeitadas }} rejeitadas</span>
+            <a href="{{ url_for('alteracoes.listar', status='PENDENTE') }}" class="oris-kpi-link d-inline-block mt-1">
+                Ver aprovações →
+            </a>
+        </div>
+    </article>
 </div>
 
-<h2 class="h5">Indicadores</h2>
-<div class="row row-cols-2 row-cols-md-4 g-3 mb-4">
-    <div class="col">
-        <div class="card text-center h-100">
-            <div class="card-body">
-                <div class="fs-3">{{ indicadores.unidades_total }}</div>
-                <div class="text-muted small">Unidades (total)</div>
-            </div>
-        </div>
-    </div>
-    <div class="col">
-        <div class="card text-center h-100 border-success">
-            <div class="card-body">
-                <div class="fs-3">{{ indicadores.unidades_ativas }}</div>
-                <div class="text-muted small">Unidades ativas</div>
-            </div>
-        </div>
-    </div>
-    <div class="col">
-        <div class="card text-center h-100 border-secondary">
-            <div class="card-body">
-                <div class="fs-3">{{ indicadores.unidades_inativas }}</div>
-                <div class="text-muted small">Unidades inativas</div>
-            </div>
-        </div>
-    </div>
-    <div class="col">
-        <div class="card text-center h-100 border-warning">
-            <div class="card-body">
-                <div class="fs-3">{{ indicadores.unidades_manutencao }}</div>
-                <div class="text-muted small">Unidades em manutenção</div>
-            </div>
-        </div>
-    </div>
+<div class="mb-4">
+    <h2 class="oris-section-title">Resumo da rede</h2>
+    <p class="oris-section-subtitle">Unidades cadastradas, com filtro por situação.</p>
 
-    <div class="col">
-        <div class="card text-center h-100">
-            <div class="card-body">
-                <div class="fs-3">{{ indicadores.servicos_total }}</div>
-                <div class="text-muted small">Serviços (total)</div>
+    <div class="oris-panel">
+        <form method="GET" class="row g-2 mb-3">
+            <div class="col-auto">
+                <select name="situacao" class="form-select form-select-sm" onchange="this.form.submit()">
+                    <option value="">Todas as situações</option>
+                    <option value="ATIVA" {% if situacao_filtro == "ATIVA" %}selected{% endif %}>Ativa</option>
+                    <option value="INATIVA" {% if situacao_filtro == "INATIVA" %}selected{% endif %}>Inativa</option>
+                    <option value="MANUTENCAO" {% if situacao_filtro == "MANUTENCAO" %}selected{% endif %}>Manutenção</option>
+                </select>
             </div>
-        </div>
-    </div>
-    <div class="col">
-        <div class="card text-center h-100 border-success">
-            <div class="card-body">
-                <div class="fs-3">{{ indicadores.servicos_ativos }}</div>
-                <div class="text-muted small">Serviços ativos</div>
-            </div>
-        </div>
-    </div>
-    <div class="col">
-        <div class="card text-center h-100 border-secondary">
-            <div class="card-body">
-                <div class="fs-3">{{ indicadores.servicos_inativos }}</div>
-                <div class="text-muted small">Serviços inativos</div>
-            </div>
-        </div>
-    </div>
-    <div class="col"></div>
+        </form>
 
-    <div class="col">
-        <div class="card text-center h-100">
-            <div class="card-body">
-                <div class="fs-3">{{ indicadores.equipamentos_total }}</div>
-                <div class="text-muted small">Equipamentos (total)</div>
-            </div>
+        {% if unidades %}
+        <div class="table-responsive">
+            <table class="table table-sm table-hover align-middle mb-0">
+                <thead>
+                    <tr>
+                        <th>Nome</th>
+                        <th>CNES</th>
+                        <th>Município</th>
+                        <th>UF</th>
+                        <th>Situação</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for unidade in unidades %}
+                    <tr>
+                        <td><a href="{{ url_for('unidades.visualizar', unidade_id=unidade.id) }}">{{ unidade.nome }}</a></td>
+                        <td>{{ unidade.cnes }}</td>
+                        <td>{{ unidade.cidade }}</td>
+                        <td>{{ unidade.uf }}</td>
+                        <td>
+                            {% if unidade.situacao.value == "ATIVA" %}
+                                <span class="badge bg-success">Ativa</span>
+                            {% elif unidade.situacao.value == "MANUTENCAO" %}
+                                <span class="badge bg-warning text-dark">Manutenção</span>
+                            {% else %}
+                                <span class="badge bg-secondary">Inativa</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
         </div>
-    </div>
-    <div class="col">
-        <div class="card text-center h-100 border-success">
-            <div class="card-body">
-                <div class="fs-3">{{ indicadores.equipamentos_ativos }}</div>
-                <div class="text-muted small">Equipamentos ativos</div>
-            </div>
-        </div>
-    </div>
-    <div class="col">
-        <div class="card text-center h-100 border-secondary">
-            <div class="card-body">
-                <div class="fs-3">{{ indicadores.equipamentos_inativos }}</div>
-                <div class="text-muted small">Equipamentos inativos</div>
-            </div>
-        </div>
-    </div>
-    <div class="col"></div>
-
-    <div class="col">
-        <div class="card text-center h-100 border-warning">
-            <div class="card-body">
-                <div class="fs-3">{{ indicadores.alteracoes_pendentes }}</div>
-                <div class="text-muted small">Alterações pendentes</div>
-            </div>
-        </div>
-    </div>
-    <div class="col">
-        <div class="card text-center h-100 border-success">
-            <div class="card-body">
-                <div class="fs-3">{{ indicadores.alteracoes_aprovadas }}</div>
-                <div class="text-muted small">Alterações aprovadas</div>
-            </div>
-        </div>
-    </div>
-    <div class="col">
-        <div class="card text-center h-100 border-secondary">
-            <div class="card-body">
-                <div class="fs-3">{{ indicadores.alteracoes_rejeitadas }}</div>
-                <div class="text-muted small">Alterações rejeitadas</div>
-            </div>
-        </div>
+        {% else %}
+        <p class="text-muted mb-0">Nenhuma unidade encontrada para esse filtro.</p>
+        {% endif %}
     </div>
 </div>
 
-<h2 class="h5">Resumo da rede</h2>
-<form method="GET" class="row g-2 mb-2">
-    <div class="col-auto">
-        <select name="situacao" class="form-select form-select-sm" onchange="this.form.submit()">
-            <option value="">Todas as situações</option>
-            <option value="ATIVA" {% if situacao_filtro == "ATIVA" %}selected{% endif %}>Ativa</option>
-            <option value="INATIVA" {% if situacao_filtro == "INATIVA" %}selected{% endif %}>Inativa</option>
-            <option value="MANUTENCAO" {% if situacao_filtro == "MANUTENCAO" %}selected{% endif %}>Manutenção</option>
-        </select>
-    </div>
-</form>
-
-{% if unidades %}
-<div class="table-responsive mb-4">
-    <table class="table table-sm table-striped align-middle">
-        <thead>
-            <tr>
-                <th>Nome</th>
-                <th>CNES</th>
-                <th>Município</th>
-                <th>UF</th>
-                <th>Situação</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for unidade in unidades %}
-            <tr>
-                <td><a href="{{ url_for('unidades.visualizar', unidade_id=unidade.id) }}">{{ unidade.nome }}</a></td>
-                <td>{{ unidade.cnes }}</td>
-                <td>{{ unidade.cidade }}</td>
-                <td>{{ unidade.uf }}</td>
-                <td>
-                    {% if unidade.situacao.value == "ATIVA" %}
-                        <span class="badge bg-success">Ativa</span>
-                    {% elif unidade.situacao.value == "MANUTENCAO" %}
-                        <span class="badge bg-warning text-dark">Manutenção</span>
+<div class="row g-4">
+    <div class="col-lg-6">
+        <h2 class="oris-section-title">Alterações pendentes</h2>
+        <p class="oris-section-subtitle">Solicitações aguardando aprovação (Fase 7).</p>
+        <div class="oris-panel">
+            {% if alteracoes_pendentes %}
+                <ul class="oris-timeline">
+                    {% for alteracao in alteracoes_pendentes %}
+                    <li class="oris-timeline-item">
+                        <span class="oris-timeline-dot" aria-hidden="true"></span>
+                        <div class="oris-timeline-content">
+                            <div class="oris-timeline-action">
+                                #{{ alteracao.id }} — {{ alteracao.operacao.value }} em {{ alteracao.tabela }}
+                            </div>
+                            <div class="oris-timeline-meta">
+                                Solicitado por {{ alteracao.usuario_criador.nome }} em
+                                {{ alteracao.created_at.strftime("%d/%m/%Y %H:%M") }}
+                            </div>
+                        </div>
+                    </li>
+                    {% endfor %}
+                </ul>
+                <div class="mt-3">
+                    {% if pode_aprovar %}
+                        <a href="{{ url_for('alteracoes.listar', status='PENDENTE') }}" class="btn btn-primary btn-sm">
+                            Ir para aprovações
+                        </a>
                     {% else %}
-                        <span class="badge bg-secondary">Inativa</span>
+                        <a href="{{ url_for('alteracoes.listar', status='PENDENTE') }}" class="btn btn-outline-secondary btn-sm">
+                            Ver detalhes
+                        </a>
                     {% endif %}
-                </td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-</div>
-{% else %}
-<p class="text-muted mb-4">Nenhuma unidade encontrada para esse filtro.</p>
-{% endif %}
-
-<div class="row">
-    <div class="col-md-6 mb-4">
-        <h2 class="h5">Alterações pendentes</h2>
-        {% if alteracoes_pendentes %}
-            <div class="table-responsive">
-                <table class="table table-sm table-striped align-middle">
-                    <thead>
-                        <tr>
-                            <th>#</th>
-                            <th>Operação</th>
-                            <th>Entidade</th>
-                            <th>Solicitante</th>
-                            <th>Data</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for alteracao in alteracoes_pendentes %}
-                        <tr>
-                            <td>{{ alteracao.id }}</td>
-                            <td>{{ alteracao.operacao.value }}</td>
-                            <td>{{ alteracao.tabela }}</td>
-                            <td>{{ alteracao.usuario_criador.nome }}</td>
-                            <td>{{ alteracao.created_at.strftime("%d/%m/%Y %H:%M") }}</td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-            {% if pode_aprovar %}
-                <a href="{{ url_for('alteracoes.listar', status='PENDENTE') }}" class="btn btn-sm btn-primary">
-                    Ir para aprovações
-                </a>
+                </div>
             {% else %}
-                <a href="{{ url_for('alteracoes.listar', status='PENDENTE') }}" class="btn btn-sm btn-outline-secondary">
-                    Ver detalhes
-                </a>
+                <p class="text-muted mb-0">Nenhuma alteração pendente.</p>
             {% endif %}
-        {% else %}
-            <p class="text-muted">Nenhuma alteração pendente.</p>
-        {% endif %}
+        </div>
     </div>
 
-    <div class="col-md-6 mb-4">
-        <h2 class="h5">Atividade recente</h2>
-        {% if atividade_e_pessoal %}
-            <p class="text-muted small">Mostrando apenas a sua própria atividade.</p>
-        {% endif %}
-        {% if atividade_recente %}
-            <div class="table-responsive">
-                <table class="table table-sm table-striped align-middle">
-                    <thead>
-                        <tr>
-                            <th>Data/Hora</th>
-                            <th>Usuário</th>
-                            <th>Ação</th>
-                            <th>Entidade</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for registro in atividade_recente %}
-                        <tr>
-                            <td>{{ registro.data_hora.strftime("%d/%m/%Y %H:%M") }}</td>
-                            <td>{{ registro.usuario.nome }}</td>
-                            <td><span class="badge bg-dark">{{ registro.acao }}</span></td>
-                            <td>{{ registro.tabela or "—" }}</td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-        {% else %}
-            <p class="text-muted">Nenhuma atividade registrada ainda.</p>
-        {% endif %}
+    <div class="col-lg-6">
+        <h2 class="oris-section-title">Atividade recente</h2>
+        <p class="oris-section-subtitle">
+            {% if atividade_e_pessoal %}
+                Mostrando apenas a sua própria atividade.
+            {% else %}
+                Últimas ações registradas no sistema.
+            {% endif %}
+        </p>
+        <div class="oris-panel">
+            {% if atividade_recente %}
+                <ul class="oris-timeline">
+                    {% for registro in atividade_recente %}
+                    <li class="oris-timeline-item">
+                        <span class="oris-timeline-dot" aria-hidden="true"></span>
+                        <div class="oris-timeline-content">
+                            <div class="oris-timeline-action">
+                                <span class="badge bg-dark">{{ registro.acao }}</span>
+                                {{ registro.tabela or "" }}
+                            </div>
+                            <div class="oris-timeline-meta">
+                                {{ registro.usuario.nome }} em {{ registro.data_hora.strftime("%d/%m/%Y %H:%M") }}
+                            </div>
+                        </div>
+                    </li>
+                    {% endfor %}
+                </ul>
+            {% else %}
+                <p class="text-muted mb-0">Nenhuma atividade registrada ainda.</p>
+            {% endif %}
+        </div>
     </div>
 </div>
 {% endblock %}

@@ -1,6 +1,6 @@
 # ORIS — Plataforma de Governança da Rede de Saúde Bucal
 
-> ⚠️ **Status do projeto:** em desenvolvimento — FASE 13A concluída (Design System e Identidade Visual).
+> ⚠️ **Status do projeto:** em desenvolvimento — FASE 13B (Etapa 1) concluída (Estrutura Global + Dashboard).
 > Este README será expandido a cada fase concluída.
 
 ## O que é o ORIS
@@ -112,7 +112,9 @@ ORIS/
 │   ├── static/
 │   │   ├── css/
 │   │   │   ├── tokens.css              # variáveis de cor/tipografia/raio/sombra (Fase 13A)
-│   │   │   └── oris-design-system.css  # componentes (navbar, botões, badges...) sobre o Bootstrap
+│   │   │   ├── oris-design-system.css  # componentes (botões, badges...) sobre o Bootstrap (Fase 13A)
+│   │   │   ├── layout.css              # sidebar/header/breadcrumb/responsividade (Fase 13B)
+│   │   │   └── dashboard.css           # hero/KPI cards/timeline do Dashboard (Fase 13B)
 │   │   ├── js/
 │   │   └── images/
 │   ├── services/
@@ -146,7 +148,8 @@ ORIS/
 │   ├── test_fase10_importacao.py
 │   ├── test_fase11_usuarios.py
 │   ├── test_fase12_seguranca.py
-│   └── test_fase13a_design_system.py
+│   ├── test_fase13a_design_system.py
+│   └── test_fase13b_etapa1.py
 │
 ├── .env                     # configuração local (NÃO versionar)
 ├── .env.example             # modelo de configuração
@@ -294,7 +297,7 @@ Resposta esperada:
 {
   "status": "ok",
   "app": "ORIS",
-  "fase": "13a - design system e identidade visual"
+  "fase": "13b-etapa1 - estrutura global e dashboard"
 }
 ```
 
@@ -874,6 +877,65 @@ básicos (botões, badges, alertas, formulário) vivos, com os tokens
 reais aplicados — serve como referência para a aplicação detalhada da
 Fase 13B.
 
+## UX/UI Final — Etapa 1: Estrutura Global + Dashboard (FASE 13B)
+
+Esta é a **primeira etapa** da Fase 13B (UX/UI Final). Ela aplicou o
+Design System da Fase 13A à estrutura global da aplicação e ao
+Dashboard — **as demais telas (Unidades, Serviços, Equipamentos,
+Aprovações, Auditoria, Importação, Usuários, Privacidade, Login)
+ainda não foram redesenhadas** e ficam para as próximas etapas.
+
+**Estrutura global:** a antiga barra de navegação horizontal foi
+substituída por **sidebar + header + conteúdo**:
+
+- **Sidebar** (azul navy, com gradiente e fallback sólido): logo ORIS
+  no topo e os itens Dashboard, Unidades de Saúde, Serviços,
+  Equipamentos, Aprovações, Auditoria, Importar e Usuários — cada um
+  com ícone (Bootstrap Icons), estado normal, hover e um destaque em
+  turquesa para o item ativo. **O RBAC não mudou**: Auditoria continua
+  visível só para `ADMINISTRADOR`/`GESTAO_INFORMACAO`, e Usuários só
+  para `ADMINISTRADOR` — validado explicitamente para os 4 perfis.
+- **Header**: breadcrumb à esquerda (`Início / Dashboard`, definido
+  por um bloco Jinja que cada tela pode sobrescrever — só o Dashboard
+  o faz nesta etapa) e, à direita, um avatar simples (inicial do
+  nome), nome e perfil do usuário logado, e o botão de sair.
+- **Menu mobile**: implementado com a técnica do "checkbox hack" (um
+  `<input type="checkbox">` oculto + `<label>` como botão) — abre e
+  fecha a sidebar em telas estreitas **sem nenhum JavaScript**,
+  mantendo a CSP restrita da Fase 12.
+
+**Dashboard redesenhado:** hero de boas-vindas ("Olá, [nome]" +
+descrição da finalidade do sistema, com um elemento gráfico
+decorativo discreto de "pontos conectados"), os mesmos indicadores da
+Fase 9 em cards com ícone e um pequeno resumo (ex.: "3 ativas · 1
+inativa"), com o card de **Alterações pendentes** visualmente
+destacado por representar uma ação de governança. O resumo da rede e
+a atividade recente (com a mesma regra de visibilidade por perfil da
+Fase 9, inalterada) foram reapresentados como painéis e uma timeline.
+**Nenhum indicador novo foi criado** — todos os números vêm,
+exatamente como antes, de `app/services/dashboard_service.py`.
+
+**Responsividade:** grade de KPIs de 4 colunas em telas largas, 2 em
+tablets e 1 em celulares; sidebar recolhida por padrão em telas até
+992px, reaberta pelo botão de menu; testado visualmente em 1440px e
+375px.
+
+**Acessibilidade básica:** foco de teclado visível (contorno em
+turquesa) em links, botões e campos; `aria-label` no botão de menu e
+na sidebar; texto sempre acompanhando a cor nos badges de status
+(nunca só a cor sozinha).
+
+**Microinterações:** transições de 150–250ms em hover de links do
+menu e nos KPI cards (leve elevação) — nada além disso.
+
+**Screenshots:** geradas em `docs/screenshots/` (`dashboard-desktop.png`,
+`dashboard-mobile.png`, `sidebar.png`, `header.png`). Duas correções
+reais de compatibilidade foram feitas durante a geração: um
+`background-color` sólido como reforço antes de cada gradiente
+(navegadores/motores sem suporte a gradiente moderno) e a troca da
+sidebar de `position: fixed` para `position: sticky` + Flexbox — mais
+robusta e correta para o layout pretendido em qualquer navegador.
+
 ## Usuário de teste
 
 Não existe usuário fixo/hardcoded no código. Para criar um usuário
@@ -1026,7 +1088,9 @@ de listagem — ver detalhes em `docs/SEGURANCA.md`.
 - [x] FASE 11 — Administração de Usuários
 - [x] FASE 12 — Segurança, LGPD e Proteção de Dados
 - [x] FASE 13A — Design System e Identidade Visual
-- [ ] FASE 13B — Aplicação do design system nas telas de negócio
+- [x] FASE 13B — Etapa 1: Estrutura Global (sidebar/header) + Dashboard
+- [ ] FASE 13B — Próximas etapas: Unidades, Serviços, Equipamentos,
+      Aprovações, Auditoria, Importação, Usuários, Privacidade, Login
 - [ ] Próximas fases — polimento final
 
 ## Dados de demonstração

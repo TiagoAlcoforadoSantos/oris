@@ -1,0 +1,297 @@
+/*
+ * ORIS — Estrutura Global (Fase 13B, Etapa 1)
+ * ---------------------------------------------------------------
+ * Sidebar + Header + Conteúdo, construído sobre os tokens da
+ * Fase 13A. Puramente visual/estrutural — nenhuma lógica de negócio
+ * aqui, só apresentação.
+ *
+ * O menu mobile usa a técnica do "checkbox hack" (um <input
+ * type="checkbox"> oculto + <label for="..."> como botão) para abrir
+ * e fechar a sidebar sem nenhum JavaScript — mantém a CSP restrita
+ * (sem scripts adicionais) e a página seguindo o modelo tradicional
+ * de navegação do Flask.
+ */
+
+/* ---- Estrutura geral -------------------------------------------- */
+
+.oris-app {
+    display: flex;
+    min-height: 100vh;
+}
+
+/* Checkbox de controle do menu mobile — nunca visível. */
+.oris-sidebar-toggle {
+    display: none;
+}
+
+/* ---- Sidebar ------------------------------------------------------ */
+
+.oris-sidebar {
+    width: var(--oris-sidebar-width);
+    flex-shrink: 0;
+    background-color: var(--oris-navy); /* fallback para navegadores/motores sem suporte a gradiente moderno */
+    background: linear-gradient(180deg, var(--oris-navy), var(--oris-blue));
+    color: var(--oris-text-on-dark);
+    position: sticky;
+    top: 0;
+    align-self: flex-start;
+    height: 100vh;
+    overflow-y: auto;
+    z-index: 1030;
+    transition: transform 0.2s ease;
+}
+
+.oris-sidebar-brand {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    padding: 1.5rem 1.35rem 1.25rem;
+    font-family: var(--oris-font-display);
+    font-weight: 700;
+    font-size: var(--oris-fs-lg);
+    color: var(--oris-white);
+    letter-spacing: 0.02em;
+}
+
+.oris-sidebar-brand .oris-logo-mark {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 30px;
+    height: 30px;
+    border-radius: var(--oris-radius-sm);
+    background: var(--oris-teal);
+    color: var(--oris-navy);
+    font-size: 1rem;
+    flex-shrink: 0;
+}
+
+.oris-sidebar-nav {
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+    padding: 0.5rem 0.75rem 1.5rem;
+}
+
+.oris-sidebar-section-label {
+    font-size: var(--oris-fs-xs);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: rgba(247, 250, 250, 0.45);
+    padding: 1rem 0.85rem 0.35rem;
+}
+
+.oris-nav-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.6rem 0.85rem;
+    border-radius: var(--oris-radius-sm);
+    color: rgba(247, 250, 250, 0.78);
+    text-decoration: none;
+    font-size: var(--oris-fs-sm);
+    transition: background-color 0.18s ease, color 0.18s ease;
+}
+
+.oris-nav-item i {
+    font-size: 1.05rem;
+    width: 1.25rem;
+    text-align: center;
+    flex-shrink: 0;
+}
+
+.oris-nav-item:hover,
+.oris-nav-item:focus-visible {
+    background-color: rgba(24, 183, 176, 0.16);
+    color: var(--oris-white);
+}
+
+.oris-nav-item.active {
+    background-color: var(--oris-teal);
+    color: var(--oris-navy);
+    font-weight: 600;
+}
+
+.oris-nav-item.active i {
+    color: var(--oris-navy);
+}
+
+/* ---- Área principal (header + conteúdo) ---------------------------- */
+
+.oris-main {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+    min-width: 0;
+}
+
+.oris-header {
+    min-height: var(--oris-navbar-height);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 0.75rem 1.75rem;
+    background: var(--oris-white);
+    border-bottom: 1px solid var(--oris-border);
+    position: sticky;
+    top: 0;
+    z-index: 1010;
+}
+
+.oris-header-left {
+    display: flex;
+    align-items: center;
+    gap: 0.85rem;
+    min-width: 0;
+}
+
+.oris-menu-toggle {
+    display: none;
+    align-items: center;
+    justify-content: center;
+    width: 38px;
+    height: 38px;
+    border-radius: var(--oris-radius-sm);
+    color: var(--oris-navy);
+    font-size: 1.3rem;
+    cursor: pointer;
+    flex-shrink: 0;
+}
+
+.oris-menu-toggle:hover {
+    background-color: var(--oris-surface);
+}
+
+.oris-breadcrumb {
+    font-size: var(--oris-fs-sm);
+    color: var(--oris-text-muted);
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.oris-breadcrumb a {
+    color: var(--oris-text-muted);
+    text-decoration: none;
+}
+
+.oris-breadcrumb a:hover {
+    color: var(--oris-teal);
+}
+
+.oris-breadcrumb .oris-breadcrumb-current {
+    color: var(--oris-navy);
+    font-weight: 600;
+}
+
+.oris-header-right {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    flex-shrink: 0;
+}
+
+.oris-user-identity {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+}
+
+.oris-avatar {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: var(--oris-surface);
+    color: var(--oris-navy);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-family: var(--oris-font-display);
+    flex-shrink: 0;
+}
+
+.oris-user-info {
+    line-height: 1.15;
+}
+
+.oris-user-name {
+    font-weight: 600;
+    font-size: var(--oris-fs-sm);
+    color: var(--oris-text);
+}
+
+.oris-user-role {
+    font-size: var(--oris-fs-xs);
+    color: var(--oris-text-muted);
+}
+
+.oris-content {
+    flex: 1;
+    padding: 1.75rem;
+    max-width: var(--oris-content-max-width);
+    width: 100%;
+    margin: 0 auto;
+}
+
+.oris-footer {
+    padding: 1rem 1.75rem;
+    text-align: center;
+    font-size: var(--oris-fs-xs);
+    color: var(--oris-text-muted);
+}
+
+/* ---- Backdrop do menu mobile ----------------------------------------- */
+
+.oris-sidebar-backdrop {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(11, 42, 74, 0.45);
+    z-index: 1020;
+}
+
+/* ---- Responsividade --------------------------------------------------- */
+
+@media (max-width: 991.98px) {
+    .oris-sidebar {
+        transform: translateX(-100%);
+    }
+
+    .oris-main {
+        margin-left: 0;
+    }
+
+    .oris-menu-toggle {
+        display: inline-flex;
+    }
+
+    /* Checkbox marcado -> sidebar entra na tela e o backdrop aparece. */
+    .oris-sidebar-toggle:checked ~ .oris-sidebar {
+        transform: translateX(0);
+        box-shadow: var(--oris-shadow-md);
+    }
+
+    .oris-sidebar-toggle:checked ~ .oris-sidebar-backdrop {
+        display: block;
+    }
+}
+
+@media (max-width: 575.98px) {
+    .oris-content {
+        padding: 1.1rem;
+    }
+
+    .oris-header {
+        padding: 0.6rem 1rem;
+    }
+
+    .oris-user-info {
+        display: none; /* mantém só o avatar em telas muito pequenas */
+    }
+}

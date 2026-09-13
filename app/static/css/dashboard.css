@@ -1,0 +1,245 @@
+/*
+ * ORIS — Dashboard (Fase 13B, Etapa 1)
+ * ---------------------------------------------------------------
+ * Estilo da tela de Dashboard: hero, KPI cards, resumo da rede e
+ * atividade recente. Nenhum dado é definido aqui — só apresentação
+ * dos valores que app/services/dashboard_service.py já calcula.
+ */
+
+/* ---- Hero -------------------------------------------------------- */
+
+.oris-hero {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 2rem;
+    background-color: var(--oris-navy); /* fallback para navegadores/motores sem suporte a gradiente moderno */
+    background: linear-gradient(120deg, var(--oris-navy), var(--oris-petroleum));
+    color: var(--oris-text-on-dark);
+    border-radius: var(--oris-radius-lg);
+    padding: 2rem 2.25rem;
+    margin-bottom: 1.75rem;
+    overflow: hidden;
+    position: relative;
+}
+
+.oris-hero-text h1 {
+    color: var(--oris-white);
+    font-size: var(--oris-fs-2xl);
+    margin-bottom: 0.35rem;
+}
+
+.oris-hero-subtitle {
+    font-size: var(--oris-fs-lg);
+    color: var(--oris-cyan);
+    font-weight: 500;
+    margin-bottom: 0.5rem;
+}
+
+.oris-hero-description {
+    color: rgba(247, 250, 250, 0.82);
+    max-width: 46ch;
+    margin-bottom: 0;
+    font-size: var(--oris-fs-sm);
+}
+
+.oris-hero-graphic {
+    flex-shrink: 0;
+    width: 180px;
+    height: 140px;
+    opacity: 0.9;
+}
+
+.oris-hero-graphic svg {
+    width: 100%;
+    height: 100%;
+}
+
+/* ---- Grade de indicadores (KPIs) ------------------------------------ */
+
+.oris-kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1.1rem;
+    margin-bottom: 1.75rem;
+}
+
+.oris-kpi-card {
+    background: var(--oris-white);
+    border: 1px solid var(--oris-border);
+    border-radius: var(--oris-radius-md);
+    padding: 1.25rem 1.35rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+    box-shadow: var(--oris-shadow-sm);
+    transition: box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+.oris-kpi-card:hover {
+    box-shadow: var(--oris-shadow-md);
+    transform: translateY(-2px);
+}
+
+.oris-kpi-icon {
+    width: 42px;
+    height: 42px;
+    border-radius: var(--oris-radius-sm);
+    background: var(--oris-surface);
+    color: var(--oris-petroleum);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.3rem;
+}
+
+.oris-kpi-label {
+    display: block;
+    font-size: var(--oris-fs-xs);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--oris-text-muted);
+    font-weight: 600;
+}
+
+.oris-kpi-value {
+    display: block;
+    font-family: var(--oris-font-display);
+    font-size: var(--oris-fs-2xl);
+    font-weight: 700;
+    color: var(--oris-navy);
+    line-height: 1.1;
+}
+
+.oris-kpi-meta {
+    display: block;
+    font-size: var(--oris-fs-xs);
+    color: var(--oris-text-muted);
+}
+
+.oris-kpi-link {
+    font-size: var(--oris-fs-xs);
+    font-weight: 600;
+    color: var(--oris-petroleum);
+    text-decoration: none;
+}
+
+.oris-kpi-link:hover {
+    color: var(--oris-teal);
+}
+
+/* Card de destaque (governança/ação pendente) — Fase 13B item 13. */
+.oris-kpi-card--highlight {
+    background-color: var(--oris-petroleum); /* fallback para navegadores/motores sem suporte a gradiente moderno */
+    background: linear-gradient(135deg, var(--oris-teal), var(--oris-petroleum));
+    border-color: transparent;
+    color: var(--oris-white);
+}
+
+.oris-kpi-card--highlight .oris-kpi-icon {
+    background: rgba(255, 255, 255, 0.2);
+    color: var(--oris-white);
+}
+
+.oris-kpi-card--highlight .oris-kpi-label,
+.oris-kpi-card--highlight .oris-kpi-meta {
+    color: rgba(247, 250, 250, 0.85);
+}
+
+.oris-kpi-card--highlight .oris-kpi-value {
+    color: var(--oris-white);
+}
+
+.oris-kpi-card--highlight .oris-kpi-link {
+    color: var(--oris-white);
+    text-decoration: underline;
+}
+
+/* ---- Seções (Resumo da rede / Atividade recente) --------------------- */
+
+.oris-section-title {
+    font-size: var(--oris-fs-lg);
+    margin-bottom: 0.25rem;
+}
+
+.oris-section-subtitle {
+    color: var(--oris-text-muted);
+    font-size: var(--oris-fs-sm);
+    margin-bottom: 1rem;
+}
+
+.oris-panel {
+    background: var(--oris-white);
+    border: 1px solid var(--oris-border);
+    border-radius: var(--oris-radius-md);
+    box-shadow: var(--oris-shadow-sm);
+    padding: 1.25rem 1.35rem;
+}
+
+/* ---- Timeline de atividade recente ------------------------------------ */
+
+.oris-timeline {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.oris-timeline-item {
+    display: flex;
+    gap: 0.85rem;
+    padding: 0.65rem 0;
+    border-bottom: 1px solid var(--oris-border);
+}
+
+.oris-timeline-item:last-child {
+    border-bottom: none;
+}
+
+.oris-timeline-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: var(--oris-teal);
+    margin-top: 0.4rem;
+    flex-shrink: 0;
+}
+
+.oris-timeline-content {
+    min-width: 0;
+}
+
+.oris-timeline-action {
+    font-weight: 600;
+    color: var(--oris-navy);
+    font-size: var(--oris-fs-sm);
+}
+
+.oris-timeline-meta {
+    font-size: var(--oris-fs-xs);
+    color: var(--oris-text-muted);
+}
+
+/* ---- Responsividade específica do Dashboard --------------------------- */
+
+@media (max-width: 1199.98px) {
+    .oris-kpi-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 767.98px) {
+    .oris-hero {
+        flex-direction: column;
+        align-items: flex-start;
+        text-align: left;
+        padding: 1.5rem;
+    }
+
+    .oris-hero-graphic {
+        display: none;
+    }
+
+    .oris-kpi-grid {
+        grid-template-columns: 1fr;
+    }
+}
