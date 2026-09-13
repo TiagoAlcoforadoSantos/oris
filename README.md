@@ -1,6 +1,6 @@
 # ORIS — Plataforma de Governança da Rede de Saúde Bucal
 
-> ⚠️ **Status do projeto:** em desenvolvimento — FASE 13B (Stage 2A) concluída (UX/UI das Unidades de Saúde).
+> ⚠️ **Status do projeto:** em desenvolvimento — FASE 13B (Stage 2B) concluída (UX/UI de Serviços e Equipamentos).
 > Este README será expandido a cada fase concluída.
 
 ## O que é o ORIS
@@ -297,7 +297,7 @@ Resposta esperada:
 {
   "status": "ok",
   "app": "ORIS",
-  "fase": "13b-stage2a - ux/ui unidades de saude"
+  "fase": "13b-stage2b - ux/ui servicos e equipamentos"
 }
 ```
 
@@ -977,6 +977,39 @@ de Unidades foi necessário.
 `unidade-nova-mobile.png`, `unidade-editar-desktop.png`, em
 `docs/screenshots/`.
 
+## UX/UI Final — Stage 2B: Serviços e Equipamentos (FASE 13B)
+
+Terceira etapa da Fase 13B: aplica o mesmo padrão visual da Stage 2A
+às 8 telas de Serviços e Equipamentos (listagem, detalhe,
+criar/editar de cada um). **As demais telas continuam como antes** —
+Dashboard, Aprovações, Auditoria, Importação, Usuários, Privacidade e
+Login ficam para etapas futuras; Unidades não foi tocada de novo.
+
+**O que mudou:** mesmo cabeçalho de página, tira de indicadores
+(Total/Ativos/Inativos — calculados a partir da mesma lista já
+carregada, **nenhuma consulta nova**), filtros existentes
+reorganizados visualmente (sem alterar a lógica), tabelas com badges
+de situação, telas de detalhe organizadas em seções, formulários
+agrupados. Na listagem e no detalhe de Equipamentos, a associação
+Equipamento → Unidade → Serviço ficou visualmente clara (usando os
+mesmos relacionamentos já carregados pela rota). **Nenhuma rota,
+validação, regra de negócio ou permissão foi alterada** — validado
+explicitamente para os 4 perfis e para o fluxo de aprovação completo
+das duas entidades (solicitar → bloquear autoaprovação → aprovar →
+aplicar → auditar), incluindo a regra de compatibilidade
+"Serviço do equipamento precisa pertencer à mesma unidade".
+
+**Componentes reutilizados:** exatamente os mesmos da Stage 2A
+(`.oris-page-header`, `.oris-stat-strip`, `.oris-panel`,
+`.oris-empty-state`, `.oris-detail-grid`, `.oris-back-link`) —
+**nenhum CSS novo foi necessário** para esta etapa.
+
+**Screenshots:** `servicos-desktop.png`, `servicos-mobile.png`,
+`servico-detalhe-desktop.png`, `servico-form-desktop.png`,
+`equipamentos-desktop.png`, `equipamentos-mobile.png`,
+`equipamento-detalhe-desktop.png`, `equipamento-form-desktop.png`,
+em `docs/screenshots/`.
+
 ## Usuário de teste
 
 Não existe usuário fixo/hardcoded no código. Para criar um usuário
@@ -1131,8 +1164,9 @@ de listagem — ver detalhes em `docs/SEGURANCA.md`.
 - [x] FASE 13A — Design System e Identidade Visual
 - [x] FASE 13B — Etapa 1: Estrutura Global (sidebar/header) + Dashboard
 - [x] FASE 13B — Stage 2A: UX/UI de Unidades de Saúde
-- [ ] FASE 13B — Próximas etapas: Serviços, Equipamentos, Aprovações,
-      Auditoria, Importação, Usuários, Privacidade, Login
+- [x] FASE 13B — Stage 2B: UX/UI de Serviços e Equipamentos
+- [ ] FASE 13B — Próximas etapas: Aprovações, Auditoria, Importação,
+      Usuários, Privacidade, Login
 - [ ] Próximas fases — polimento final
 
 ## Dados de demonstração

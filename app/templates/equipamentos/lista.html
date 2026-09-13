@@ -2,50 +2,90 @@
 
 {% block title %}Equipamentos — ORIS{% endblock %}
 
+{% block breadcrumb %}
+    <a href="{{ url_for('dashboard.index') }}">Início</a>
+    <span aria-hidden="true">/</span>
+    <span class="oris-breadcrumb-current">Equipamentos</span>
+{% endblock %}
+
 {% block content %}
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <h1 class="h3 mb-0">Equipamentos</h1>
+<div class="oris-page-header">
     <div>
-        <a href="{{ url_for('main.index') }}" class="btn btn-outline-secondary btn-sm">Início</a>
+        <h1>Equipamentos</h1>
+        <p>Gerencie os equipamentos vinculados às unidades e serviços da rede.</p>
+    </div>
+    <div class="oris-page-header-actions">
         {% if pode_alterar %}
-            <a href="{{ url_for('equipamentos.novo') }}" class="btn btn-primary btn-sm">+ Novo equipamento</a>
+            <a href="{{ url_for('equipamentos.novo') }}" class="btn btn-primary">
+                <i class="bi bi-plus-lg" aria-hidden="true"></i> Novo equipamento
+            </a>
         {% endif %}
     </div>
 </div>
 
-<form method="GET" class="row g-2 mb-3">
-    <div class="col-auto">
-        <select name="unidade_id" class="form-select form-select-sm" onchange="this.form.submit()">
-            <option value="">Todas as unidades</option>
-            {% for unidade in unidades %}
-                <option value="{{ unidade.id }}" {% if unidade_id_filtro == unidade.id %}selected{% endif %}>
-                    {{ unidade.nome }}
-                </option>
-            {% endfor %}
-        </select>
+{% if equipamentos %}
+{% set total = equipamentos|length %}
+{% set ativos = equipamentos|selectattr("situacao.value", "equalto", "ATIVO")|list|length %}
+{% set inativos = total - ativos %}
+<div class="oris-stat-strip">
+    <div class="oris-stat-card">
+        <span class="oris-stat-value">{{ total }}</span>
+        <span class="oris-stat-label">Total</span>
     </div>
-    <div class="col-auto">
-        <select name="servico_id" class="form-select form-select-sm" onchange="this.form.submit()">
-            <option value="">Todos os serviços</option>
-            {% for servico in servicos %}
-                <option value="{{ servico.id }}" {% if servico_id_filtro == servico.id %}selected{% endif %}>
-                    {{ servico.nome }} — {{ servico.unidade.nome }}
-                </option>
-            {% endfor %}
-        </select>
+    <div class="oris-stat-card">
+        <span class="oris-stat-value">{{ ativos }}</span>
+        <span class="oris-stat-label">Ativos</span>
     </div>
-    <div class="col-auto">
-        <select name="situacao" class="form-select form-select-sm" onchange="this.form.submit()">
-            <option value="">Todas as situações</option>
-            <option value="ATIVO" {% if situacao_filtro == "ATIVO" %}selected{% endif %}>Ativo</option>
-            <option value="INATIVO" {% if situacao_filtro == "INATIVO" %}selected{% endif %}>Inativo</option>
-        </select>
+    <div class="oris-stat-card">
+        <span class="oris-stat-value">{{ inativos }}</span>
+        <span class="oris-stat-label">Inativos</span>
     </div>
-</form>
+</div>
+{% endif %}
+
+<div class="oris-panel mb-3">
+    <form method="GET" class="row g-2 align-items-end">
+        <div class="col-auto">
+            <label class="form-label small text-muted mb-1" for="filtro-unidade">Unidade</label>
+            <select id="filtro-unidade" name="unidade_id" class="form-select form-select-sm" onchange="this.form.submit()">
+                <option value="">Todas as unidades</option>
+                {% for unidade in unidades %}
+                    <option value="{{ unidade.id }}" {% if unidade_id_filtro == unidade.id %}selected{% endif %}>
+                        {{ unidade.nome }}
+                    </option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-auto">
+            <label class="form-label small text-muted mb-1" for="filtro-servico">Serviço</label>
+            <select id="filtro-servico" name="servico_id" class="form-select form-select-sm" onchange="this.form.submit()">
+                <option value="">Todos os serviços</option>
+                {% for servico in servicos %}
+                    <option value="{{ servico.id }}" {% if servico_id_filtro == servico.id %}selected{% endif %}>
+                        {{ servico.nome }} — {{ servico.unidade.nome }}
+                    </option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-auto">
+            <label class="form-label small text-muted mb-1" for="filtro-situacao">Situação</label>
+            <select id="filtro-situacao" name="situacao" class="form-select form-select-sm" onchange="this.form.submit()">
+                <option value="">Todas as situações</option>
+                <option value="ATIVO" {% if situacao_filtro == "ATIVO" %}selected{% endif %}>Ativo</option>
+                <option value="INATIVO" {% if situacao_filtro == "INATIVO" %}selected{% endif %}>Inativo</option>
+            </select>
+        </div>
+        {% if unidade_id_filtro or servico_id_filtro or situacao_filtro %}
+            <div class="col-auto">
+                <a href="{{ url_for('equipamentos.listar') }}" class="btn btn-sm btn-outline-secondary">Limpar filtros</a>
+            </div>
+        {% endif %}
+    </form>
+</div>
 
 {% if equipamentos %}
-<div class="table-responsive">
-    <table class="table table-striped align-middle">
+<div class="table-responsive oris-panel p-0">
+    <table class="table table-hover align-middle mb-0">
         <thead>
             <tr>
                 <th>Nome</th>
@@ -59,10 +99,26 @@
         <tbody>
             {% for equipamento in equipamentos %}
             <tr>
-                <td>{{ equipamento.nome }}</td>
+                <td>
+                    <a href="{{ url_for('equipamentos.visualizar', equipamento_id=equipamento.id) }}" class="fw-semibold text-decoration-none">
+                        {{ equipamento.nome }}
+                    </a>
+                </td>
                 <td>{{ equipamento.tipo }}</td>
-                <td>{{ equipamento.unidade.nome }}</td>
-                <td>{{ equipamento.servico.nome if equipamento.servico else "—" }}</td>
+                <td>
+                    <a href="{{ url_for('unidades.visualizar', unidade_id=equipamento.unidade.id) }}" class="text-decoration-none">
+                        {{ equipamento.unidade.nome }}
+                    </a>
+                </td>
+                <td>
+                    {% if equipamento.servico %}
+                        <a href="{{ url_for('servicos.visualizar', servico_id=equipamento.servico.id) }}" class="text-decoration-none">
+                            {{ equipamento.servico.nome }}
+                        </a>
+                    {% else %}
+                        <span class="text-muted">—</span>
+                    {% endif %}
+                </td>
                 <td>
                     {% if equipamento.situacao.value == "ATIVO" %}
                         <span class="badge bg-success">Ativo</span>
@@ -71,9 +127,17 @@
                     {% endif %}
                 </td>
                 <td class="text-end">
-                    <a href="{{ url_for('equipamentos.visualizar', equipamento_id=equipamento.id) }}" class="btn btn-sm btn-outline-secondary">Visualizar</a>
+                    <a href="{{ url_for('equipamentos.visualizar', equipamento_id=equipamento.id) }}"
+                       class="btn btn-sm btn-outline-secondary"
+                       aria-label="Visualizar {{ equipamento.nome }}" title="Visualizar">
+                        <i class="bi bi-eye" aria-hidden="true"></i> Visualizar
+                    </a>
                     {% if pode_alterar %}
-                        <a href="{{ url_for('equipamentos.editar', equipamento_id=equipamento.id) }}" class="btn btn-sm btn-outline-primary">Editar</a>
+                        <a href="{{ url_for('equipamentos.editar', equipamento_id=equipamento.id) }}"
+                           class="btn btn-sm btn-outline-primary"
+                           aria-label="Editar {{ equipamento.nome }}" title="Editar">
+                            <i class="bi bi-pencil" aria-hidden="true"></i> Editar
+                        </a>
                     {% endif %}
                 </td>
             </tr>
@@ -82,6 +146,18 @@
     </table>
 </div>
 {% else %}
-<p class="text-muted">Nenhum equipamento encontrado.</p>
+<div class="oris-empty-state">
+    <i class="bi bi-tools" aria-hidden="true"></i>
+    <p><strong>Nenhum equipamento encontrado.</strong></p>
+    <p class="small">
+        {% if unidade_id_filtro or servico_id_filtro or situacao_filtro %}
+            Nenhum equipamento corresponde a esse filtro — tente ajustar os critérios acima.
+        {% elif pode_alterar %}
+            Comece cadastrando o primeiro equipamento da rede.
+        {% else %}
+            Assim que equipamentos forem cadastrados, eles aparecerão aqui.
+        {% endif %}
+    </p>
+</div>
 {% endif %}
 {% endblock %}

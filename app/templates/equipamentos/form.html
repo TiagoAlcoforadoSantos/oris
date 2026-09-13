@@ -2,66 +2,91 @@
 
 {% block title %}{{ titulo }} — ORIS{% endblock %}
 
+{% block breadcrumb %}
+    <a href="{{ url_for('dashboard.index') }}">Início</a>
+    <span aria-hidden="true">/</span>
+    <a href="{{ url_for('equipamentos.listar') }}">Equipamentos</a>
+    <span aria-hidden="true">/</span>
+    <span class="oris-breadcrumb-current">{{ "Editar" if equipamento else "Novo equipamento" }}</span>
+{% endblock %}
+
 {% block content %}
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <h1 class="h3 mb-0">{{ titulo }}</h1>
-    <a href="{{ url_for('equipamentos.listar') }}" class="btn btn-outline-secondary btn-sm">Voltar para a lista</a>
+<a href="{{ url_for('equipamentos.listar') if not equipamento else url_for('equipamentos.visualizar', equipamento_id=equipamento.id) }}" class="oris-back-link">
+    <i class="bi bi-arrow-left" aria-hidden="true"></i> Voltar
+</a>
+
+<div class="oris-page-header">
+    <div>
+        <h1>{{ titulo }}</h1>
+        <p>
+            {% if equipamento %}
+                Atualize os dados deste equipamento. A alteração passa por aprovação antes de valer.
+            {% else %}
+                Cadastre um novo equipamento vinculado a uma unidade da rede. O cadastro passa por aprovação antes de valer.
+            {% endif %}
+        </p>
+    </div>
 </div>
 
-<div class="card">
-    <div class="card-body">
-        <form method="POST" novalidate>
-            {{ form.hidden_tag() }}
+<div class="oris-panel">
+    <form method="POST" novalidate>
+        {{ form.hidden_tag() }}
 
-            <div class="row g-3">
-                <div class="col-md-5">
-                    {{ form.nome.label(class="form-label") }}
-                    {{ form.nome(class="form-control") }}
-                    {% for erro in form.nome.errors %}
-                        <div class="text-danger small">{{ erro }}</div>
-                    {% endfor %}
-                </div>
-
-                <div class="col-md-3">
-                    {{ form.tipo.label(class="form-label") }}
-                    {{ form.tipo(class="form-control", placeholder="Ex.: Equipamento clínico") }}
-                    {% for erro in form.tipo.errors %}
-                        <div class="text-danger small">{{ erro }}</div>
-                    {% endfor %}
-                </div>
-
-                <div class="col-md-2">
-                    {{ form.situacao.label(class="form-label") }}
-                    {{ form.situacao(class="form-select") }}
-                    {% for erro in form.situacao.errors %}
-                        <div class="text-danger small">{{ erro }}</div>
-                    {% endfor %}
-                </div>
-
-                <div class="col-md-6">
-                    {{ form.unidade_id.label(class="form-label") }}
-                    {{ form.unidade_id(class="form-select") }}
-                    {% for erro in form.unidade_id.errors %}
-                        <div class="text-danger small">{{ erro }}</div>
-                    {% endfor %}
-                </div>
-
-                <div class="col-md-6">
-                    {{ form.servico_id.label(class="form-label") }}
-                    {{ form.servico_id(class="form-select") }}
-                    {% for erro in form.servico_id.errors %}
-                        <div class="text-danger small">{{ erro }}</div>
-                    {% endfor %}
-                    <div class="form-text">
-                        O serviço precisa pertencer à mesma unidade selecionada acima.
-                    </div>
-                </div>
+        <h2 class="oris-section-label">Informações do equipamento</h2>
+        <div class="row g-3 mb-4">
+            <div class="col-md-5">
+                {{ form.nome.label(class="form-label") }}
+                {{ form.nome(class="form-control") }}
+                {% for erro in form.nome.errors %}
+                    <div class="text-danger small">{{ erro }}</div>
+                {% endfor %}
             </div>
 
-            <div class="mt-4">
-                {{ form.submit(class="btn btn-primary") }}
+            <div class="col-md-3">
+                {{ form.tipo.label(class="form-label") }}
+                {{ form.tipo(class="form-control", placeholder="Ex.: Equipamento clínico") }}
+                {% for erro in form.tipo.errors %}
+                    <div class="text-danger small">{{ erro }}</div>
+                {% endfor %}
             </div>
-        </form>
-    </div>
+
+            <div class="col-md-2">
+                {{ form.situacao.label(class="form-label") }}
+                {{ form.situacao(class="form-select") }}
+                {% for erro in form.situacao.errors %}
+                    <div class="text-danger small">{{ erro }}</div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <h2 class="oris-section-label">Vínculos</h2>
+        <div class="row g-3 mb-4">
+            <div class="col-md-6">
+                {{ form.unidade_id.label(class="form-label") }}
+                {{ form.unidade_id(class="form-select") }}
+                {% for erro in form.unidade_id.errors %}
+                    <div class="text-danger small">{{ erro }}</div>
+                {% endfor %}
+            </div>
+
+            <div class="col-md-6">
+                {{ form.servico_id.label(class="form-label") }}
+                {{ form.servico_id(class="form-select") }}
+                {% for erro in form.servico_id.errors %}
+                    <div class="text-danger small">{{ erro }}</div>
+                {% endfor %}
+                <div class="form-text">
+                    O serviço precisa pertencer à mesma unidade selecionada acima.
+                </div>
+            </div>
+        </div>
+
+        <div class="d-flex gap-2">
+            {{ form.submit(class="btn btn-primary") }}
+            <a href="{{ url_for('equipamentos.listar') if not equipamento else url_for('equipamentos.visualizar', equipamento_id=equipamento.id) }}" class="btn btn-outline-secondary">
+                Cancelar
+            </a>
+        </div>
+    </form>
 </div>
 {% endblock %}
