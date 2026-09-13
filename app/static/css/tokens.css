@@ -1,0 +1,74 @@
+/*
+ * ORIS — Design Tokens (Fase 13A)
+ * ---------------------------------------------------------------
+ * Fonte única de verdade da identidade visual do ORIS: cores,
+ * tipografia, raios, sombras e dimensões de layout, todos expostos
+ * como variáveis CSS (custom properties).
+ *
+ * Direção visual: Health-Tech + Gov-Tech + plataforma de governança
+ * — tecnologia, saúde, confiança e institucionalidade, sem parecer
+ * hospital genérico, sistema de governo datado, SaaS de fintech ou
+ * interface "futurista"/gamer.
+ *
+ * Esta fase (13A) define o sistema; a aplicação detalhada em cada
+ * tela do ORIS é feita na Fase 13B. Aqui já se aplica ao "chrome"
+ * compartilhado (base.html: navegação, tipografia, botões, badges,
+ * alertas, formulários) porque isso é inevitavelmente global — o
+ * conteúdo específico de cada tela de negócio permanece com a
+ * mesma estrutura Bootstrap até a Fase 13B.
+ */
+
+:root {
+    /* ---- Paleta principal ------------------------------------ */
+    --oris-navy: #0B2A4A;       /* Azul institucional — estrutura a interface */
+    --oris-blue: #123B63;       /* Azul profundo */
+    --oris-petroleum: #155E75;  /* Azul petróleo */
+    --oris-teal: #18B7B0;       /* Turquesa ORIS — cor de destaque/marca */
+    --oris-cyan: #39C6D3;       /* Ciano — realces e estados de hover */
+
+    --oris-bg: #F7FAFA;         /* Fundo da aplicação */
+    --oris-surface: #DDF4F5;    /* Superfícies de destaque suave (azul claro) */
+    --oris-white: #FFFFFF;
+    --oris-border: #D4E3E6;     /* Borda neutra, derivada da superfície */
+
+    --oris-text: #10212B;        /* Texto principal */
+    --oris-text-muted: #5B6B73;  /* Texto secundário */
+    --oris-text-on-dark: #F7FAFA; /* Texto sobre fundos escuros (navy/blue) */
+
+    /* ---- Cores semânticas de status --------------------------- */
+    --oris-success: #39A96B;
+    --oris-warning: #E9A23B;
+    --oris-danger: #D9534F;
+    --oris-info: var(--oris-petroleum);
+
+    /* ---- Tipografia -------------------------------------------
+     * Duas famílias, claramente distintas:
+     * - Space Grotesk para títulos/headlines: geométrica, técnica,
+     *   com um caráter contemporâneo sem ser "futurista" ou gamer.
+     * - IBM Plex Sans para texto de interface/corpo: extremamente
+     *   legível, de caráter institucional/técnico — a mesma família
+     *   usada por sistemas corporativos e governamentais sérios.
+     */
+    --oris-font-display: "Space Grotesk", "Segoe UI", sans-serif;
+    --oris-font-body: "IBM Plex Sans", "Segoe UI", sans-serif;
+
+    --oris-fs-xs: 0.8125rem;   /* 13px */
+    --oris-fs-sm: 0.9375rem;   /* 15px */
+    --oris-fs-base: 1rem;      /* 16px */
+    --oris-fs-lg: 1.25rem;     /* 20px */
+    --oris-fs-xl: 1.75rem;     /* 28px */
+    --oris-fs-2xl: 2.25rem;    /* 36px */
+
+    /* ---- Raios e sombras --------------------------------------- */
+    --oris-radius-sm: 6px;
+    --oris-radius-md: 10px;
+    --oris-radius-lg: 16px;
+
+    --oris-shadow-sm: 0 1px 2px rgba(11, 42, 74, 0.08);
+    --oris-shadow-md: 0 6px 20px rgba(11, 42, 74, 0.12);
+
+    /* ---- Layout -------------------------------------------------- */
+    --oris-sidebar-width: 264px;
+    --oris-navbar-height: 64px;
+    --oris-content-max-width: 1200px;
+}

@@ -1,0 +1,114 @@
+{% extends "base.html" %}
+
+{% block title %}Design System — ORIS{% endblock %}
+
+{% block content %}
+<h1 class="mb-1">Design System do ORIS</h1>
+<p class="text-muted">
+    Referência da identidade visual definida na Fase 13A — cores, tipografia
+    e componentes básicos, construídos como tokens CSS reutilizáveis em
+    <code>app/static/css/tokens.css</code>. A aplicação detalhada em cada
+    tela do sistema é feita na Fase 13B.
+</p>
+
+<h2 class="h4 mt-5">Paleta</h2>
+<div class="row row-cols-2 row-cols-md-4 g-3 mb-4">
+    {% set cores = [
+        ("Azul institucional", "--oris-navy", "#0B2A4A", "true"),
+        ("Azul profundo", "--oris-blue", "#123B63", "true"),
+        ("Azul petróleo", "--oris-petroleum", "#155E75", "true"),
+        ("Turquesa ORIS", "--oris-teal", "#18B7B0", "true"),
+        ("Ciano", "--oris-cyan", "#39C6D3", "false"),
+        ("Superfície", "--oris-surface", "#DDF4F5", "false"),
+        ("Fundo", "--oris-bg", "#F7FAFA", "false"),
+        ("Texto principal", "--oris-text", "#10212B", "true")
+    ] %}
+    {% for nome, var, hex, escuro in cores %}
+    <div class="col">
+        <div class="rounded-3 p-3 h-100" style="background-color: var({{ var }}); {% if escuro == 'true' %}color: #fff;{% else %}color: var(--oris-text); border: 1px solid var(--oris-border);{% endif %}">
+            <div class="fw-semibold">{{ nome }}</div>
+            <div class="small">{{ var }}</div>
+            <div class="small">{{ hex }}</div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<h2 class="h4 mt-5">Status semânticos</h2>
+<div class="row row-cols-3 g-3 mb-4">
+    <div class="col">
+        <div class="rounded-3 p-3 text-white" style="background-color: var(--oris-success);">Sucesso</div>
+    </div>
+    <div class="col">
+        <div class="rounded-3 p-3" style="background-color: var(--oris-warning); color: var(--oris-text);">Atenção</div>
+    </div>
+    <div class="col">
+        <div class="rounded-3 p-3 text-white" style="background-color: var(--oris-danger);">Erro</div>
+    </div>
+</div>
+
+<h2 class="h4 mt-5">Tipografia</h2>
+<div class="card mb-4">
+    <div class="card-body">
+        <p class="text-muted small mb-1">Títulos — Space Grotesk</p>
+        <h1>Título nível 1</h1>
+        <h2>Título nível 2</h2>
+        <h3>Título nível 3</h3>
+        <hr>
+        <p class="text-muted small mb-1">Corpo de texto — IBM Plex Sans</p>
+        <p>
+            Texto de parágrafo padrão, usado em todo o conteúdo do ORIS.
+            <a href="#">Este é um link</a> dentro de um parágrafo.
+        </p>
+        <p class="text-muted small">Texto secundário/auxiliar (text-muted).</p>
+    </div>
+</div>
+
+<h2 class="h4 mt-5">Botões</h2>
+<div class="card mb-4">
+    <div class="card-body d-flex flex-wrap gap-2">
+        <button type="button" class="btn btn-primary">Ação principal</button>
+        <button type="button" class="btn btn-outline-primary">Ação secundária</button>
+        <button type="button" class="btn btn-outline-secondary">Cancelar</button>
+        <button type="button" class="btn btn-outline-danger">Excluir/Rejeitar</button>
+    </div>
+</div>
+
+<h2 class="h4 mt-5">Badges de situação</h2>
+<div class="card mb-4">
+    <div class="card-body d-flex flex-wrap gap-2">
+        <span class="badge bg-success">Ativo</span>
+        <span class="badge bg-secondary">Inativo</span>
+        <span class="badge bg-warning text-dark">Manutenção</span>
+        <span class="badge bg-danger">Rejeitado</span>
+        <span class="badge bg-dark">Ação registrada</span>
+    </div>
+</div>
+
+<h2 class="h4 mt-5">Alertas</h2>
+<div class="mb-4">
+    <div class="alert alert-success">Operação concluída com sucesso.</div>
+    <div class="alert alert-warning">Atenção: revise os dados antes de confirmar.</div>
+    <div class="alert alert-danger">Não foi possível concluir a operação.</div>
+    <div class="alert alert-info mb-0">Esta ação está pendente de aprovação.</div>
+</div>
+
+<h2 class="h4 mt-5">Formulário</h2>
+<div class="card mb-5">
+    <div class="card-body">
+        <div class="row g-3">
+            <div class="col-md-6">
+                <label class="form-label">Nome</label>
+                <input type="text" class="form-control" placeholder="Ex.: UBS Bairro Novo">
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Situação</label>
+                <select class="form-select">
+                    <option>Ativa</option>
+                    <option>Inativa</option>
+                </select>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

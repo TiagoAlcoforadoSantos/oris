@@ -1,0 +1,185 @@
+/*
+ * ORIS — Design System (Fase 13A)
+ * ---------------------------------------------------------------
+ * Camada de estilo construída SOBRE o Bootstrap (carregado antes
+ * deste arquivo) usando os tokens definidos em tokens.css — não
+ * substitui o Bootstrap nem introduz um framework novo.
+ *
+ * Escopo desta fase: o "chrome" compartilhado por todas as telas
+ * (base.html — navegação, tipografia, botões, badges, alertas,
+ * formulários, foco de teclado) e a página de referência do design
+ * system (/design-system). O layout interno de cada tela de negócio
+ * (tabelas, formulários específicos de Unidade/Serviço/etc.) segue
+ * inalterado nesta fase — a aplicação detalhada é a Fase 13B.
+ */
+
+/* ---- Base ------------------------------------------------------ */
+
+body {
+    background-color: var(--oris-bg);
+    color: var(--oris-text);
+    font-family: var(--oris-font-body);
+    font-size: var(--oris-fs-base);
+}
+
+h1, h2, h3, h4, h5, h6,
+.h1, .h2, .h3, .h4, .h5, .h6 {
+    font-family: var(--oris-font-display);
+    color: var(--oris-navy);
+    font-weight: 600;
+    letter-spacing: -0.01em;
+}
+
+a {
+    color: var(--oris-petroleum);
+}
+
+a:hover {
+    color: var(--oris-teal);
+}
+
+small, .text-muted {
+    color: var(--oris-text-muted) !important;
+}
+
+/* Foco de teclado visível e consistente em qualquer elemento
+   interativo — acessibilidade básica do design system. */
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+.btn:focus-visible {
+    outline: 2px solid var(--oris-teal);
+    outline-offset: 2px;
+}
+
+/* ---- Navegação --------------------------------------------------- */
+
+.navbar {
+    background: linear-gradient(90deg, var(--oris-navy), var(--oris-blue));
+    min-height: var(--oris-navbar-height);
+    box-shadow: var(--oris-shadow-sm);
+}
+
+.navbar .navbar-brand {
+    font-family: var(--oris-font-display);
+    font-weight: 700;
+    font-size: var(--oris-fs-lg);
+    color: var(--oris-white) !important;
+    letter-spacing: 0.02em;
+}
+
+.navbar .nav-link {
+    color: rgba(247, 250, 250, 0.82) !important;
+    font-size: var(--oris-fs-sm);
+    padding-left: 0.85rem;
+    padding-right: 0.85rem;
+    border-radius: var(--oris-radius-sm);
+    transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.navbar .nav-link:hover,
+.navbar .nav-link:focus-visible {
+    color: var(--oris-white) !important;
+    background-color: rgba(24, 183, 176, 0.18);
+}
+
+/* ---- Botões ------------------------------------------------------- */
+
+.btn {
+    border-radius: var(--oris-radius-sm);
+    font-weight: 500;
+}
+
+.btn-primary {
+    background-color: var(--oris-teal);
+    border-color: var(--oris-teal);
+    color: var(--oris-navy);
+}
+
+.btn-primary:hover,
+.btn-primary:focus {
+    background-color: var(--oris-cyan);
+    border-color: var(--oris-cyan);
+    color: var(--oris-navy);
+}
+
+.btn-outline-primary {
+    color: var(--oris-petroleum);
+    border-color: var(--oris-petroleum);
+}
+
+.btn-outline-primary:hover {
+    background-color: var(--oris-petroleum);
+    border-color: var(--oris-petroleum);
+    color: var(--oris-white);
+}
+
+.btn-outline-secondary {
+    color: var(--oris-text-muted);
+    border-color: var(--oris-border);
+}
+
+.btn-outline-secondary:hover {
+    background-color: var(--oris-navy);
+    border-color: var(--oris-navy);
+    color: var(--oris-white);
+}
+
+/* ---- Cards, tabelas e superfícies ----------------------------------- */
+
+.card {
+    border: 1px solid var(--oris-border);
+    border-radius: var(--oris-radius-md);
+    box-shadow: var(--oris-shadow-sm);
+}
+
+.table thead {
+    background-color: var(--oris-surface);
+}
+
+.table thead th {
+    color: var(--oris-navy);
+    font-weight: 600;
+    border-bottom-width: 1px;
+}
+
+/* ---- Badges (status semânticos) -------------------------------------- */
+
+.badge.bg-success { background-color: var(--oris-success) !important; }
+.badge.bg-warning { background-color: var(--oris-warning) !important; color: var(--oris-text) !important; }
+.badge.bg-danger  { background-color: var(--oris-danger) !important; }
+.badge.bg-secondary { background-color: var(--oris-text-muted) !important; }
+.badge.bg-dark { background-color: var(--oris-blue) !important; }
+
+/* ---- Alertas ------------------------------------------------------- */
+
+.alert {
+    border: none;
+    border-left: 4px solid transparent;
+    border-radius: var(--oris-radius-sm);
+}
+
+.alert-success { border-left-color: var(--oris-success); background-color: #E9F7EF; color: #1E6B44; }
+.alert-warning { border-left-color: var(--oris-warning); background-color: #FDF3E3; color: #7A5417; }
+.alert-danger  { border-left-color: var(--oris-danger);  background-color: #FBEAEA; color: #8C2E2B; }
+.alert-info    { border-left-color: var(--oris-petroleum); background-color: var(--oris-surface); color: var(--oris-blue); }
+
+/* ---- Formulários ----------------------------------------------------- */
+
+.form-control:focus,
+.form-select:focus {
+    border-color: var(--oris-teal);
+    box-shadow: 0 0 0 0.2rem rgba(24, 183, 176, 0.25);
+}
+
+/* ---- Rodapé ------------------------------------------------------------ */
+
+footer a {
+    color: var(--oris-text-muted);
+}
+
+footer a:hover {
+    color: var(--oris-teal);
+}

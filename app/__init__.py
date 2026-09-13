@@ -1,20 +1,19 @@
 """
 Application factory do ORIS.
 
-Nesta FASE 12, o ORIS passa por uma auditoria técnica de segurança e
-ganha os controles de proteção de dados/LGPD compatíveis com o seu
-escopo (ver docs/SEGURANCA.md para o relatório completo). Reaproveita
-tudo das fases anteriores sem quebrar nada — autenticação (Fase 3),
-RBAC (Fase 4), fluxo de aprovação (Fase 7), auditoria (Fase 8),
-Dashboard (Fase 9), Importador (Fase 10) e Administração de Usuários
-(Fase 11).
+Nesta FASE 13A, o ORIS ganha um Design System / identidade visual —
+tokens de cor, tipografia e componentes básicos (ver
+app/static/css/tokens.css e docs/DESIGN_SYSTEM.md), aplicados ao
+chrome compartilhado (navegação, botões, badges, alertas,
+formulários). Nenhuma regra de negócio, model, autenticação, RBAC,
+aprovação, auditoria, importação ou segurança foi alterada — só a
+camada visual. Uma página de referência (`/design-system`) documenta
+os tokens vivos, sem redesenhar ainda cada tela de negócio (Fase 13B).
 
-Novidades desta fase:
-- Cabeçalhos HTTP de segurança básicos em toda resposta.
-- Página de erro 500 amigável (nunca expõe stack trace/SQL/caminhos).
-- Rate limiting leve (em memória, sem Redis) para tentativas de login.
-- Página `/privacidade` documentando finalidade, dados tratados,
-  controles e retenção.
+Fases anteriores continuam intactas: autenticação (Fase 3), RBAC
+(Fase 4), fluxo de aprovação (Fase 7), auditoria (Fase 8), Dashboard
+(Fase 9), Importador (Fase 10), Administração de Usuários (Fase 11) e
+segurança/LGPD (Fase 12) — ver docs/SEGURANCA.md.
 """
 
 from flask import Flask, render_template
@@ -48,7 +47,8 @@ def create_app(config_object=None):
     # protegida inicial, áreas de teste do RBAC, os CRUDs de
     # Unidades/Serviços/Equipamentos, o fluxo de Alterações, a
     # consulta de Auditoria, o Dashboard, o Importador de planilhas,
-    # a Administração de Usuários e a página de Privacidade.
+    # a Administração de Usuários, a página de Privacidade e a
+    # página de referência do Design System.
     from app.routes.auth import auth_bp
     from app.routes.main import main_bp
     from app.routes.areas import areas_bp
@@ -61,6 +61,7 @@ def create_app(config_object=None):
     from app.routes.importacao import importacao_bp
     from app.routes.usuarios import usuarios_bp
     from app.routes.privacidade import privacidade_bp
+    from app.routes.design_system import design_system_bp
 
     app.register_blueprint(auth_bp)
     app.register_blueprint(main_bp)
@@ -74,6 +75,7 @@ def create_app(config_object=None):
     app.register_blueprint(importacao_bp)
     app.register_blueprint(usuarios_bp)
     app.register_blueprint(privacidade_bp)
+    app.register_blueprint(design_system_bp)
 
     # Registra o comando de CLI para criar usuários (ver app/cli.py).
     from app.cli import register_cli_commands
@@ -104,7 +106,8 @@ def create_app(config_object=None):
         response.headers.setdefault(
             "Content-Security-Policy",
             "default-src 'self'; "
-            "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; "
+            "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://fonts.googleapis.com; "
+            "font-src 'self' https://fonts.gstatic.com; "
             "script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; "
             "img-src 'self' data:; "
             "frame-ancestors 'none'",
@@ -143,7 +146,7 @@ def create_app(config_object=None):
         return {
             "status": "ok",
             "app": "ORIS",
-            "fase": "12 - seguranca, lgpd e protecao de dados",
+            "fase": "13a - design system e identidade visual",
         }
 
     return app

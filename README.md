@@ -1,6 +1,6 @@
 # ORIS — Plataforma de Governança da Rede de Saúde Bucal
 
-> ⚠️ **Status do projeto:** em desenvolvimento — FASE 12 concluída (Segurança, LGPD e Proteção de Dados).
+> ⚠️ **Status do projeto:** em desenvolvimento — FASE 13A concluída (Design System e Identidade Visual).
 > Este README será expandido a cada fase concluída.
 
 ## O que é o ORIS
@@ -66,7 +66,8 @@ ORIS/
 │   │   ├── dashboard.py          # /dashboard
 │   │   ├── importacao.py         # importador de planilhas (.xlsx/.csv)
 │   │   ├── usuarios.py           # administração de usuários (só ADMINISTRADOR)
-│   │   └── privacidade.py        # /privacidade (pública)
+│   │   ├── privacidade.py        # /privacidade (pública)
+│   │   └── design_system.py      # /design-system (referência visual, pública)
 │   ├── models/
 │   │   ├── enums.py             # PerfilUsuario, situações, status, TipoOperacaoAlteracao
 │   │   ├── mixins.py            # TimestampMixin (created_at/updated_at)
@@ -86,6 +87,7 @@ ORIS/
 │   │   ├── nao_encontrado.html  # página de erro 404
 │   │   ├── erro_interno.html    # página de erro 500 (Fase 12)
 │   │   ├── privacidade.html     # transparência/LGPD (Fase 12)
+│   │   ├── design_system.html   # referência de tokens/componentes (Fase 13A)
 │   │   ├── unidades/
 │   │   │   ├── lista.html
 │   │   │   ├── form.html         # cadastro e edição
@@ -109,6 +111,8 @@ ORIS/
 │   │       └── form.html         # criar e editar (+ mini-form de redefinir senha)
 │   ├── static/
 │   │   ├── css/
+│   │   │   ├── tokens.css              # variáveis de cor/tipografia/raio/sombra (Fase 13A)
+│   │   │   └── oris-design-system.css  # componentes (navbar, botões, badges...) sobre o Bootstrap
 │   │   ├── js/
 │   │   └── images/
 │   ├── services/
@@ -141,7 +145,8 @@ ORIS/
 │   ├── test_fase9_dashboard.py
 │   ├── test_fase10_importacao.py
 │   ├── test_fase11_usuarios.py
-│   └── test_fase12_seguranca.py
+│   ├── test_fase12_seguranca.py
+│   └── test_fase13a_design_system.py
 │
 ├── .env                     # configuração local (NÃO versionar)
 ├── .env.example             # modelo de configuração
@@ -289,7 +294,7 @@ Resposta esperada:
 {
   "status": "ok",
   "app": "ORIS",
-  "fase": "12 - seguranca, lgpd e protecao de dados"
+  "fase": "13a - design system e identidade visual"
 }
 ```
 
@@ -816,6 +821,59 @@ dado no MVP que exija criptografia reversível em repouso; se um
 campo assim surgir no futuro, a recomendação é AES-256-GCM, com a
 chave fora do código-fonte.
 
+## Design System e Identidade Visual (FASE 13A)
+
+Esta fase criou o **Design System** do ORIS — a base visual reutilizável
+para as próximas telas — sem redesenhar ainda cada tela de negócio
+(isso é a Fase 13B) e sem alterar nenhuma regra de negócio, model,
+autenticação, RBAC, aprovação, auditoria, importação ou segurança.
+
+**Direção visual:** Health-Tech + Gov-Tech + plataforma de governança —
+tecnologia, saúde, confiança e institucionalidade, evitando parecer
+hospital genérico, sistema de governo datado, SaaS de fintech,
+cyberpunk ou interface "futurista"/gamer.
+
+**Tokens de cor** (`app/static/css/tokens.css`), com função semântica
+clara — o azul profundo estrutura a interface, a turquesa é usada como
+destaque, e as cores de status (sucesso/atenção/erro) nunca mudam de
+significado:
+
+| Token | Cor | Uso |
+|-------|-----|-----|
+| `--oris-navy` | `#0B2A4A` | Estrutura (navbar, títulos) |
+| `--oris-blue` | `#123B63` | Apoio ao navy (gradientes, textos escuros) |
+| `--oris-petroleum` | `#155E75` | Links, botões secundários |
+| `--oris-teal` | `#18B7B0` | Destaque/marca (botão principal, foco) |
+| `--oris-cyan` | `#39C6D3` | Realces e estados de hover |
+| `--oris-bg` / `--oris-surface` | `#F7FAFA` / `#DDF4F5` | Fundo da aplicação / superfícies suaves |
+| `--oris-success` / `--oris-warning` / `--oris-danger` | `#39A96B` / `#E9A23B` / `#D9534F` | Status semânticos |
+
+Também há tokens de tipografia, raio de borda, sombra e dimensões de
+layout (sidebar, navbar, largura de conteúdo) — ver o arquivo para a
+lista completa.
+
+**Tipografia:** duas famílias, claramente distintas —
+[Space Grotesk](https://fonts.google.com/specimen/Space+Grotesk) para
+títulos (geométrica, técnica, sem parecer "futurista") e
+[IBM Plex Sans](https://fonts.google.com/specimen/IBM+Plex+Sans) para
+texto de interface/corpo (extremamente legível, de caráter
+institucional/técnico).
+
+**Onde já está aplicado nesta fase:** o "chrome" compartilhado por
+todas as telas em `base.html` — navegação, tipografia global, botões,
+badges de status, alertas e foco de teclado — construído em
+`app/static/css/oris-design-system.css`, uma camada **sobre** o
+Bootstrap (não o substitui, não introduz um framework novo). O layout
+interno de cada tela de negócio (tabelas e formulários específicos de
+Unidade/Serviço/Equipamento etc.) continua com a mesma estrutura até a
+Fase 13B.
+
+**Onde ver:** a página [`/design-system`](/design-system) (pública,
+sem exigir login) mostra a paleta, a tipografia e os componentes
+básicos (botões, badges, alertas, formulário) vivos, com os tokens
+reais aplicados — serve como referência para a aplicação detalhada da
+Fase 13B.
+
 ## Usuário de teste
 
 Não existe usuário fixo/hardcoded no código. Para criar um usuário
@@ -967,7 +1025,9 @@ de listagem — ver detalhes em `docs/SEGURANCA.md`.
 - [x] FASE 10 — Importador de Planilhas (.xlsx/.csv)
 - [x] FASE 11 — Administração de Usuários
 - [x] FASE 12 — Segurança, LGPD e Proteção de Dados
-- [ ] Próximas fases — acabamento de UX/UI e polimento final
+- [x] FASE 13A — Design System e Identidade Visual
+- [ ] FASE 13B — Aplicação do design system nas telas de negócio
+- [ ] Próximas fases — polimento final
 
 ## Dados de demonstração
 
