@@ -173,6 +173,7 @@
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+    min-width: 0; /* permite o flex item encolher e o ellipsis funcionar de verdade */
 }
 
 .oris-breadcrumb a {
@@ -293,5 +294,15 @@
 
     .oris-user-info {
         display: none; /* mantém só o avatar em telas muito pequenas */
+    }
+
+    /* Breadcrumb em telas muito estreitas: mostra só a página atual,
+       para nunca disputar espaço com a identidade do usuário — um
+       padrão comum de breadcrumb responsivo (não é possível truncar
+       bem com ellipsis quando o breadcrumb tem vários links/spans
+       como filhos separados). */
+    .oris-breadcrumb a,
+    .oris-breadcrumb span:not(.oris-breadcrumb-current) {
+        display: none;
     }
 }

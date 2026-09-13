@@ -147,7 +147,7 @@ def create_app(config_object=None):
         return {
             "status": "ok",
             "app": "ORIS",
-            "fase": "13b-etapa1 - estrutura global e dashboard",
+            "fase": "13b-stage2a - ux/ui unidades de saude",
         }
 
     return app

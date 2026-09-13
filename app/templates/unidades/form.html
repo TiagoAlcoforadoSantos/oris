@@ -2,87 +2,115 @@
 
 {% block title %}{{ titulo }} — ORIS{% endblock %}
 
+{% block breadcrumb %}
+    <a href="{{ url_for('dashboard.index') }}">Início</a>
+    <span aria-hidden="true">/</span>
+    <a href="{{ url_for('unidades.listar') }}">Unidades de Saúde</a>
+    <span aria-hidden="true">/</span>
+    <span class="oris-breadcrumb-current">{{ "Editar" if unidade else "Nova unidade" }}</span>
+{% endblock %}
+
 {% block content %}
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <h1 class="h3 mb-0">{{ titulo }}</h1>
-    <a href="{{ url_for('unidades.listar') }}" class="btn btn-outline-secondary btn-sm">Voltar para a lista</a>
+<a href="{{ url_for('unidades.listar') if not unidade else url_for('unidades.visualizar', unidade_id=unidade.id) }}" class="oris-back-link">
+    <i class="bi bi-arrow-left" aria-hidden="true"></i> Voltar
+</a>
+
+<div class="oris-page-header">
+    <div>
+        <h1>{{ titulo }}</h1>
+        <p>
+            {% if unidade %}
+                Atualize os dados desta unidade. A alteração passa por aprovação antes de valer.
+            {% else %}
+                Cadastre uma nova unidade da rede. O cadastro passa por aprovação antes de valer.
+            {% endif %}
+        </p>
+    </div>
 </div>
 
-<div class="card">
-    <div class="card-body">
-        <form method="POST" novalidate>
-            {{ form.hidden_tag() }}
+<div class="oris-panel">
+    <form method="POST" novalidate>
+        {{ form.hidden_tag() }}
 
-            <div class="row g-3">
-                <div class="col-md-6">
-                    {{ form.nome.label(class="form-label") }}
-                    {{ form.nome(class="form-control") }}
-                    {% for erro in form.nome.errors %}
-                        <div class="text-danger small">{{ erro }}</div>
-                    {% endfor %}
-                </div>
-
-                <div class="col-md-3">
-                    {{ form.cnes.label(class="form-label") }}
-                    {{ form.cnes(class="form-control") }}
-                    {% for erro in form.cnes.errors %}
-                        <div class="text-danger small">{{ erro }}</div>
-                    {% endfor %}
-                </div>
-
-                <div class="col-md-3">
-                    {{ form.tipo.label(class="form-label") }}
-                    {{ form.tipo(class="form-control", placeholder="Ex.: UBS") }}
-                    {% for erro in form.tipo.errors %}
-                        <div class="text-danger small">{{ erro }}</div>
-                    {% endfor %}
-                </div>
-
-                <div class="col-md-8">
-                    {{ form.endereco.label(class="form-label") }}
-                    {{ form.endereco(class="form-control") }}
-                    {% for erro in form.endereco.errors %}
-                        <div class="text-danger small">{{ erro }}</div>
-                    {% endfor %}
-                </div>
-
-                <div class="col-md-4">
-                    {{ form.bairro.label(class="form-label") }}
-                    {{ form.bairro(class="form-control") }}
-                    {% for erro in form.bairro.errors %}
-                        <div class="text-danger small">{{ erro }}</div>
-                    {% endfor %}
-                </div>
-
-                <div class="col-md-6">
-                    {{ form.cidade.label(class="form-label") }}
-                    {{ form.cidade(class="form-control") }}
-                    {% for erro in form.cidade.errors %}
-                        <div class="text-danger small">{{ erro }}</div>
-                    {% endfor %}
-                </div>
-
-                <div class="col-md-2">
-                    {{ form.uf.label(class="form-label") }}
-                    {{ form.uf(class="form-control", maxlength=2, style="text-transform:uppercase") }}
-                    {% for erro in form.uf.errors %}
-                        <div class="text-danger small">{{ erro }}</div>
-                    {% endfor %}
-                </div>
-
-                <div class="col-md-4">
-                    {{ form.situacao.label(class="form-label") }}
-                    {{ form.situacao(class="form-select") }}
-                    {% for erro in form.situacao.errors %}
-                        <div class="text-danger small">{{ erro }}</div>
-                    {% endfor %}
-                </div>
+        <h2 class="oris-section-label">Informações da unidade</h2>
+        <div class="row g-3 mb-4">
+            <div class="col-md-6">
+                {{ form.nome.label(class="form-label") }}
+                {{ form.nome(class="form-control") }}
+                {% for erro in form.nome.errors %}
+                    <div class="text-danger small">{{ erro }}</div>
+                {% endfor %}
             </div>
 
-            <div class="mt-4">
-                {{ form.submit(class="btn btn-primary") }}
+            <div class="col-md-3">
+                {{ form.cnes.label(class="form-label") }}
+                {{ form.cnes(class="form-control") }}
+                {% for erro in form.cnes.errors %}
+                    <div class="text-danger small">{{ erro }}</div>
+                {% endfor %}
             </div>
-        </form>
-    </div>
+
+            <div class="col-md-3">
+                {{ form.tipo.label(class="form-label") }}
+                {{ form.tipo(class="form-control", placeholder="Ex.: UBS") }}
+                {% for erro in form.tipo.errors %}
+                    <div class="text-danger small">{{ erro }}</div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <h2 class="oris-section-label">Localização</h2>
+        <div class="row g-3 mb-4">
+            <div class="col-md-8">
+                {{ form.endereco.label(class="form-label") }}
+                {{ form.endereco(class="form-control") }}
+                {% for erro in form.endereco.errors %}
+                    <div class="text-danger small">{{ erro }}</div>
+                {% endfor %}
+            </div>
+
+            <div class="col-md-4">
+                {{ form.bairro.label(class="form-label") }}
+                {{ form.bairro(class="form-control") }}
+                {% for erro in form.bairro.errors %}
+                    <div class="text-danger small">{{ erro }}</div>
+                {% endfor %}
+            </div>
+
+            <div class="col-md-6">
+                {{ form.cidade.label(class="form-label") }}
+                {{ form.cidade(class="form-control") }}
+                {% for erro in form.cidade.errors %}
+                    <div class="text-danger small">{{ erro }}</div>
+                {% endfor %}
+            </div>
+
+            <div class="col-md-2">
+                {{ form.uf.label(class="form-label") }}
+                {{ form.uf(class="form-control", maxlength=2, style="text-transform:uppercase") }}
+                {% for erro in form.uf.errors %}
+                    <div class="text-danger small">{{ erro }}</div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <h2 class="oris-section-label">Situação</h2>
+        <div class="row g-3 mb-4">
+            <div class="col-md-4">
+                {{ form.situacao.label(class="form-label") }}
+                {{ form.situacao(class="form-select") }}
+                {% for erro in form.situacao.errors %}
+                    <div class="text-danger small">{{ erro }}</div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <div class="d-flex gap-2">
+            {{ form.submit(class="btn btn-primary") }}
+            <a href="{{ url_for('unidades.listar') if not unidade else url_for('unidades.visualizar', unidade_id=unidade.id) }}" class="btn btn-outline-secondary">
+                Cancelar
+            </a>
+        </div>
+    </form>
 </div>
 {% endblock %}

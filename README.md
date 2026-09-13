@@ -1,6 +1,6 @@
 # ORIS — Plataforma de Governança da Rede de Saúde Bucal
 
-> ⚠️ **Status do projeto:** em desenvolvimento — FASE 13B (Etapa 1) concluída (Estrutura Global + Dashboard).
+> ⚠️ **Status do projeto:** em desenvolvimento — FASE 13B (Stage 2A) concluída (UX/UI das Unidades de Saúde).
 > Este README será expandido a cada fase concluída.
 
 ## O que é o ORIS
@@ -297,7 +297,7 @@ Resposta esperada:
 {
   "status": "ok",
   "app": "ORIS",
-  "fase": "13b-etapa1 - estrutura global e dashboard"
+  "fase": "13b-stage2a - ux/ui unidades de saude"
 }
 ```
 
@@ -936,6 +936,47 @@ reais de compatibilidade foram feitas durante a geração: um
 sidebar de `position: fixed` para `position: sticky` + Flexbox — mais
 robusta e correta para o layout pretendido em qualquer navegador.
 
+## UX/UI Final — Stage 2A: Unidades de Saúde (FASE 13B)
+
+Segunda etapa da Fase 13B: aplica o Design System às 3 telas de
+Unidades (listagem, detalhe, formulário de criar/editar). **As demais
+telas continuam como antes** — Serviços, Equipamentos, Aprovações,
+Auditoria, Importação, Usuários, Privacidade e Login ficam para
+etapas futuras.
+
+**O que mudou:** cabeçalho de página reutilizável (título + descrição
++ ação principal), uma tira de indicadores agregados na listagem
+(Total/Ativas/Inativas/Em manutenção — calculados a partir da mesma
+lista de unidades já carregada pela rota, **nenhuma consulta nova**),
+tabela refinada com badges de situação, tela de detalhe organizada em
+seções (Identificação/Localização/Registro), e formulário de
+criar/editar agrupado da mesma forma. **Nenhuma rota, validação,
+regra de negócio ou permissão foi alterada** — validado explicitamente
+para os 4 perfis (GESTOR continua sem poder criar/editar/alterar
+situação) e para o fluxo de aprovação da Fase 7 (criar/editar continua
+gerando uma solicitação `PENDENTE`, nunca aplicando direto).
+
+**Componentes reutilizados do Design System:** `.oris-page-header`,
+`.oris-stat-strip`, `.oris-panel`, `.oris-empty-state`,
+`.oris-detail-grid`, `.oris-back-link` — todos em
+`app/static/css/oris-design-system.css`; nenhum CSS novo específico
+de Unidades foi necessário.
+
+**Correções feitas durante esta etapa:**
+- `.oris-panel` estava definido só em `dashboard.css` (carregado
+  apenas na página do Dashboard) mas era usado pelas telas de
+  Unidades — movido para `oris-design-system.css`, onde já é
+  carregado globalmente.
+- Breadcrumbs longos podiam sobrepor a identidade do usuário no
+  header em telas muito estreitas — em telas ≤576px, o breadcrumb
+  agora mostra só a página atual (padrão comum de breadcrumb
+  responsivo).
+
+**Screenshots:** `unidades-desktop.png`, `unidades-mobile.png`,
+`unidade-detalhe-desktop.png`, `unidade-nova-desktop.png`,
+`unidade-nova-mobile.png`, `unidade-editar-desktop.png`, em
+`docs/screenshots/`.
+
 ## Usuário de teste
 
 Não existe usuário fixo/hardcoded no código. Para criar um usuário
@@ -1089,8 +1130,9 @@ de listagem — ver detalhes em `docs/SEGURANCA.md`.
 - [x] FASE 12 — Segurança, LGPD e Proteção de Dados
 - [x] FASE 13A — Design System e Identidade Visual
 - [x] FASE 13B — Etapa 1: Estrutura Global (sidebar/header) + Dashboard
-- [ ] FASE 13B — Próximas etapas: Unidades, Serviços, Equipamentos,
-      Aprovações, Auditoria, Importação, Usuários, Privacidade, Login
+- [x] FASE 13B — Stage 2A: UX/UI de Unidades de Saúde
+- [ ] FASE 13B — Próximas etapas: Serviços, Equipamentos, Aprovações,
+      Auditoria, Importação, Usuários, Privacidade, Login
 - [ ] Próximas fases — polimento final
 
 ## Dados de demonstração

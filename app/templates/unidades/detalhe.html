@@ -2,120 +2,160 @@
 
 {% block title %}{{ unidade.nome }} — ORIS{% endblock %}
 
+{% block breadcrumb %}
+    <a href="{{ url_for('dashboard.index') }}">Início</a>
+    <span aria-hidden="true">/</span>
+    <a href="{{ url_for('unidades.listar') }}">Unidades de Saúde</a>
+    <span aria-hidden="true">/</span>
+    <span class="oris-breadcrumb-current">{{ unidade.nome }}</span>
+{% endblock %}
+
 {% block content %}
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <h1 class="h3 mb-0">{{ unidade.nome }}</h1>
+<a href="{{ url_for('unidades.listar') }}" class="oris-back-link">
+    <i class="bi bi-arrow-left" aria-hidden="true"></i> Voltar para unidades
+</a>
+
+<div class="oris-page-header">
     <div>
-        <a href="{{ url_for('unidades.listar') }}" class="btn btn-outline-secondary btn-sm">Voltar para a lista</a>
-        {% if pode_alterar %}
-            <a href="{{ url_for('unidades.editar', unidade_id=unidade.id) }}" class="btn btn-primary btn-sm">Editar</a>
-        {% endif %}
+        <p class="oris-section-label mb-1">Unidade de Saúde</p>
+        <h1 class="d-flex align-items-center gap-2 flex-wrap">
+            {{ unidade.nome }}
+            {% if unidade.situacao.value == "ATIVA" %}
+                <span class="badge bg-success">Ativa</span>
+            {% elif unidade.situacao.value == "MANUTENCAO" %}
+                <span class="badge bg-warning text-dark">Manutenção</span>
+            {% else %}
+                <span class="badge bg-secondary">Inativa</span>
+            {% endif %}
+        </h1>
     </div>
+    {% if pode_alterar %}
+        <div class="oris-page-header-actions">
+            <a href="{{ url_for('unidades.editar', unidade_id=unidade.id) }}" class="btn btn-primary">
+                <i class="bi bi-pencil" aria-hidden="true"></i> Editar
+            </a>
+        </div>
+    {% endif %}
 </div>
 
-<div class="card mb-4">
-    <div class="card-body">
-        <dl class="row mb-0">
-            <dt class="col-sm-3">CNES</dt>
-            <dd class="col-sm-9">{{ unidade.cnes }}</dd>
+<div class="oris-panel mb-4">
+    <div class="oris-detail-section">
+        <h2 class="oris-section-label">Identificação</h2>
+        <dl class="oris-detail-grid mb-0">
+            <div>
+                <dt>CNES</dt>
+                <dd>{{ unidade.cnes }}</dd>
+            </div>
+            <div>
+                <dt>Tipo</dt>
+                <dd>{{ unidade.tipo }}</dd>
+            </div>
+        </dl>
+    </div>
 
-            <dt class="col-sm-3">Tipo</dt>
-            <dd class="col-sm-9">{{ unidade.tipo }}</dd>
+    <hr class="my-4">
 
-            <dt class="col-sm-3">Endereço</dt>
-            <dd class="col-sm-9">{{ unidade.endereco or "—" }}</dd>
+    <div class="oris-detail-section">
+        <h2 class="oris-section-label">Localização</h2>
+        <dl class="oris-detail-grid mb-0">
+            <div>
+                <dt>Endereço</dt>
+                <dd>{{ unidade.endereco or "—" }}</dd>
+            </div>
+            <div>
+                <dt>Bairro</dt>
+                <dd>{{ unidade.bairro or "—" }}</dd>
+            </div>
+            <div>
+                <dt>Município</dt>
+                <dd>{{ unidade.cidade }}</dd>
+            </div>
+            <div>
+                <dt>UF</dt>
+                <dd>{{ unidade.uf }}</dd>
+            </div>
+        </dl>
+    </div>
 
-            <dt class="col-sm-3">Bairro</dt>
-            <dd class="col-sm-9">{{ unidade.bairro or "—" }}</dd>
+    <hr class="my-4">
 
-            <dt class="col-sm-3">Cidade/UF</dt>
-            <dd class="col-sm-9">{{ unidade.cidade }}/{{ unidade.uf }}</dd>
-
-            <dt class="col-sm-3">Situação</dt>
-            <dd class="col-sm-9">
-                {% if unidade.situacao.value == "ATIVA" %}
-                    <span class="badge bg-success">Ativa</span>
-                {% elif unidade.situacao.value == "MANUTENCAO" %}
-                    <span class="badge bg-warning text-dark">Manutenção</span>
-                {% else %}
-                    <span class="badge bg-secondary">Inativa</span>
-                {% endif %}
-            </dd>
-
-            <dt class="col-sm-3">Criada em</dt>
-            <dd class="col-sm-9">{{ unidade.created_at.strftime("%d/%m/%Y %H:%M") }}</dd>
-
-            <dt class="col-sm-3">Última atualização</dt>
-            <dd class="col-sm-9">{{ unidade.updated_at.strftime("%d/%m/%Y %H:%M") }}</dd>
+    <div class="oris-detail-section mb-0">
+        <h2 class="oris-section-label">Registro</h2>
+        <dl class="oris-detail-grid mb-0">
+            <div>
+                <dt>Criada em</dt>
+                <dd>{{ unidade.created_at.strftime("%d/%m/%Y %H:%M") }}</dd>
+            </div>
+            <div>
+                <dt>Última atualização</dt>
+                <dd>{{ unidade.updated_at.strftime("%d/%m/%Y %H:%M") }}</dd>
+            </div>
         </dl>
     </div>
 </div>
 
 {% if pode_alterar %}
-<div class="card mb-4">
-    <div class="card-body">
-        <h2 class="h6">Alterar situação</h2>
-        <form method="POST" action="{{ url_for('unidades.alterar_situacao', unidade_id=unidade.id) }}" class="row g-2 align-items-end">
-            {{ form_situacao.hidden_tag() }}
-            <div class="col-auto">
-                {{ form_situacao.situacao(class="form-select") }}
-            </div>
-            <div class="col-auto">
-                {{ form_situacao.submit(class="btn btn-outline-primary") }}
-            </div>
-        </form>
-    </div>
+<div class="oris-panel mb-4">
+    <h2 class="oris-section-label">Alterar situação</h2>
+    <form method="POST" action="{{ url_for('unidades.alterar_situacao', unidade_id=unidade.id) }}" class="row g-2 align-items-end">
+        {{ form_situacao.hidden_tag() }}
+        <div class="col-auto">
+            <label class="form-label small text-muted" for="{{ form_situacao.situacao.id }}">
+                {{ form_situacao.situacao.label.text }}
+            </label>
+            {{ form_situacao.situacao(class="form-select") }}
+        </div>
+        <div class="col-auto">
+            {{ form_situacao.submit(class="btn btn-outline-primary") }}
+        </div>
+    </form>
 </div>
 {% endif %}
 
 <div class="row">
     <div class="col-md-6 mb-4">
-        <div class="card h-100">
-            <div class="card-body">
-                <h2 class="h6">Serviços desta unidade</h2>
-                {% if unidade.servicos.all() %}
-                    <ul class="list-group list-group-flush">
-                        {% for servico in unidade.servicos %}
-                            <li class="list-group-item px-0 d-flex justify-content-between">
-                                <a href="{{ url_for('servicos.visualizar', servico_id=servico.id) }}">{{ servico.nome }}</a>
-                                {% if servico.situacao.value == "ATIVO" %}
-                                    <span class="badge bg-success">Ativo</span>
-                                {% else %}
-                                    <span class="badge bg-secondary">Inativo</span>
-                                {% endif %}
-                            </li>
-                        {% endfor %}
-                    </ul>
-                {% else %}
-                    <p class="text-muted small mb-0">Nenhum serviço cadastrado.</p>
-                {% endif %}
-                <a href="{{ url_for('servicos.listar', unidade_id=unidade.id) }}" class="small">Ver todos na listagem de serviços</a>
-            </div>
+        <div class="oris-panel h-100">
+            <h2 class="oris-section-label">Serviços desta unidade</h2>
+            {% if unidade.servicos.all() %}
+                <ul class="list-group list-group-flush">
+                    {% for servico in unidade.servicos %}
+                        <li class="list-group-item px-0 d-flex justify-content-between align-items-center">
+                            <a href="{{ url_for('servicos.visualizar', servico_id=servico.id) }}" class="text-decoration-none">{{ servico.nome }}</a>
+                            {% if servico.situacao.value == "ATIVO" %}
+                                <span class="badge bg-success">Ativo</span>
+                            {% else %}
+                                <span class="badge bg-secondary">Inativo</span>
+                            {% endif %}
+                        </li>
+                    {% endfor %}
+                </ul>
+            {% else %}
+                <p class="text-muted small mb-0">Nenhum serviço cadastrado.</p>
+            {% endif %}
+            <a href="{{ url_for('servicos.listar', unidade_id=unidade.id) }}" class="small d-inline-block mt-2">Ver todos na listagem de serviços</a>
         </div>
     </div>
 
     <div class="col-md-6 mb-4">
-        <div class="card h-100">
-            <div class="card-body">
-                <h2 class="h6">Equipamentos desta unidade</h2>
-                {% if unidade.equipamentos.all() %}
-                    <ul class="list-group list-group-flush">
-                        {% for equipamento in unidade.equipamentos %}
-                            <li class="list-group-item px-0 d-flex justify-content-between">
-                                <a href="{{ url_for('equipamentos.visualizar', equipamento_id=equipamento.id) }}">{{ equipamento.nome }}</a>
-                                {% if equipamento.situacao.value == "ATIVO" %}
-                                    <span class="badge bg-success">Ativo</span>
-                                {% else %}
-                                    <span class="badge bg-secondary">Inativo</span>
-                                {% endif %}
-                            </li>
-                        {% endfor %}
-                    </ul>
-                {% else %}
-                    <p class="text-muted small mb-0">Nenhum equipamento cadastrado.</p>
-                {% endif %}
-                <a href="{{ url_for('equipamentos.listar', unidade_id=unidade.id) }}" class="small">Ver todos na listagem de equipamentos</a>
-            </div>
+        <div class="oris-panel h-100">
+            <h2 class="oris-section-label">Equipamentos desta unidade</h2>
+            {% if unidade.equipamentos.all() %}
+                <ul class="list-group list-group-flush">
+                    {% for equipamento in unidade.equipamentos %}
+                        <li class="list-group-item px-0 d-flex justify-content-between align-items-center">
+                            <a href="{{ url_for('equipamentos.visualizar', equipamento_id=equipamento.id) }}" class="text-decoration-none">{{ equipamento.nome }}</a>
+                            {% if equipamento.situacao.value == "ATIVO" %}
+                                <span class="badge bg-success">Ativo</span>
+                            {% else %}
+                                <span class="badge bg-secondary">Inativo</span>
+                            {% endif %}
+                        </li>
+                    {% endfor %}
+                </ul>
+            {% else %}
+                <p class="text-muted small mb-0">Nenhum equipamento cadastrado.</p>
+            {% endif %}
+            <a href="{{ url_for('equipamentos.listar', unidade_id=unidade.id) }}" class="small d-inline-block mt-2">Ver todos na listagem de equipamentos</a>
         </div>
     </div>
 </div>

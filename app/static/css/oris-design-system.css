@@ -183,3 +183,177 @@ footer a {
 footer a:hover {
     color: var(--oris-teal);
 }
+
+/* ---- Cartão de conteúdo genérico (Fase 13B) -----------------------------
+ * Usado pelo Dashboard (Fase 13B, Stage 1) e pelas telas de CRUD como
+ * Unidades (Stage 2A) — um "cartão" branco simples para agrupar
+ * conteúdo relacionado (uma seção de detalhe, um formulário, uma
+ * tabela). Definido aqui (não em dashboard.css) porque não é
+ * específico do Dashboard.
+ */
+
+.oris-panel {
+    background: var(--oris-white);
+    border: 1px solid var(--oris-border);
+    border-radius: var(--oris-radius-md);
+    box-shadow: var(--oris-shadow-sm);
+    padding: 1.25rem 1.35rem;
+}
+
+/* ---- Cabeçalho de página (Fase 13B, Stage 2A) --------------------------
+ * Padrão reutilizável para qualquer tela de listagem/CRUD: título +
+ * descrição curta + ação principal. Substitui o antigo cabeçalho
+ * "d-flex justify-content-between" repetido em cada template.
+ */
+
+.oris-page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 1rem;
+    flex-wrap: wrap;
+    margin-bottom: 1.5rem;
+}
+
+.oris-page-header h1 {
+    font-size: var(--oris-fs-xl);
+    margin-bottom: 0.3rem;
+}
+
+.oris-page-header p {
+    color: var(--oris-text-muted);
+    font-size: var(--oris-fs-sm);
+    max-width: 60ch;
+    margin-bottom: 0;
+}
+
+.oris-page-header-actions {
+    display: flex;
+    gap: 0.5rem;
+    flex-shrink: 0;
+}
+
+/* ---- Tira de estatísticas (versão leve dos KPI cards do Dashboard) ------
+ * Para listagens que já têm os dados carregados e podem mostrar um
+ * resumo agregado sem nenhuma consulta nova ao banco.
+ */
+
+.oris-stat-strip {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0.85rem;
+    margin-bottom: 1.5rem;
+}
+
+.oris-stat-card {
+    background: var(--oris-white);
+    border: 1px solid var(--oris-border);
+    border-radius: var(--oris-radius-md);
+    padding: 0.9rem 1.1rem;
+    box-shadow: var(--oris-shadow-sm);
+}
+
+.oris-stat-value {
+    display: block;
+    font-family: var(--oris-font-display);
+    font-size: var(--oris-fs-xl);
+    font-weight: 700;
+    color: var(--oris-navy);
+    line-height: 1.1;
+}
+
+.oris-stat-label {
+    display: block;
+    font-size: var(--oris-fs-xs);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--oris-text-muted);
+    font-weight: 600;
+    margin-top: 0.2rem;
+}
+
+@media (max-width: 767.98px) {
+    .oris-stat-strip {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+/* ---- Estado vazio -------------------------------------------------------- */
+
+.oris-empty-state {
+    text-align: center;
+    padding: 3rem 1.5rem;
+    color: var(--oris-text-muted);
+    background: var(--oris-white);
+    border: 1px solid var(--oris-border);
+    border-radius: var(--oris-radius-md);
+}
+
+.oris-empty-state i {
+    font-size: 2rem;
+    color: var(--oris-border);
+    display: block;
+    margin-bottom: 0.75rem;
+}
+
+.oris-empty-state p {
+    margin-bottom: 0;
+}
+
+/* ---- Seções de detalhe / formulário (rótulos discretos em maiúsculas) --- */
+
+.oris-section-label {
+    font-size: var(--oris-fs-xs);
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    color: var(--oris-text-muted);
+    font-weight: 600;
+    margin-bottom: 0.9rem;
+}
+
+.oris-detail-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1.1rem 2rem;
+}
+
+.oris-detail-grid dt {
+    font-size: var(--oris-fs-xs);
+    color: var(--oris-text-muted);
+    margin-bottom: 0.15rem;
+}
+
+.oris-detail-grid dd {
+    font-size: var(--oris-fs-sm);
+    color: var(--oris-text);
+    font-weight: 500;
+    margin-bottom: 0;
+}
+
+@media (max-width: 575.98px) {
+    .oris-detail-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* ---- Tabela: hover com a cor de superfície do Design System ------------- */
+
+.table {
+    --bs-table-hover-bg: var(--oris-surface);
+}
+
+/* ---- Botão "voltar" discreto --------------------------------------------- */
+
+.oris-back-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    color: var(--oris-text-muted);
+    text-decoration: none;
+    font-size: var(--oris-fs-sm);
+    margin-bottom: 0.75rem;
+}
+
+.oris-back-link:hover {
+    color: var(--oris-teal);
+}

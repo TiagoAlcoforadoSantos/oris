@@ -168,13 +168,9 @@
     margin-bottom: 1rem;
 }
 
-.oris-panel {
-    background: var(--oris-white);
-    border: 1px solid var(--oris-border);
-    border-radius: var(--oris-radius-md);
-    box-shadow: var(--oris-shadow-sm);
-    padding: 1.25rem 1.35rem;
-}
+/* .oris-panel foi movido para oris-design-system.css (Fase 13B,
+   Stage 2A) — é um componente genérico de "cartão de conteúdo",
+   reutilizado também pelas telas de Unidades, não só pelo Dashboard. */
 
 /* ---- Timeline de atividade recente ------------------------------------ */
 
