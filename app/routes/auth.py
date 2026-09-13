@@ -2,9 +2,10 @@
 Rotas de autenticação: login e logout.
 
 Fluxo do login (POST /login):
-1. Recebe email e senha do formulário.
-2. Procura o usuário pelo email.
-3. Verifica se o usuário existe.
+1. Verifica rate limiting (Fase 12): se este (IP, email) já falhou
+   demais vezes na janela atual, bloqueia sem sequer checar a senha.
+2. Recebe email e senha do formulário.
+3. Procura o usuário pelo email.
 4. Verifica se o usuário está ativo.
 5. Valida a senha com bcrypt (app.utils.security.verificar_senha).
 6. Se tudo correto, cria a sessão autenticada e audita a ação LOGIN
@@ -20,20 +21,32 @@ identificam de forma confiável um usuário para atribuir o evento).
 
 O logout audita a ação LOGOUT antes de limpar a sessão (precisa do
 usuário ainda identificado na sessão para saber quem registrar).
+
+PROTEÇÃO CONTRA SESSION FIXATION: `session.clear()` é chamado logo
+antes de estabelecer a nova sessão autenticada — qualquer dado que
+já existisse na sessão do navegador (inclusive um valor que um
+atacante tivesse tentado "plantar" antes do login) é descartado nesse
+momento. Como o Flask usa sessões assinadas do lado do cliente (sem
+um ID de sessão do lado do servidor para "fixar"), essa é a mitigação
+adequada ao mecanismo em uso.
 """
 
-from flask import Blueprint, flash, redirect, render_template, session, url_for
+from flask import Blueprint, current_app, flash, redirect, render_template, request, session, url_for
 
 from app.extensions import db
 from app.forms import LoginForm
 from app.models import Usuario
 from app.services.auditoria_service import registrar_auditoria
 from app.utils.decorators import usuario_atual
+from app.utils.rate_limit import bloqueado, limpar_tentativas, registrar_tentativa_falha
 from app.utils.security import verificar_senha
 
 auth_bp = Blueprint("auth", __name__)
 
 MENSAGEM_LOGIN_INVALIDO = "Email ou senha inválidos."
+MENSAGEM_MUITAS_TENTATIVAS = (
+    "Muitas tentativas de login para esta conta. Aguarde alguns minutos e tente novamente."
+)
 
 
 @auth_bp.route("/login", methods=["GET", "POST"])
@@ -48,6 +61,12 @@ def login():
     if form.validate_on_submit():
         email = form.email.data.strip().lower()
         senha = form.senha.data
+        ip = request.remote_addr
+        rate_limit_ativo = current_app.config.get("RATE_LIMIT_LOGIN_ENABLED", True)
+
+        if rate_limit_ativo and bloqueado(ip, email):
+            flash(MENSAGEM_MUITAS_TENTATIVAS, "danger")
+            return render_template("login.html", form=form)
 
         usuario = Usuario.query.filter_by(email=email).first()
 
@@ -60,8 +79,13 @@ def login():
         )
 
         if login_valido:
-            # Sessão guarda apenas o mínimo necessário para identificar
-            # o usuário — nunca senha ou senha_hash.
+            if rate_limit_ativo:
+                limpar_tentativas(ip, email)
+
+            # Descarta qualquer dado de sessão pré-existente (proteção
+            # contra session fixation) e guarda apenas o mínimo
+            # necessário para identificar o usuário — nunca senha ou
+            # senha_hash.
             session.clear()
             session["usuario_id"] = usuario.id
             session["autenticado"] = True
@@ -72,6 +96,8 @@ def login():
 
             return redirect(url_for("main.index"))
 
+        if rate_limit_ativo:
+            registrar_tentativa_falha(ip, email)
         flash(MENSAGEM_LOGIN_INVALIDO, "danger")
 
     return render_template("login.html", form=form)

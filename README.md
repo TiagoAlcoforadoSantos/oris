@@ -1,6 +1,6 @@
 # ORIS — Plataforma de Governança da Rede de Saúde Bucal
 
-> ⚠️ **Status do projeto:** em desenvolvimento — FASE 11 concluída (Administração de Usuários).
+> ⚠️ **Status do projeto:** em desenvolvimento — FASE 12 concluída (Segurança, LGPD e Proteção de Dados).
 > Este README será expandido a cada fase concluída.
 
 ## O que é o ORIS
@@ -65,7 +65,8 @@ ORIS/
 │   │   ├── auditoria.py          # /auditoria (somente leitura)
 │   │   ├── dashboard.py          # /dashboard
 │   │   ├── importacao.py         # importador de planilhas (.xlsx/.csv)
-│   │   └── usuarios.py           # administração de usuários (só ADMINISTRADOR)
+│   │   ├── usuarios.py           # administração de usuários (só ADMINISTRADOR)
+│   │   └── privacidade.py        # /privacidade (pública)
 │   ├── models/
 │   │   ├── enums.py             # PerfilUsuario, situações, status, TipoOperacaoAlteracao
 │   │   ├── mixins.py            # TimestampMixin (created_at/updated_at)
@@ -83,6 +84,8 @@ ORIS/
 │   │   ├── area_perfil.html     # áreas de teste do RBAC
 │   │   ├── acesso_negado.html   # página de erro 403
 │   │   ├── nao_encontrado.html  # página de erro 404
+│   │   ├── erro_interno.html    # página de erro 500 (Fase 12)
+│   │   ├── privacidade.html     # transparência/LGPD (Fase 12)
 │   │   ├── unidades/
 │   │   │   ├── lista.html
 │   │   │   ├── form.html         # cadastro e edição
@@ -117,7 +120,11 @@ ORIS/
 │       ├── datetime_utils.py    # helper de data/hora (UTC)
 │       ├── security.py          # hash/verificação de senha (bcrypt)
 │       ├── decorators.py        # login_required, roles_required
-│       └── rbac.py               # matriz de acesso das áreas de teste
+│       ├── rbac.py               # matriz de acesso das áreas de teste
+│       └── rate_limit.py         # rate limiting leve de login (Fase 12)
+│
+├── docs/
+│   └── SEGURANCA.md         # relatório de auditoria de segurança (Fase 12)
 │
 ├── database/
 │   └── schema.sql           # DDL completo das tabelas (MySQL)
@@ -133,7 +140,8 @@ ORIS/
 │   ├── test_fase8_auditoria.py
 │   ├── test_fase9_dashboard.py
 │   ├── test_fase10_importacao.py
-│   └── test_fase11_usuarios.py
+│   ├── test_fase11_usuarios.py
+│   └── test_fase12_seguranca.py
 │
 ├── .env                     # configuração local (NÃO versionar)
 ├── .env.example             # modelo de configuração
@@ -281,7 +289,7 @@ Resposta esperada:
 {
   "status": "ok",
   "app": "ORIS",
-  "fase": "11 - administracao de usuarios"
+  "fase": "12 - seguranca, lgpd e protecao de dados"
 }
 ```
 
@@ -726,6 +734,88 @@ tempo gera `EDITAR_USUARIO` e `ALTERAR_PERFIL` separadamente), cada
 um só com os campos que de fato mudaram. Nunca é registrada senha,
 hash ou qualquer credencial — nem na criação, nem na redefinição.
 
+## Segurança e LGPD (FASE 12)
+
+Esta fase foi dedicada a uma auditoria técnica de segurança do
+projeto inteiro e à implementação dos controles de proteção de dados
+compatíveis com o escopo do ORIS. O relatório completo — achados
+classificados por severidade, o que foi corrigido, e as limitações
+que dependem do ambiente de produção — está em
+[`docs/SEGURANCA.md`](docs/SEGURANCA.md).
+
+**Novidades técnicas desta fase:**
+
+- **Headers HTTP de segurança** em toda resposta:
+  `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`,
+  `Referrer-Policy: strict-origin-when-cross-origin` e uma
+  `Content-Security-Policy` básica.
+- **Página de erro 500 amigável** — nenhum erro inesperado expõe
+  stack trace, SQL ou caminhos internos ao usuário.
+- **Rate limiting leve de login** (em memória, sem Redis): após 5
+  tentativas malsucedidas para o mesmo (IP, email) em 5 minutos, o
+  login fica temporariamente bloqueado — inclusive para a senha
+  correta, até a janela passar. É por processo (não distribuído);
+  para produção com múltiplos workers, recomenda-se um backend
+  compartilhado.
+- **`/privacidade`** — página pública de transparência (não exige
+  login) com finalidade do sistema, categorias de dados tratados,
+  quem tem acesso, controles de segurança e política de retenção.
+
+**Achados corrigidos nesta fase:** ausência de headers de segurança,
+ausência de página de erro 500 dedicada, ausência de rate limiting no
+login, ausência de página de transparência. Dois achados de fases
+anteriores (CSRF global e revalidação de usuário ativo em
+`login_required`) já haviam sido corrigidos nas Fases 10 e 11,
+respectivamente, e são revalidados no relatório.
+
+**O que foi revisado e confirmado sem alterações necessárias:** RBAC
+de todas as rotas, proteção contra IDOR (todo acesso por ID retorna
+404 para inexistente e é protegido por RBAC), ausência de XSS
+(autoescape do Jinja nunca desativado, nenhum uso de `\|safe`),
+ausência de SQL Injection (100% via ORM), e nenhuma credencial real
+no código-fonte ou no histórico do Git.
+
+### LGPD — finalidade, minimização e retenção
+
+**Finalidade:** o ORIS existe para apoiar a gestão e governança das
+informações da Rede de Saúde Bucal — organizar cadastros, controlar
+alterações via aprovação, manter rastreabilidade e apoiar a gestão
+através do dashboard. O sistema **não trata** prontuários, dados
+clínicos, diagnósticos ou dados de pacientes — isso está fora do
+escopo deste MVP.
+
+**Minimização:** os únicos dados pessoais tratados hoje são os dos
+usuários do próprio sistema — nome, email, perfil, situação
+(ativo/inativo) e os registros de auditoria da atividade desses
+usuários. Não são coletados CPF, telefone, endereço residencial ou
+qualquer outro dado sem necessidade funcional direta.
+
+**Retenção:** usuários desativados não são excluídos (preserva
+histórico/auditoria); registros de auditoria não são apagados pela
+aplicação; dados operacionais seguem a necessidade administrativa
+definida pelo responsável pelo sistema. Prazos específicos de
+retenção e descarte ainda precisam ser definidos pelo órgão
+responsável — o ORIS não inventa um prazo legal.
+
+**Consentimento e base legal:** o ORIS é uma plataforma de gestão
+administrativa; este projeto não afirma uma base legal específica de
+tratamento nem exige um checkbox genérico de "concordo com a LGPD" —
+isso depende do contexto jurídico real de quem opera o sistema.
+
+**HTTPS/TLS em produção:** o código já diferencia
+`SESSION_COOKIE_SECURE=True` em `ProductionConfig` (exigindo HTTPS
+para o cookie de sessão trafegar) de `False` em desenvolvimento local
+— mas o TLS em si é responsabilidade do ambiente de implantação
+(servidor web/proxy reverso), não algo que uma aplicação Flask sozinha
+resolve.
+
+**Criptografia:** senhas usam hash bcrypt (irreversível, nunca
+criptografia reversível). O ORIS não introduziu nenhum campo
+artificial só para justificar o uso de AES — não há, hoje, nenhum
+dado no MVP que exija criptografia reversível em repouso; se um
+campo assim surgir no futuro, a recomendação é AES-256-GCM, com a
+chave fora do código-fonte.
+
 ## Usuário de teste
 
 Não existe usuário fixo/hardcoded no código. Para criar um usuário
@@ -772,7 +862,8 @@ ainda serão implementados nas próximas fases.
 
 ## Segurança implementada
 
-Até o momento (FASE 11):
+Até o momento (FASE 12) — ver também o relatório completo em
+[`docs/SEGURANCA.md`](docs/SEGURANCA.md):
 
 - Nenhuma credencial sensível fica hardcoded no código — tudo vem do `.env`
   via `python-dotenv`.
@@ -783,12 +874,20 @@ Até o momento (FASE 11):
   (biblioteca `bcrypt`), gerado com salt aleatório a cada chamada —
   também na criação e na redefinição administrativa (Fase 11).
 - Sessão do Flask guarda apenas `usuario_id` e `autenticado` — nunca a
-  senha ou o hash.
+  senha ou o hash. `session.clear()` no login e no logout mitiga
+  session fixation.
 - Cookies de sessão com `HttpOnly` e `SameSite=Lax` (e `Secure` em
   produção); `SECRET_KEY` sempre lida do `.env`.
 - `CSRFProtect` inicializado globalmente (Fase 10) — cobre tanto os
   formulários baseados em `FlaskForm` quanto as telas do importador,
   que usam formulários simples com campos dinâmicos por entidade.
+- **Headers HTTP de segurança** em toda resposta (Fase 12):
+  `X-Content-Type-Options`, `X-Frame-Options`, `Referrer-Policy` e uma
+  `Content-Security-Policy` básica.
+- **Rate limiting leve de login** (Fase 12): bloqueia temporariamente
+  após 5 tentativas malsucedidas para o mesmo (IP, email) em 5 minutos.
+- **Página de erro 500 dedicada** (Fase 12): nenhum erro inesperado
+  expõe stack trace, SQL ou caminhos internos.
 - Mensagem de erro de login sempre genérica ("Email ou senha inválidos."),
   sem revelar se o email existe, se a senha está errada ou se a conta
   está inativa.
@@ -809,15 +908,14 @@ Até o momento (FASE 11):
   (`app/services/alteracoes_service.py`), nunca só na interface.
 - Aprovação e aplicação da mudança acontecem na mesma transação: se a
   aplicação falhar (ex.: conflito de CNES), nada é salvo e a alteração
-  continua PENDENTE.
+  continua PENDENTE — nenhuma auditoria falsa é gerada em um rollback.
 - Auditoria funcional e protegida: login/logout, solicitação, aprovação,
-  rejeição, a mudança efetivamente aplicada e agora também toda a
-  administração de usuários (criação, edição, ativação/desativação,
-  troca de perfil, redefinição de senha) geram registros rastreáveis
-  (quem, quando, o quê, valores antes/depois quando aplicável) — nunca
-  senha ou hash. A auditoria é somente leitura: não existe rota de
-  edição ou exclusão pela aplicação, e só ADMINISTRADOR/
-  GESTAO_INFORMACAO podem consultá-la.
+  rejeição, a mudança efetivamente aplicada e toda a administração de
+  usuários (criação, edição, ativação/desativação, troca de perfil,
+  redefinição de senha) geram registros rastreáveis (quem, quando, o
+  quê, valores antes/depois quando aplicável) — nunca senha ou hash. A
+  auditoria é somente leitura: não existe rota de edição ou exclusão
+  pela aplicação, e só ADMINISTRADOR/GESTAO_INFORMACAO podem consultá-la.
 - O Dashboard reaproveita essa mesma restrição: a seção "Atividade
   recente" só mostra o histórico completo para ADMINISTRADOR/
   GESTAO_INFORMACAO — RESPONSAVEL_SAUDE_BUCAL e GESTOR veem apenas a
@@ -825,12 +923,17 @@ Até o momento (FASE 11):
 - Upload de planilhas com extensão validada, tamanho e número de
   linhas limitados, nome de arquivo gerado pelo servidor (nunca o do
   usuário), armazenamento temporário fora de `static`/`templates`, e
-  remoção do arquivo assim que deixa de ser necessário.
+  remoção do arquivo assim que deixa de ser necessário — sem exposição
+  de caminhos internos em mensagens de erro.
 - Páginas dedicadas de "Acesso negado" (HTTP 403) e "Não encontrado"
   (HTTP 404), sem expor detalhes internos do sistema (ex.: erro de
   banco de dados) para o usuário.
 - Todo acesso ao banco passa pelo ORM (SQLAlchemy), sem SQL manual —
-  proteção nativa contra SQL Injection.
+  proteção nativa contra SQL Injection; revisado e confirmado na
+  Fase 12.
+- Autoescape do Jinja nunca desativado e nenhum uso de `|safe` com
+  dados de usuário em nenhum template — proteção contra XSS revisada
+  e confirmada na Fase 12.
 - Unicidade de CNES e de email de usuário validada tanto na aplicação
   (mensagem amigável) quanto no banco (constraint), cobrindo também
   condições de corrida.
@@ -840,9 +943,15 @@ Até o momento (FASE 11):
   dados vêm de uma planilha importada.
 - Nenhuma exclusão física de usuário existe em nenhuma rota — apenas
   ativação/desativação, preservando histórico e auditoria.
+- Página `/privacidade` (Fase 12) documentando finalidade, categorias
+  de dados tratados, controles de segurança e retenção — sem afirmar
+  conformidade legal absoluta nem inventar informações institucionais.
 
-Itens de segurança das próximas fases (LGPD/criptografia adicional,
-acabamento geral) serão documentados aqui conforme forem implementados.
+Limitações conhecidas (dependem do ambiente de produção): HTTPS/TLS
+real depende do servidor/proxy de implantação; o rate limiting é em
+memória por processo (não distribuído); a Content-Security-Policy usa
+`unsafe-inline` por causa de pequenos handlers JS inline nos filtros
+de listagem — ver detalhes em `docs/SEGURANCA.md`.
 
 ## Roadmap de fases
 
@@ -857,8 +966,8 @@ acabamento geral) serão documentados aqui conforme forem implementados.
 - [x] FASE 9 — Dashboard
 - [x] FASE 10 — Importador de Planilhas (.xlsx/.csv)
 - [x] FASE 11 — Administração de Usuários
-- [ ] Próximas fases — LGPD/criptografia final, acabamento de UX/UI,
-      testes e polimento final
+- [x] FASE 12 — Segurança, LGPD e Proteção de Dados
+- [ ] Próximas fases — acabamento de UX/UI e polimento final
 
 ## Dados de demonstração
 

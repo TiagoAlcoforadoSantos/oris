@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+
+{% block title %}Erro interno — ORIS{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6 text-center">
+        <h1 class="display-6">500 — Erro interno</h1>
+        <p class="text-muted mt-3">
+            Algo deu errado ao processar sua solicitação. Nenhuma informação
+            técnica é exibida aqui por segurança — se o problema persistir,
+            avise um administrador.
+        </p>
+        <a href="{{ url_for('main.index') }}" class="btn btn-primary mt-2">Voltar ao início</a>
+    </div>
+</div>
+{% endblock %}

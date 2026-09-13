@@ -46,6 +46,15 @@ class Config:
     # Proteção CSRF (Flask-WTF)
     WTF_CSRF_ENABLED = True
 
+    # Rate limiting leve de login (Fase 12) — ligado por padrão;
+    # desligado só em TestingConfig, pelo mesmo motivo que
+    # WTF_CSRF_ENABLED também é: testes automatizados fazem muitas
+    # tentativas de login (certas de propósito, para exercitar
+    # validação) usando os mesmos emails repetidamente, e o contador
+    # é global ao processo — sem desligar, um teste acabaria
+    # bloqueando o login para os testes seguintes.
+    RATE_LIMIT_LOGIN_ENABLED = True
+
 
 class DevelopmentConfig(Config):
     DEBUG = True
@@ -61,6 +70,7 @@ class TestingConfig(Config):
     TESTING = True
     DEBUG = True
     WTF_CSRF_ENABLED = False
+    RATE_LIMIT_LOGIN_ENABLED = False
     # Banco de dados em memória (SQLite) apenas para testes automatizados,
     # evitando depender de um MySQL real durante a suíte de testes.
     SQLALCHEMY_DATABASE_URI = "sqlite:///:memory:"
