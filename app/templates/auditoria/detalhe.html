@@ -2,43 +2,99 @@
 
 {% block title %}Auditoria #{{ registro.id }} — ORIS{% endblock %}
 
+{% block breadcrumb %}
+    <a href="{{ url_for('dashboard.index') }}">Início</a>
+    <span aria-hidden="true">/</span>
+    <a href="{{ url_for('auditoria.listar') }}">Auditoria</a>
+    <span aria-hidden="true">/</span>
+    <span class="oris-breadcrumb-current">Registro #{{ registro.id }}</span>
+{% endblock %}
+
 {% block content %}
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <h1 class="h3 mb-0">Registro de Auditoria #{{ registro.id }}</h1>
-    <a href="{{ url_for('auditoria.listar') }}" class="btn btn-outline-secondary btn-sm">Voltar para a lista</a>
-</div>
+{% set valores_anteriores = registro.valor_anterior | from_json | campos_visiveis %}
+{% set valores_novos = registro.valor_novo | from_json | campos_visiveis %}
 
-<div class="card">
-    <div class="card-body">
-        <dl class="row mb-0">
-            <dt class="col-sm-3">Data/Hora</dt>
-            <dd class="col-sm-9">{{ registro.data_hora.strftime("%d/%m/%Y %H:%M:%S") }}</dd>
+<a href="{{ url_for('auditoria.listar') }}" class="oris-back-link">
+    <i class="bi bi-arrow-left" aria-hidden="true"></i> Voltar para auditoria
+</a>
 
-            <dt class="col-sm-3">Usuário</dt>
-            <dd class="col-sm-9">{{ registro.usuario.nome }} ({{ registro.usuario.perfil.value }})</dd>
-
-            <dt class="col-sm-3">Ação</dt>
-            <dd class="col-sm-9"><span class="badge bg-dark">{{ registro.acao }}</span></dd>
-
-            <dt class="col-sm-3">Entidade</dt>
-            <dd class="col-sm-9">{{ registro.tabela or "—" }}</dd>
-
-            <dt class="col-sm-3">Registro afetado</dt>
-            <dd class="col-sm-9">{{ registro.registro_id if registro.registro_id is not none else "—" }}</dd>
-
-            <dt class="col-sm-3">Descrição</dt>
-            <dd class="col-sm-9">{{ registro.descricao or "—" }}</dd>
-
-            {% if registro.valor_anterior %}
-            <dt class="col-sm-3">Valor anterior</dt>
-            <dd class="col-sm-9"><code>{{ registro.valor_anterior }}</code></dd>
+<div class="oris-page-header">
+    <div>
+        <p class="oris-section-label mb-1">Registro de Auditoria #{{ registro.id }}</p>
+        <h1 class="d-flex align-items-center gap-2 flex-wrap">
+            {% if registro.acao in ("APROVAR_ALTERACAO", "ATIVAR_USUARIO") %}
+                <span class="badge bg-success">{{ registro.acao }}</span>
+            {% elif registro.acao in ("REJEITAR_ALTERACAO", "DESATIVAR_USUARIO") %}
+                <span class="badge bg-danger">{{ registro.acao }}</span>
+            {% elif registro.acao in ("LOGIN", "LOGOUT") %}
+                <span class="badge bg-secondary">{{ registro.acao }}</span>
+            {% else %}
+                <span class="badge bg-dark">{{ registro.acao }}</span>
             {% endif %}
-
-            {% if registro.valor_novo %}
-            <dt class="col-sm-3">Valor novo</dt>
-            <dd class="col-sm-9"><code>{{ registro.valor_novo }}</code></dd>
-            {% endif %}
-        </dl>
+        </h1>
     </div>
 </div>
+
+<div class="oris-panel mb-4">
+    <h2 class="oris-section-label">Evento</h2>
+    <dl class="oris-detail-grid mb-0">
+        <div>
+            <dt>Data/Hora</dt>
+            <dd>{{ registro.data_hora.strftime("%d/%m/%Y %H:%M:%S") }}</dd>
+        </div>
+        <div>
+            <dt>Usuário</dt>
+            <dd>{{ registro.usuario.nome }} ({{ registro.usuario.perfil.value }})</dd>
+        </div>
+        <div>
+            <dt>Entidade</dt>
+            <dd class="text-capitalize">{{ registro.tabela or "—" }}</dd>
+        </div>
+        <div>
+            <dt>Registro afetado</dt>
+            <dd>{{ registro.registro_id if registro.registro_id is not none else "—" }}</dd>
+        </div>
+        {% if registro.descricao %}
+        <div class="oris-detail-grid-full">
+            <dt>Descrição</dt>
+            <dd>{{ registro.descricao }}</dd>
+        </div>
+        {% endif %}
+    </dl>
+</div>
+
+{% if valores_anteriores or valores_novos %}
+<div class="row g-4">
+    {% if valores_anteriores %}
+    <div class="col-lg-6">
+        <div class="oris-panel h-100">
+            <h2 class="oris-section-label">Antes</h2>
+            <dl class="oris-detail-grid mb-0">
+                {% for campo, valor in valores_anteriores %}
+                <div>
+                    <dt>{{ campo|rotulo_campo }}</dt>
+                    <dd>{{ valor if valor else "—" }}</dd>
+                </div>
+                {% endfor %}
+            </dl>
+        </div>
+    </div>
+    {% endif %}
+    {% if valores_novos %}
+    <div class="col-lg-6">
+        <div class="oris-panel h-100">
+            <h2 class="oris-section-label">Depois</h2>
+            <dl class="oris-detail-grid mb-0">
+                {% for campo, valor in valores_novos %}
+                <div>
+                    <dt>{{ campo|rotulo_campo }}</dt>
+                    <dd>{{ valor if valor else "—" }}</dd>
+                </div>
+                {% endfor %}
+            </dl>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endif %}
 {% endblock %}

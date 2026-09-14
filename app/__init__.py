@@ -197,7 +197,7 @@ def create_app(config_object=None):
         return {
             "status": "ok",
             "app": "ORIS",
-            "fase": "13b-stage3 - ux/ui aprovacoes",
+            "fase": "13b-stage4 - ux/ui auditoria",
         }
 
     return app

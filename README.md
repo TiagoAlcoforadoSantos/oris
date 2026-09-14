@@ -1,6 +1,6 @@
 # ORIS — Plataforma de Governança da Rede de Saúde Bucal
 
-> ⚠️ **Status do projeto:** em desenvolvimento — FASE 13B (Stage 3) concluída (UX/UI do Módulo de Aprovações).
+> ⚠️ **Status do projeto:** em desenvolvimento — FASE 13B (Stage 4) concluída (UX/UI da tela de Auditoria).
 > Este README será expandido a cada fase concluída.
 
 ## O que é o ORIS
@@ -297,7 +297,7 @@ Resposta esperada:
 {
   "status": "ok",
   "app": "ORIS",
-  "fase": "13b-stage3 - ux/ui aprovacoes"
+  "fase": "13b-stage4 - ux/ui auditoria"
 }
 ```
 
@@ -1051,6 +1051,37 @@ decodificar e rotular os dados que já existiam.
 `aprovacao-aprovada-desktop.png`, `aprovacao-rejeitada-desktop.png`,
 em `docs/screenshots/`.
 
+## UX/UI Final — Stage 4: Auditoria (FASE 13B)
+
+Quinta etapa da Fase 13B: aplica o Design System à tela de Auditoria
+(`/auditoria`), mantendo-a **estritamente somente leitura** — nenhuma
+rota de edição ou exclusão existe, nem mesmo para ADMINISTRADOR.
+
+**O que mudou:** cabeçalho de página com um selo "Somente leitura"
+sempre visível, filtros existentes (usuário, ação, entidade, data)
+reorganizados visualmente, contagem de resultados, tabela com badges
+de ação coloridos por significado semântico (aprovações em verde,
+rejeições/desativações em vermelho, login/logout em neutro — só uma
+recolorização dos valores que já existiam, nada novo), e estado vazio
+diferenciando "nenhum registro" de "nenhum resultado para o filtro".
+No detalhe, os campos `valor_anterior`/`valor_novo` (Fase 8) agora são
+decodificados e exibidos lado a lado como "Antes"/"Depois" —
+reaproveitando os mesmos filtros de template (`from_json`,
+`campos_visiveis`, `rotulo_campo`) já criados na Stage 3 para o mesmo
+formato de dado em `Alteracao.dados_novos`. **Nenhuma paginação foi
+adicionada** (não existia antes) e **nenhum dado foi inventado**.
+
+**Componentes reutilizados:** os mesmos de sempre
+(`.oris-page-header`, `.oris-panel`, `.oris-empty-state`,
+`.oris-detail-grid`, `.oris-back-link`) — só um pequeno utilitário
+CSS novo (`.oris-detail-grid-full`, para a descrição ocupar a largura
+toda) foi acrescentado ao Design System existente.
+
+**Screenshots:** `auditoria-desktop.png` (com os registros reais do
+ambiente de desenvolvimento) e `auditoria-detalhe-desktop.png`
+(mostrando uma alteração de perfil real, com Antes/Depois), em
+`docs/screenshots/`.
+
 ## Usuário de teste
 
 Não existe usuário fixo/hardcoded no código. Para criar um usuário
@@ -1207,8 +1238,9 @@ de listagem — ver detalhes em `docs/SEGURANCA.md`.
 - [x] FASE 13B — Stage 2A: UX/UI de Unidades de Saúde
 - [x] FASE 13B — Stage 2B: UX/UI de Serviços e Equipamentos
 - [x] FASE 13B — Stage 3: UX/UI do Módulo de Aprovações
-- [ ] FASE 13B — Próximas etapas: Auditoria, Importação, Usuários,
-      Privacidade, Login
+- [x] FASE 13B — Stage 4: UX/UI da tela de Auditoria
+- [ ] FASE 13B — Próximas etapas: Importação, Usuários, Privacidade,
+      Login
 - [ ] Próximas fases — polimento final
 
 ## Dados de demonstração
