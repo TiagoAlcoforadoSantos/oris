@@ -1,6 +1,6 @@
 # ORIS — Plataforma de Governança da Rede de Saúde Bucal
 
-> ⚠️ **Status do projeto:** em desenvolvimento — FASE 13B (Stage 2B) concluída (UX/UI de Serviços e Equipamentos).
+> ⚠️ **Status do projeto:** em desenvolvimento — FASE 13B (Stage 3) concluída (UX/UI do Módulo de Aprovações).
 > Este README será expandido a cada fase concluída.
 
 ## O que é o ORIS
@@ -297,7 +297,7 @@ Resposta esperada:
 {
   "status": "ok",
   "app": "ORIS",
-  "fase": "13b-stage2b - ux/ui servicos e equipamentos"
+  "fase": "13b-stage3 - ux/ui aprovacoes"
 }
 ```
 
@@ -1010,6 +1010,47 @@ aplicar → auditar), incluindo a regra de compatibilidade
 `equipamento-detalhe-desktop.png`, `equipamento-form-desktop.png`,
 em `docs/screenshots/`.
 
+## UX/UI Final — Stage 3: Módulo de Aprovações (FASE 13B)
+
+Quarta etapa da Fase 13B: aplica o Design System à listagem e ao
+detalhe de Alterações (`/alteracoes`), tornando o fluxo de aprovação
+já existente (Fase 7) muito mais fácil de entender visualmente. **As
+demais telas continuam como antes.**
+
+**O que mudou:** mesmo cabeçalho de página e tira de indicadores
+(Total/Pendentes/Aprovadas/Rejeitadas — calculados a partir da mesma
+lista já carregada, **nenhuma consulta nova**). Na tela de detalhe —
+a mais importante desta etapa — a informação agora é organizada em
+blocos claros: **Solicitante**, **Alteração** (entidade, registro,
+operação, e quem decidiu/quando), **O que muda** (comparação
+antes → depois, extraída da própria descrição já gravada pela Fase 7)
+e **Valores propostos** (campos da alteração, decodificados do JSON
+já existente em `Alteracao.dados_novos` — omitindo IDs técnicos como
+`unidade_id`, já que o contexto relacional aparece em texto). Para
+uma criação (`CRIAR`), a tela mostra "Novo registro" em vez de uma
+comparação, já que não existe um "antes". **Nenhuma regra de
+aprovação, rejeição, autoaprovação ou auditoria foi alterada** —
+validado explicitamente com MySQL real (solicitar → bloquear
+autoaprovação → outro usuário aprova/rejeita → aplica ou não →
+audita) e para os 4 perfis.
+
+**Achado corrigido:** o badge de "Rejeitado" usava a cor cinza
+(`bg-secondary`) em vez da cor de erro do Design System
+(`bg-danger`) — corrigido para seguir a mesma convenção de
+Pendente=aviso / Aprovado=sucesso / Rejeitado=erro.
+
+**Componentes reutilizados:** os mesmos das etapas anteriores
+(`.oris-page-header`, `.oris-stat-strip`, `.oris-panel`,
+`.oris-empty-state`, `.oris-detail-grid`, `.oris-back-link`) — só
+foram adicionados dois filtros de template (`from_json`,
+`campos_visiveis`, `rotulo_campo`), puramente de apresentação, para
+decodificar e rotular os dados que já existiam.
+
+**Screenshots:** `aprovacoes-desktop.png`, `aprovacoes-mobile.png`,
+`aprovacao-pendente-desktop.png`, `aprovacao-pendente-mobile.png`,
+`aprovacao-aprovada-desktop.png`, `aprovacao-rejeitada-desktop.png`,
+em `docs/screenshots/`.
+
 ## Usuário de teste
 
 Não existe usuário fixo/hardcoded no código. Para criar um usuário
@@ -1165,8 +1206,9 @@ de listagem — ver detalhes em `docs/SEGURANCA.md`.
 - [x] FASE 13B — Etapa 1: Estrutura Global (sidebar/header) + Dashboard
 - [x] FASE 13B — Stage 2A: UX/UI de Unidades de Saúde
 - [x] FASE 13B — Stage 2B: UX/UI de Serviços e Equipamentos
-- [ ] FASE 13B — Próximas etapas: Aprovações, Auditoria, Importação,
-      Usuários, Privacidade, Login
+- [x] FASE 13B — Stage 3: UX/UI do Módulo de Aprovações
+- [ ] FASE 13B — Próximas etapas: Auditoria, Importação, Usuários,
+      Privacidade, Login
 - [ ] Próximas fases — polimento final
 
 ## Dados de demonstração

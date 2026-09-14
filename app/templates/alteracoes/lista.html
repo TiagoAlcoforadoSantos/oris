@@ -1,75 +1,133 @@
 {% extends "base.html" %}
 
-{% block title %}Alterações — ORIS{% endblock %}
+{% block title %}Aprovações — ORIS{% endblock %}
+
+{% block breadcrumb %}
+    <a href="{{ url_for('dashboard.index') }}">Início</a>
+    <span aria-hidden="true">/</span>
+    <span class="oris-breadcrumb-current">Aprovações</span>
+{% endblock %}
 
 {% block content %}
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <h1 class="h3 mb-0">Alterações</h1>
-    <a href="{{ url_for('main.index') }}" class="btn btn-outline-secondary btn-sm">Início</a>
+<div class="oris-page-header">
+    <div>
+        <h1>Aprovações</h1>
+        <p>Revise e gerencie as alterações solicitadas na plataforma.</p>
+    </div>
 </div>
 
-<form method="GET" class="row g-2 mb-3">
-    <div class="col-auto">
-        <select name="status" class="form-select form-select-sm" onchange="this.form.submit()">
-            <option value="">Todos os status</option>
-            <option value="PENDENTE" {% if filtro_status == "PENDENTE" %}selected{% endif %}>Pendente</option>
-            <option value="APROVADO" {% if filtro_status == "APROVADO" %}selected{% endif %}>Aprovado</option>
-            <option value="REJEITADO" {% if filtro_status == "REJEITADO" %}selected{% endif %}>Rejeitado</option>
-        </select>
+{% if alteracoes %}
+{% set total = alteracoes|length %}
+{% set pendentes = alteracoes|selectattr("status.value", "equalto", "PENDENTE")|list|length %}
+{% set aprovadas = alteracoes|selectattr("status.value", "equalto", "APROVADO")|list|length %}
+{% set rejeitadas = alteracoes|selectattr("status.value", "equalto", "REJEITADO")|list|length %}
+<div class="oris-stat-strip">
+    <div class="oris-stat-card">
+        <span class="oris-stat-value">{{ total }}</span>
+        <span class="oris-stat-label">Total</span>
     </div>
-    <div class="col-auto">
-        <select name="tabela" class="form-select form-select-sm" onchange="this.form.submit()">
-            <option value="">Todas as entidades</option>
-            <option value="unidades" {% if filtro_tabela == "unidades" %}selected{% endif %}>Unidades</option>
-            <option value="servicos" {% if filtro_tabela == "servicos" %}selected{% endif %}>Serviços</option>
-            <option value="equipamentos" {% if filtro_tabela == "equipamentos" %}selected{% endif %}>Equipamentos</option>
-        </select>
+    <div class="oris-stat-card">
+        <span class="oris-stat-value">{{ pendentes }}</span>
+        <span class="oris-stat-label">Pendentes</span>
     </div>
-</form>
+    <div class="oris-stat-card">
+        <span class="oris-stat-value">{{ aprovadas }}</span>
+        <span class="oris-stat-label">Aprovadas</span>
+    </div>
+    <div class="oris-stat-card">
+        <span class="oris-stat-value">{{ rejeitadas }}</span>
+        <span class="oris-stat-label">Rejeitadas</span>
+    </div>
+</div>
+{% endif %}
+
+<div class="oris-panel mb-3">
+    <form method="GET" class="row g-2 align-items-end">
+        <div class="col-auto">
+            <label class="form-label small text-muted mb-1" for="filtro-status">Status</label>
+            <select id="filtro-status" name="status" class="form-select form-select-sm" onchange="this.form.submit()">
+                <option value="">Todos os status</option>
+                <option value="PENDENTE" {% if filtro_status == "PENDENTE" %}selected{% endif %}>Pendente</option>
+                <option value="APROVADO" {% if filtro_status == "APROVADO" %}selected{% endif %}>Aprovado</option>
+                <option value="REJEITADO" {% if filtro_status == "REJEITADO" %}selected{% endif %}>Rejeitado</option>
+            </select>
+        </div>
+        <div class="col-auto">
+            <label class="form-label small text-muted mb-1" for="filtro-tabela">Entidade</label>
+            <select id="filtro-tabela" name="tabela" class="form-select form-select-sm" onchange="this.form.submit()">
+                <option value="">Todas as entidades</option>
+                <option value="unidades" {% if filtro_tabela == "unidades" %}selected{% endif %}>Unidades</option>
+                <option value="servicos" {% if filtro_tabela == "servicos" %}selected{% endif %}>Serviços</option>
+                <option value="equipamentos" {% if filtro_tabela == "equipamentos" %}selected{% endif %}>Equipamentos</option>
+            </select>
+        </div>
+        {% if filtro_status or filtro_tabela %}
+            <div class="col-auto">
+                <a href="{{ url_for('alteracoes.listar') }}" class="btn btn-sm btn-outline-secondary">Limpar filtros</a>
+            </div>
+        {% endif %}
+    </form>
+</div>
 
 {% if alteracoes %}
-<div class="table-responsive">
-    <table class="table table-striped align-middle">
+<div class="table-responsive oris-panel p-0">
+    <table class="table table-hover align-middle mb-0">
         <thead>
             <tr>
                 <th>#</th>
-                <th>Solicitante</th>
+                <th>Alteração</th>
                 <th>Entidade</th>
-                <th>Descrição</th>
-                <th>Status</th>
+                <th>Solicitante</th>
                 <th>Data</th>
-                <th>Aprovador</th>
+                <th>Status</th>
                 <th class="text-end">Ações</th>
             </tr>
         </thead>
         <tbody>
             {% for alteracao in alteracoes %}
             <tr>
-                <td>{{ alteracao.id }}</td>
+                <td class="text-muted">#{{ alteracao.id }}</td>
+                <td>
+                    <a href="{{ url_for('alteracoes.visualizar', alteracao_id=alteracao.id) }}" class="fw-semibold text-decoration-none">
+                        {% if alteracao.operacao.value == "CRIAR" %}Criação
+                        {% elif alteracao.operacao.value == "EDITAR" %}Edição
+                        {% else %}Alteração de situação
+                        {% endif %}
+                    </a>
+                    <div class="text-muted small">{{ alteracao.descricao }}</div>
+                </td>
+                <td class="text-capitalize">{{ alteracao.tabela }}</td>
                 <td>{{ alteracao.usuario_criador.nome }}</td>
-                <td>{{ alteracao.tabela }}</td>
-                <td>{{ alteracao.descricao }}</td>
+                <td>{{ alteracao.created_at.strftime("%d/%m/%Y %H:%M") }}</td>
                 <td>
                     {% if alteracao.status.value == "PENDENTE" %}
                         <span class="badge bg-warning text-dark">Pendente</span>
                     {% elif alteracao.status.value == "APROVADO" %}
                         <span class="badge bg-success">Aprovado</span>
                     {% else %}
-                        <span class="badge bg-secondary">Rejeitado</span>
+                        <span class="badge bg-danger">Rejeitado</span>
                     {% endif %}
                 </td>
-                <td>{{ alteracao.created_at.strftime("%d/%m/%Y %H:%M") }}</td>
-                <td>{{ alteracao.usuario_aprovador.nome if alteracao.usuario_aprovador else "—" }}</td>
                 <td class="text-end">
-                    <a href="{{ url_for('alteracoes.visualizar', alteracao_id=alteracao.id) }}" class="btn btn-sm btn-outline-secondary">Visualizar</a>
+                    <a href="{{ url_for('alteracoes.visualizar', alteracao_id=alteracao.id) }}"
+                       class="btn btn-sm btn-outline-secondary"
+                       aria-label="Ver alteração #{{ alteracao.id }}" title="Visualizar">
+                        <i class="bi bi-eye" aria-hidden="true"></i> Visualizar
+                    </a>
                     {% if pode_decidir and alteracao.status.value == "PENDENTE" and alteracao.usuario_id != usuario_atual_id %}
                         <form method="POST" action="{{ url_for('alteracoes.aprovar', alteracao_id=alteracao.id) }}" class="d-inline">
                             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                            <button type="submit" class="btn btn-sm btn-outline-success">Aprovar</button>
+                            <button type="submit" class="btn btn-sm btn-outline-success"
+                                    aria-label="Aprovar alteração #{{ alteracao.id }}" title="Aprovar">
+                                <i class="bi bi-check-lg" aria-hidden="true"></i> Aprovar
+                            </button>
                         </form>
                         <form method="POST" action="{{ url_for('alteracoes.rejeitar', alteracao_id=alteracao.id) }}" class="d-inline">
                             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                            <button type="submit" class="btn btn-sm btn-outline-danger">Rejeitar</button>
+                            <button type="submit" class="btn btn-sm btn-outline-danger"
+                                    aria-label="Rejeitar alteração #{{ alteracao.id }}" title="Rejeitar">
+                                <i class="bi bi-x-lg" aria-hidden="true"></i> Rejeitar
+                            </button>
                         </form>
                     {% endif %}
                 </td>
@@ -79,7 +137,17 @@
     </table>
 </div>
 {% else %}
-<p class="text-muted">Nenhuma alteração encontrada.</p>
+<div class="oris-empty-state">
+    <i class="bi bi-check2-square" aria-hidden="true"></i>
+    <p><strong>Nenhuma alteração encontrada.</strong></p>
+    <p class="small">
+        {% if filtro_status or filtro_tabela %}
+            Nenhuma alteração corresponde a esse filtro — tente ajustar os critérios acima.
+        {% else %}
+            Assim que alguém solicitar uma alteração, ela aparecerá aqui.
+        {% endif %}
+    </p>
+</div>
 {% endif %}
 
 <p class="text-muted small mt-3">

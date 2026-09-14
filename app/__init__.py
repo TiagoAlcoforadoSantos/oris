@@ -83,6 +83,56 @@ def create_app(config_object=None):
 
     register_cli_commands(app)
 
+    # Filtro de template puramente de apresentação (Fase 13B, Stage 3):
+    # transforma o JSON salvo em Alteracao.dados_novos de volta em um
+    # dicionário, para a tela de detalhe de aprovação poder mostrar os
+    # valores propostos de forma organizada. Não altera nenhum dado
+    # gravado nem nenhuma regra de negócio — só como o template lê um
+    # campo que já existe.
+    @app.template_filter("from_json")
+    def from_json_filter(valor):
+        import json
+
+        if not valor:
+            return {}
+        try:
+            return json.loads(valor)
+        except (TypeError, ValueError):
+            return {}
+
+    # Filtro de apresentação: a partir do dicionário de dados_novos
+    # (já convertido por from_json), devolve só os campos "amigáveis"
+    # para mostrar na tela de aprovação — exclui chaves de id bruto
+    # (ex.: unidade_id, servico_id), cujo valor é só um número sem
+    # significado direto para quem está revisando a alteração; o
+    # contexto relacional (qual unidade/serviço) já aparece em
+    # `descricao`, escrita pelas rotas de Unidades/Serviços/
+    # Equipamentos no momento da solicitação.
+    @app.template_filter("campos_visiveis")
+    def campos_visiveis_filter(dados):
+        if not dados:
+            return []
+        return [(campo, valor) for campo, valor in dados.items() if not campo.endswith("_id")]
+
+    # Rótulos amigáveis para os nomes de campo que aparecem em
+    # Alteracao.dados_novos (Fase 13B, Stage 3) — só apresentação;
+    # nomes de campo desconhecidos caem de volta em algo razoável
+    # (capitalizado) em vez de quebrar.
+    RÓTULOS_CAMPOS_ALTERACAO = {
+        "nome": "Nome",
+        "cnes": "CNES",
+        "tipo": "Tipo",
+        "endereco": "Endereço",
+        "bairro": "Bairro",
+        "cidade": "Cidade",
+        "uf": "UF",
+        "situacao": "Situação",
+    }
+
+    @app.template_filter("rotulo_campo")
+    def rotulo_campo_filter(campo):
+        return RÓTULOS_CAMPOS_ALTERACAO.get(campo, campo.replace("_", " ").capitalize())
+
     # Disponibiliza o usuário autenticado em todos os templates (ex.:
     # para o menu em base.html decidir se mostra os links "Auditoria"
     # e "Usuários", que só fazem sentido para perfis específicos).
@@ -147,7 +197,7 @@ def create_app(config_object=None):
         return {
             "status": "ok",
             "app": "ORIS",
-            "fase": "13b-stage2b - ux/ui servicos e equipamentos",
+            "fase": "13b-stage3 - ux/ui aprovacoes",
         }
 
     return app

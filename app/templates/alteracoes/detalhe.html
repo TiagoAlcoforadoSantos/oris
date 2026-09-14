@@ -2,86 +2,179 @@
 
 {% block title %}Alteração #{{ alteracao.id }} — ORIS{% endblock %}
 
+{% block breadcrumb %}
+    <a href="{{ url_for('dashboard.index') }}">Início</a>
+    <span aria-hidden="true">/</span>
+    <a href="{{ url_for('alteracoes.listar') }}">Aprovações</a>
+    <span aria-hidden="true">/</span>
+    <span class="oris-breadcrumb-current">Alteração #{{ alteracao.id }}</span>
+{% endblock %}
+
 {% block content %}
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <h1 class="h3 mb-0">Alteração #{{ alteracao.id }}</h1>
-    <a href="{{ url_for('alteracoes.listar') }}" class="btn btn-outline-secondary btn-sm">Voltar para a lista</a>
-</div>
+{% set dados_propostos = alteracao.dados_novos | from_json | campos_visiveis %}
 
-<div class="card mb-4">
-    <div class="card-body">
-        <dl class="row mb-0">
-            <dt class="col-sm-3">Status</dt>
-            <dd class="col-sm-9">
-                {% if alteracao.status.value == "PENDENTE" %}
-                    <span class="badge bg-warning text-dark">Pendente</span>
-                {% elif alteracao.status.value == "APROVADO" %}
-                    <span class="badge bg-success">Aprovado</span>
-                {% else %}
-                    <span class="badge bg-secondary">Rejeitado</span>
-                {% endif %}
-            </dd>
+<a href="{{ url_for('alteracoes.listar') }}" class="oris-back-link">
+    <i class="bi bi-arrow-left" aria-hidden="true"></i> Voltar para aprovações
+</a>
 
-            <dt class="col-sm-3">Solicitante</dt>
-            <dd class="col-sm-9">{{ alteracao.usuario_criador.nome }} ({{ alteracao.usuario_criador.perfil.value }})</dd>
-
-            <dt class="col-sm-3">Entidade</dt>
-            <dd class="col-sm-9">{{ alteracao.tabela }}</dd>
-
-            <dt class="col-sm-3">Operação</dt>
-            <dd class="col-sm-9">{{ alteracao.operacao.value }}</dd>
-
-            <dt class="col-sm-3">Registro afetado</dt>
-            <dd class="col-sm-9">
-                {% if alteracao.registro_id %}
-                    #{{ alteracao.registro_id }}
-                    {% if alteracao.tabela == "unidades" %}
-                        (<a href="{{ url_for('unidades.visualizar', unidade_id=alteracao.registro_id) }}">ver unidade</a>)
-                    {% elif alteracao.tabela == "servicos" %}
-                        (<a href="{{ url_for('servicos.visualizar', servico_id=alteracao.registro_id) }}">ver serviço</a>)
-                    {% elif alteracao.tabela == "equipamentos" %}
-                        (<a href="{{ url_for('equipamentos.visualizar', equipamento_id=alteracao.registro_id) }}">ver equipamento</a>)
-                    {% endif %}
-                {% else %}
-                    <span class="text-muted">Ainda não criado — aguardando aprovação</span>
-                {% endif %}
-            </dd>
-
-            <dt class="col-sm-3">Descrição</dt>
-            <dd class="col-sm-9">{{ alteracao.descricao }}</dd>
-
-            <dt class="col-sm-3">Solicitada em</dt>
-            <dd class="col-sm-9">{{ alteracao.created_at.strftime("%d/%m/%Y %H:%M") }}</dd>
-
-            {% if alteracao.usuario_aprovador %}
-            <dt class="col-sm-3">Responsável pela decisão</dt>
-            <dd class="col-sm-9">{{ alteracao.usuario_aprovador.nome }}</dd>
-
-            <dt class="col-sm-3">Decisão em</dt>
-            <dd class="col-sm-9">{{ alteracao.approved_at.strftime("%d/%m/%Y %H:%M") }}</dd>
+<div class="oris-page-header">
+    <div>
+        <p class="oris-section-label mb-1">Alteração #{{ alteracao.id }}</p>
+        <h1 class="d-flex align-items-center gap-2 flex-wrap">
+            {% if alteracao.operacao.value == "CRIAR" %}Criação
+            {% elif alteracao.operacao.value == "EDITAR" %}Edição
+            {% else %}Alteração de situação
             {% endif %}
-        </dl>
+            {% if alteracao.status.value == "PENDENTE" %}
+                <span class="badge bg-warning text-dark">Pendente</span>
+            {% elif alteracao.status.value == "APROVADO" %}
+                <span class="badge bg-success">Aprovado</span>
+            {% else %}
+                <span class="badge bg-danger">Rejeitado</span>
+            {% endif %}
+        </h1>
     </div>
 </div>
 
+<div class="row g-4 mb-4">
+    <div class="col-lg-6">
+        <div class="oris-panel h-100">
+            <h2 class="oris-section-label">Solicitante</h2>
+            <dl class="oris-detail-grid mb-0">
+                <div>
+                    <dt>Nome</dt>
+                    <dd>{{ alteracao.usuario_criador.nome }}</dd>
+                </div>
+                <div>
+                    <dt>Perfil</dt>
+                    <dd>{{ alteracao.usuario_criador.perfil.value }}</dd>
+                </div>
+                <div>
+                    <dt>Solicitada em</dt>
+                    <dd>{{ alteracao.created_at.strftime("%d/%m/%Y %H:%M") }}</dd>
+                </div>
+            </dl>
+        </div>
+    </div>
+
+    <div class="col-lg-6">
+        <div class="oris-panel h-100">
+            <h2 class="oris-section-label">Alteração</h2>
+            <dl class="oris-detail-grid mb-0">
+                <div>
+                    <dt>Entidade</dt>
+                    <dd class="text-capitalize">{{ alteracao.tabela }}</dd>
+                </div>
+                <div>
+                    <dt>Registro</dt>
+                    <dd>
+                        {% if alteracao.registro_id %}
+                            #{{ alteracao.registro_id }}
+                            {% if alteracao.tabela == "unidades" %}
+                                (<a href="{{ url_for('unidades.visualizar', unidade_id=alteracao.registro_id) }}">ver unidade</a>)
+                            {% elif alteracao.tabela == "servicos" %}
+                                (<a href="{{ url_for('servicos.visualizar', servico_id=alteracao.registro_id) }}">ver serviço</a>)
+                            {% elif alteracao.tabela == "equipamentos" %}
+                                (<a href="{{ url_for('equipamentos.visualizar', equipamento_id=alteracao.registro_id) }}">ver equipamento</a>)
+                            {% endif %}
+                        {% else %}
+                            <span class="text-muted">Novo registro — ainda não criado</span>
+                        {% endif %}
+                    </dd>
+                </div>
+                <div>
+                    <dt>Operação</dt>
+                    <dd>
+                        {% if alteracao.operacao.value == "CRIAR" %}Criação de registro
+                        {% elif alteracao.operacao.value == "EDITAR" %}Edição de dados
+                        {% else %}Alteração de situação
+                        {% endif %}
+                    </dd>
+                </div>
+                {% if alteracao.usuario_aprovador %}
+                <div>
+                    <dt>{{ "Aprovado" if alteracao.status.value == "APROVADO" else "Rejeitado" }} por</dt>
+                    <dd>{{ alteracao.usuario_aprovador.nome }}</dd>
+                </div>
+                <div>
+                    <dt>Decisão em</dt>
+                    <dd>{{ alteracao.approved_at.strftime("%d/%m/%Y %H:%M") }}</dd>
+                </div>
+                {% endif %}
+            </dl>
+        </div>
+    </div>
+</div>
+
+{% if alteracao.operacao.value == "CRIAR" %}
+<div class="oris-panel mb-4">
+    <h2 class="oris-section-label">Novo registro</h2>
+    {% if dados_propostos %}
+        <dl class="oris-detail-grid mb-0">
+            {% for campo, valor in dados_propostos %}
+            <div>
+                <dt>{{ campo|rotulo_campo }}</dt>
+                <dd>{{ valor if valor else "—" }}</dd>
+            </div>
+            {% endfor %}
+        </dl>
+    {% else %}
+        <p class="text-muted small mb-0">{{ alteracao.descricao }}</p>
+    {% endif %}
+</div>
+{% else %}
+<div class="oris-panel mb-4">
+    <h2 class="oris-section-label">O que muda</h2>
+    {% set partes = alteracao.descricao.split(": ", 1) %}
+    {% if partes|length == 2 %}
+        <ul class="mb-0 ps-3">
+            {% for mudanca in partes[1].split("; ") %}
+                <li>{{ mudanca }}</li>
+            {% endfor %}
+        </ul>
+    {% else %}
+        <p class="mb-0">{{ alteracao.descricao }}</p>
+    {% endif %}
+</div>
+
+{% if dados_propostos %}
+<div class="oris-panel mb-4">
+    <h2 class="oris-section-label">Valores propostos (depois)</h2>
+    <dl class="oris-detail-grid mb-0">
+        {% for campo, valor in dados_propostos %}
+        <div>
+            <dt>{{ campo|rotulo_campo }}</dt>
+            <dd>{{ valor if valor else "—" }}</dd>
+        </div>
+        {% endfor %}
+    </dl>
+</div>
+{% endif %}
+{% endif %}
+
 {% if pode_decidir %}
-<div class="card">
-    <div class="card-body d-flex gap-2">
+<div class="oris-panel">
+    <h2 class="oris-section-label">Ações</h2>
+    <div class="d-flex gap-2">
         <form method="POST" action="{{ url_for('alteracoes.aprovar', alteracao_id=alteracao.id) }}">
             {{ form.hidden_tag() }}
-            <button type="submit" class="btn btn-success">Aprovar</button>
+            <button type="submit" class="btn btn-success">
+                <i class="bi bi-check-lg" aria-hidden="true"></i> Aprovar alteração
+            </button>
         </form>
         <form method="POST" action="{{ url_for('alteracoes.rejeitar', alteracao_id=alteracao.id) }}">
             {{ form.hidden_tag() }}
-            <button type="submit" class="btn btn-danger">Rejeitar</button>
+            <button type="submit" class="btn btn-outline-danger">
+                <i class="bi bi-x-lg" aria-hidden="true"></i> Rejeitar alteração
+            </button>
         </form>
     </div>
 </div>
 {% elif alteracao.status.value == "PENDENTE" %}
-<p class="text-muted small">
+<div class="alert alert-info mb-0">
     Esta alteração está pendente, mas você não pode decidir sobre ela
-    (seja porque seu perfil não aprova alterações, seja porque foi
-    você quem a solicitou).
-</p>
+    — seja porque seu perfil não aprova alterações, seja porque foi
+    você quem a solicitou.
+</div>
 {% endif %}
 {% endblock %}
