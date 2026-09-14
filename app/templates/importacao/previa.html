@@ -2,56 +2,54 @@
 
 {% block title %}Pré-visualização — ORIS{% endblock %}
 
+{% block breadcrumb %}
+    <a href="{{ url_for('dashboard.index') }}">Início</a>
+    <span aria-hidden="true">/</span>
+    <a href="{{ url_for('importacao.index') }}">Importação</a>
+    <span aria-hidden="true">/</span>
+    <span class="oris-breadcrumb-current">Pré-visualização</span>
+{% endblock %}
+
 {% block content %}
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <h1 class="h3 mb-0">Pré-visualização</h1>
-    <a href="{{ url_for('importacao.nova', entidade=entidade) }}" class="btn btn-outline-secondary btn-sm">Cancelar</a>
-</div>
-
-<div class="row row-cols-4 g-3 mb-4">
-    <div class="col">
-        <div class="card text-center">
-            <div class="card-body">
-                <div class="fs-4">{{ resultado.total }}</div>
-                <div class="text-muted small">Total</div>
-            </div>
-        </div>
+<div class="oris-page-header">
+    <div>
+        <h1>Pré-visualização</h1>
+        <p>Estes são os dados que serão enviados — confira antes de confirmar.</p>
     </div>
-    <div class="col">
-        <div class="card text-center border-success">
-            <div class="card-body">
-                <div class="fs-4">{{ contagens.novo }}</div>
-                <div class="text-muted small">Novos</div>
-            </div>
-        </div>
-    </div>
-    <div class="col">
-        <div class="card text-center border-warning">
-            <div class="card-body">
-                <div class="fs-4">{{ contagens.alterado }}</div>
-                <div class="text-muted small">Alterados</div>
-            </div>
-        </div>
-    </div>
-    <div class="col">
-        <div class="card text-center border-secondary">
-            <div class="card-body">
-                <div class="fs-4">{{ contagens.sem_alteracao }}</div>
-                <div class="text-muted small">Sem alteração</div>
-            </div>
-        </div>
+    <div class="oris-page-header-actions">
+        <a href="{{ url_for('importacao.nova', entidade=entidade) }}" class="btn btn-outline-secondary">Cancelar</a>
     </div>
 </div>
 
-<p class="text-muted small">
+<div class="oris-stat-strip">
+    <div class="oris-stat-card">
+        <span class="oris-stat-value">{{ resultado.total }}</span>
+        <span class="oris-stat-label">Total</span>
+    </div>
+    <div class="oris-stat-card">
+        <span class="oris-stat-value">{{ contagens.novo }}</span>
+        <span class="oris-stat-label">Novos</span>
+    </div>
+    <div class="oris-stat-card">
+        <span class="oris-stat-value">{{ contagens.alterado }}</span>
+        <span class="oris-stat-label">Alterados</span>
+    </div>
+    <div class="oris-stat-card">
+        <span class="oris-stat-value">{{ contagens.sem_alteracao }}</span>
+        <span class="oris-stat-label">Sem alteração</span>
+    </div>
+</div>
+
+<div class="alert alert-info">
+    <i class="bi bi-info-circle" aria-hidden="true"></i>
     Mostrando até {{ linhas_previa|length }} de {{ resultado.total }} linha(s).
     Nada foi gravado no banco ainda — ao confirmar, cada linha nova ou
     alterada vira uma solicitação <strong>pendente de aprovação</strong>
     (Fase 7); linhas "sem alteração" não geram nenhuma solicitação.
-</p>
+</div>
 
-<div class="table-responsive mb-4">
-    <table class="table table-sm table-striped align-middle">
+<div class="table-responsive oris-panel p-0 mb-4">
+    <table class="table table-hover align-middle mb-0">
         <thead>
             <tr>
                 <th>Linha</th>
@@ -87,6 +85,8 @@
     {% for campo, coluna in mapeamento.items() %}
         <input type="hidden" name="mapa_{{ campo }}" value="{{ coluna or '' }}">
     {% endfor %}
-    <button type="submit" class="btn btn-primary">Confirmar importação</button>
+    <button type="submit" class="btn btn-primary">
+        <i class="bi bi-check-lg" aria-hidden="true"></i> Confirmar importação
+    </button>
 </form>
 {% endblock %}

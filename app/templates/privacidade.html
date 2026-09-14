@@ -2,97 +2,122 @@
 
 {% block title %}Privacidade — ORIS{% endblock %}
 
+{% block breadcrumb %}
+    <a href="{{ url_for('dashboard.index') }}">Início</a>
+    <span aria-hidden="true">/</span>
+    <span class="oris-breadcrumb-current">Privacidade</span>
+{% endblock %}
+
 {% block content %}
-<h1 class="h3 mb-4">Privacidade e Transparência</h1>
+<div class="oris-page-header">
+    <div>
+        <h1>Privacidade e Transparência</h1>
+        <p>
+            Esta página descreve, de forma resumida, como o ORIS trata dados no
+            âmbito deste projeto. Ela não substitui uma política de privacidade
+            formal a ser publicada pelo órgão responsável pelo sistema.
+        </p>
+    </div>
+</div>
 
-<p class="text-muted">
-    Esta página descreve, de forma resumida, como o ORIS trata dados no
-    âmbito deste projeto. Ela não substitui uma política de privacidade
-    formal a ser publicada pelo órgão responsável pelo sistema.
-</p>
+<div class="oris-panel mb-3">
+    <h2 class="oris-section-label">Finalidade do sistema</h2>
+    <p class="mb-0">
+        O ORIS existe para apoiar a <strong>gestão e governança das
+        informações da Rede de Saúde Bucal</strong>: organizar o cadastro de
+        Unidades, Serviços e Equipamentos, controlar alterações através de um
+        fluxo de solicitação/aprovação, manter uma trilha de auditoria das
+        ações realizadas, e oferecer uma visão consolidada (dashboard) da
+        situação da rede. O sistema não trata prontuários, dados clínicos,
+        diagnósticos ou qualquer informação de pacientes — isso está fora do
+        escopo deste MVP.
+    </p>
+</div>
 
-<h2 class="h5 mt-4">Finalidade do sistema</h2>
-<p>
-    O ORIS existe para apoiar a <strong>gestão e governança das
-    informações da Rede de Saúde Bucal</strong>: organizar o cadastro de
-    Unidades, Serviços e Equipamentos, controlar alterações através de um
-    fluxo de solicitação/aprovação, manter uma trilha de auditoria das
-    ações realizadas, e oferecer uma visão consolidada (dashboard) da
-    situação da rede. O sistema não trata prontuários, dados clínicos,
-    diagnósticos ou qualquer informação de pacientes — isso está fora do
-    escopo deste MVP.
-</p>
+<div class="oris-panel mb-3">
+    <h2 class="oris-section-label">Categorias de dados tratados</h2>
+    <p>O ORIS trabalha, hoje, principalmente com:</p>
+    <ul>
+        <li>Dados administrativos da rede: unidades, serviços e equipamentos de Saúde Bucal;</li>
+        <li>Dados de identificação e acesso dos usuários do sistema: nome, email, perfil e situação (ativo/inativo);</li>
+        <li>Registros de auditoria da atividade desses usuários (quem fez o quê, quando, e em qual registro).</li>
+    </ul>
+    <p class="text-muted small mb-0">
+        Não são coletados dados como CPF, telefone ou endereço residencial dos
+        usuários — apenas o necessário para identificação e controle de
+        acesso ao sistema.
+    </p>
+</div>
 
-<h2 class="h5 mt-4">Categorias de dados tratados</h2>
-<p>O ORIS trabalha, hoje, principalmente com:</p>
-<ul>
-    <li>Dados administrativos da rede: unidades, serviços e equipamentos de Saúde Bucal;</li>
-    <li>Dados de identificação e acesso dos usuários do sistema: nome, email, perfil e situação (ativo/inativo);</li>
-    <li>Registros de auditoria da atividade desses usuários (quem fez o quê, quando, e em qual registro).</li>
-</ul>
-<p class="text-muted small">
-    Não são coletados dados como CPF, telefone ou endereço residencial dos
-    usuários — apenas o necessário para identificação e controle de
-    acesso ao sistema.
-</p>
+<div class="oris-panel mb-3">
+    <h2 class="oris-section-label">Quem possui acesso</h2>
+    <p class="mb-0">
+        O acesso aos dados é controlado por perfil (RBAC): cada usuário só
+        acessa as áreas e ações permitidas ao seu perfil
+        (<code>ADMINISTRADOR</code>, <code>GESTAO_INFORMACAO</code>,
+        <code>RESPONSAVEL_SAUDE_BUCAL</code> ou <code>GESTOR</code>). A
+        administração de contas de usuário é exclusiva do
+        <code>ADMINISTRADOR</code>. A trilha de auditoria só pode ser
+        consultada por <code>ADMINISTRADOR</code> e
+        <code>GESTAO_INFORMACAO</code>.
+    </p>
+</div>
 
-<h2 class="h5 mt-4">Quem possui acesso</h2>
-<p>
-    O acesso aos dados é controlado por perfil (RBAC): cada usuário só
-    acessa as áreas e ações permitidas ao seu perfil
-    (<code>ADMINISTRADOR</code>, <code>GESTAO_INFORMACAO</code>,
-    <code>RESPONSAVEL_SAUDE_BUCAL</code> ou <code>GESTOR</code>). A
-    administração de contas de usuário é exclusiva do
-    <code>ADMINISTRADOR</code>. A trilha de auditoria só pode ser
-    consultada por <code>ADMINISTRADOR</code> e
-    <code>GESTAO_INFORMACAO</code>.
-</p>
+<div class="oris-panel mb-3">
+    <h2 class="oris-section-label">Controles de segurança</h2>
+    <ul class="mb-0">
+        <li>Senhas nunca são armazenadas em texto puro — apenas como hash bcrypt;</li>
+        <li>Controle de acesso por perfil verificado sempre no backend;</li>
+        <li>Alterações críticas (criar/editar/mudar situação de Unidades, Serviços e Equipamentos) passam por um fluxo de aprovação, nunca aplicadas unilateralmente;</li>
+        <li>Toda ação relevante gera um registro de auditoria rastreável, que não pode ser editado nem excluído pela aplicação;</li>
+        <li>Proteção contra CSRF em todos os formulários;</li>
+        <li>Upload de planilhas com validação de formato, tamanho e limpeza de arquivos temporários.</li>
+    </ul>
+</div>
 
-<h2 class="h5 mt-4">Controles de segurança</h2>
-<ul>
-    <li>Senhas nunca são armazenadas em texto puro — apenas como hash bcrypt;</li>
-    <li>Controle de acesso por perfil verificado sempre no backend;</li>
-    <li>Alterações críticas (criar/editar/mudar situação de Unidades, Serviços e Equipamentos) passam por um fluxo de aprovação, nunca aplicadas unilateralmente;</li>
-    <li>Toda ação relevante gera um registro de auditoria rastreável, que não pode ser editado nem excluído pela aplicação;</li>
-    <li>Proteção contra CSRF em todos os formulários;</li>
-    <li>Upload de planilhas com validação de formato, tamanho e limpeza de arquivos temporários.</li>
-</ul>
+<div class="oris-panel mb-3">
+    <h2 class="oris-section-label">Auditoria e rastreabilidade</h2>
+    <p class="mb-0">
+        Login, logout, criação/edição de registros, aprovações, rejeições e
+        a administração de usuários geram registros de auditoria — quem fez,
+        quando, o quê, e (quando aplicável) o valor anterior e o novo valor.
+        Esses registros nunca incluem senhas, hashes ou outras credenciais.
+    </p>
+</div>
 
-<h2 class="h5 mt-4">Auditoria e rastreabilidade</h2>
-<p>
-    Login, logout, criação/edição de registros, aprovações, rejeições e
-    a administração de usuários geram registros de auditoria — quem fez,
-    quando, o quê, e (quando aplicável) o valor anterior e o novo valor.
-    Esses registros nunca incluem senhas, hashes ou outras credenciais.
-</p>
+<div class="oris-panel mb-3">
+    <h2 class="oris-section-label">Retenção de dados</h2>
+    <p>
+        Nesta fase do projeto, o ORIS adota uma política simples e prudente:
+    </p>
+    <ul>
+        <li>Usuários desativados não são excluídos — permanecem no sistema para preservar o histórico e a integridade da auditoria;</li>
+        <li>Registros de auditoria não são apagados pela aplicação;</li>
+        <li>Dados operacionais (unidades, serviços, equipamentos) seguem a necessidade administrativa definida pelo responsável pelo sistema.</li>
+    </ul>
+    <p class="text-muted small mb-0">
+        Prazos específicos de retenção e descarte ainda precisam ser
+        definidos pelo órgão responsável pelo sistema —
+        <strong>[definir pelo órgão responsável]</strong>.
+    </p>
+</div>
 
-<h2 class="h5 mt-4">Retenção de dados</h2>
-<p>
-    Nesta fase do projeto, o ORIS adota uma política simples e prudente:
-</p>
-<ul>
-    <li>Usuários desativados não são excluídos — permanecem no sistema para preservar o histórico e a integridade da auditoria;</li>
-    <li>Registros de auditoria não são apagados pela aplicação;</li>
-    <li>Dados operacionais (unidades, serviços, equipamentos) seguem a necessidade administrativa definida pelo responsável pelo sistema.</li>
-</ul>
-<p class="text-muted small">
-    Prazos específicos de retenção e descarte ainda precisam ser
-    definidos pelo órgão responsável pelo sistema —
-    <strong>[definir pelo órgão responsável]</strong>.
-</p>
+<div class="oris-panel mb-3">
+    <h2 class="oris-section-label">Contato / responsável</h2>
+    <p class="text-muted mb-0">
+        <strong>[definir pelo órgão responsável]</strong> — este projeto
+        acadêmico não define, neste momento, um encarregado de dados (DPO),
+        e-mail institucional ou canal oficial de contato.
+    </p>
+</div>
 
-<h2 class="h5 mt-4">Contato / responsável</h2>
-<p class="text-muted">
-    <strong>[definir pelo órgão responsável]</strong> — este projeto
-    acadêmico não define, neste momento, um encarregado de dados (DPO),
-    e-mail institucional ou canal oficial de contato.
-</p>
-
-<h2 class="h5 mt-4">Ambiente de produção</h2>
-<p class="text-muted small">
-    Em um ambiente de produção real, o acesso ao ORIS deve ocorrer
-    exclusivamente via HTTPS/TLS, com os cookies de sessão marcados
-    como seguros — ver a documentação de segurança do projeto para mais
-    detalhes técnicos.
-</p>
+<div class="oris-panel">
+    <h2 class="oris-section-label">Ambiente de produção</h2>
+    <p class="text-muted small mb-0">
+        Em um ambiente de produção real, o acesso ao ORIS deve ocorrer
+        exclusivamente via HTTPS/TLS, com os cookies de sessão marcados
+        como seguros — ver a documentação de segurança do projeto para mais
+        detalhes técnicos.
+    </p>
+</div>
 {% endblock %}

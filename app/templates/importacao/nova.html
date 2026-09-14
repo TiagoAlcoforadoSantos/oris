@@ -2,49 +2,58 @@
 
 {% block title %}Nova Importação — ORIS{% endblock %}
 
+{% block breadcrumb %}
+    <a href="{{ url_for('dashboard.index') }}">Início</a>
+    <span aria-hidden="true">/</span>
+    <a href="{{ url_for('importacao.index') }}">Importação</a>
+    <span aria-hidden="true">/</span>
+    <span class="oris-breadcrumb-current">Novo upload</span>
+{% endblock %}
+
 {% block content %}
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <h1 class="h3 mb-0">Nova Importação</h1>
-    <a href="{{ url_for('importacao.index') }}" class="btn btn-outline-secondary btn-sm">Voltar</a>
-</div>
+<a href="{{ url_for('importacao.index') }}" class="oris-back-link">
+    <i class="bi bi-arrow-left" aria-hidden="true"></i> Voltar
+</a>
 
-<div class="card">
-    <div class="card-body">
-        <form method="POST" action="{{ url_for('importacao.mapear') }}" enctype="multipart/form-data">
-            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-            <div class="mb-3">
-                <label class="form-label">Entidade</label>
-                <select name="entidade" class="form-select">
-                    {% for opcao in entidades %}
-                        <option value="{{ opcao }}" {% if opcao == entidade %}selected{% endif %}>
-                            {{ opcao|capitalize }}
-                        </option>
-                    {% endfor %}
-                </select>
-            </div>
-
-            <div class="mb-3">
-                <label class="form-label">Arquivo (.csv ou .xlsx)</label>
-                <input type="file" name="arquivo" class="form-control" accept=".csv,.xlsx" required>
-                <div class="form-text">
-                    Formatos aceitos: {{ extensoes_aceitas|join(", ") }}. Tamanho máximo:
-                    {{ limite_tamanho_mb }} MB. Limite de {{ limite_linhas }} linhas por planilha.
-                </div>
-            </div>
-
-            <a href="{{ url_for('importacao.template', entidade=entidade) }}" class="btn btn-outline-secondary btn-sm mb-3">
-                Baixar modelo de planilha
-            </a>
-
-            <div>
-                <button type="submit" class="btn btn-primary">Continuar para o mapeamento</button>
-            </div>
-        </form>
+<div class="oris-page-header">
+    <div>
+        <h1>Nova Importação</h1>
+        <p>Envie uma planilha para começar. Nenhum dado é gravado no banco nesta etapa.</p>
     </div>
 </div>
 
-<p class="text-muted small mt-3">
-    Nenhum dado é gravado no banco nesta etapa — o arquivo só é lido
-    para o próximo passo (mapeamento de colunas).
-</p>
+<div class="oris-panel">
+    <form method="POST" action="{{ url_for('importacao.mapear') }}" enctype="multipart/form-data">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+        <h2 class="oris-section-label">Entidade</h2>
+        <div class="mb-4" style="max-width: 320px;">
+            <select name="entidade" class="form-select">
+                {% for opcao in entidades %}
+                    <option value="{{ opcao }}" {% if opcao == entidade %}selected{% endif %}>
+                        {{ opcao|capitalize }}
+                    </option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <h2 class="oris-section-label">Arquivo</h2>
+        <div class="oris-upload-area mb-2">
+            <i class="bi bi-cloud-arrow-up" aria-hidden="true"></i>
+            <label for="arquivo-input" class="fw-semibold mb-1">Selecione uma planilha (.csv ou .xlsx)</label>
+            <input id="arquivo-input" type="file" name="arquivo" class="form-control" accept=".csv,.xlsx" required>
+        </div>
+        <div class="form-text mb-4">
+            Formatos aceitos: {{ extensoes_aceitas|join(", ") }}. Tamanho máximo:
+            {{ limite_tamanho_mb }} MB. Limite de {{ limite_linhas }} linhas por planilha.
+        </div>
+
+        <div class="d-flex flex-wrap gap-2 align-items-center">
+            <button type="submit" class="btn btn-primary">Continuar para o mapeamento</button>
+            <a href="{{ url_for('importacao.template', entidade=entidade) }}" class="btn btn-outline-secondary">
+                <i class="bi bi-download" aria-hidden="true"></i> Baixar modelo de planilha
+            </a>
+        </div>
+    </form>
+</div>
 {% endblock %}

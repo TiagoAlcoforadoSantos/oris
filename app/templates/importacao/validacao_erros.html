@@ -2,46 +2,50 @@
 
 {% block title %}Validação — ORIS{% endblock %}
 
+{% block breadcrumb %}
+    <a href="{{ url_for('dashboard.index') }}">Início</a>
+    <span aria-hidden="true">/</span>
+    <a href="{{ url_for('importacao.index') }}">Importação</a>
+    <span aria-hidden="true">/</span>
+    <span class="oris-breadcrumb-current">Validação</span>
+{% endblock %}
+
 {% block content %}
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <h1 class="h3 mb-0">Validação da Planilha</h1>
-    <a href="{{ url_for('importacao.nova', entidade=entidade) }}" class="btn btn-outline-secondary btn-sm">Corrigir e enviar novamente</a>
+<div class="oris-page-header">
+    <div>
+        <h1>Validação da Planilha</h1>
+        <p>Corrija os registros com erro e envie a planilha novamente.</p>
+    </div>
+    <div class="oris-page-header-actions">
+        <a href="{{ url_for('importacao.nova', entidade=entidade) }}" class="btn btn-primary">
+            Corrigir e enviar novamente
+        </a>
+    </div>
 </div>
 
-<div class="row row-cols-3 g-3 mb-4">
-    <div class="col">
-        <div class="card text-center">
-            <div class="card-body">
-                <div class="fs-3">{{ resultado.total }}</div>
-                <div class="text-muted small">Total de registros</div>
-            </div>
-        </div>
+<div class="oris-stat-strip">
+    <div class="oris-stat-card">
+        <span class="oris-stat-value">{{ resultado.total }}</span>
+        <span class="oris-stat-label">Total de registros</span>
     </div>
-    <div class="col">
-        <div class="card text-center border-success">
-            <div class="card-body">
-                <div class="fs-3">{{ resultado.validos }}</div>
-                <div class="text-muted small">Válidos</div>
-            </div>
-        </div>
+    <div class="oris-stat-card">
+        <span class="oris-stat-value">{{ resultado.validos }}</span>
+        <span class="oris-stat-label">Válidos</span>
     </div>
-    <div class="col">
-        <div class="card text-center border-danger">
-            <div class="card-body">
-                <div class="fs-3">{{ resultado.invalidos }}</div>
-                <div class="text-muted small">Com erros</div>
-            </div>
-        </div>
+    <div class="oris-stat-card">
+        <span class="oris-stat-value">{{ resultado.invalidos }}</span>
+        <span class="oris-stat-label">Com erros</span>
     </div>
 </div>
 
 <div class="alert alert-danger">
+    <i class="bi bi-exclamation-triangle" aria-hidden="true"></i>
     Existem registros com erro nesta planilha. Corrija o arquivo e envie
     novamente — esta versão não pode ser confirmada.
 </div>
 
-<div class="table-responsive">
-    <table class="table table-sm table-striped align-middle">
+<div class="table-responsive oris-panel p-0">
+    <table class="table table-hover align-middle mb-0">
         <thead>
             <tr>
                 <th>Linha</th>

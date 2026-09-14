@@ -1,43 +1,63 @@
 {% extends "base.html" %}
 
-{% block title %}Administração de Usuários — ORIS{% endblock %}
+{% block title %}Usuários — ORIS{% endblock %}
+
+{% block breadcrumb %}
+    <a href="{{ url_for('dashboard.index') }}">Início</a>
+    <span aria-hidden="true">/</span>
+    <span class="oris-breadcrumb-current">Usuários</span>
+{% endblock %}
 
 {% block content %}
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <h1 class="h3 mb-0">Administração de Usuários</h1>
+<div class="oris-page-header">
     <div>
-        <a href="{{ url_for('main.index') }}" class="btn btn-outline-secondary btn-sm">Início</a>
-        <a href="{{ url_for('usuarios.novo') }}" class="btn btn-primary btn-sm">+ Novo usuário</a>
+        <h1>Usuários</h1>
+        <p>Gerencie os usuários e seus perfis de acesso.</p>
+    </div>
+    <div class="oris-page-header-actions">
+        <a href="{{ url_for('usuarios.novo') }}" class="btn btn-primary">
+            <i class="bi bi-person-plus" aria-hidden="true"></i> Novo usuário
+        </a>
     </div>
 </div>
 
-<form method="GET" class="row g-2 mb-3">
-    <div class="col-auto">
-        <input type="text" name="busca" class="form-control form-control-sm" placeholder="Buscar por nome ou email" value="{{ busca or '' }}">
-    </div>
-    <div class="col-auto">
-        <select name="perfil" class="form-select form-select-sm" onchange="this.form.submit()">
-            <option value="">Todos os perfis</option>
-            {% for perfil in perfis %}
-                <option value="{{ perfil }}" {% if perfil_filtro == perfil %}selected{% endif %}>{{ perfil }}</option>
-            {% endfor %}
-        </select>
-    </div>
-    <div class="col-auto">
-        <select name="situacao" class="form-select form-select-sm" onchange="this.form.submit()">
-            <option value="">Todas as situações</option>
-            <option value="1" {% if situacao_filtro == "1" %}selected{% endif %}>Ativo</option>
-            <option value="0" {% if situacao_filtro == "0" %}selected{% endif %}>Inativo</option>
-        </select>
-    </div>
-    <div class="col-auto">
-        <button type="submit" class="btn btn-outline-secondary btn-sm">Filtrar</button>
-    </div>
-</form>
+<div class="oris-panel mb-3">
+    <form method="GET" class="row g-2 align-items-end">
+        <div class="col-auto">
+            <label class="form-label small text-muted mb-1" for="busca">Buscar</label>
+            <input id="busca" type="text" name="busca" class="form-control form-control-sm" placeholder="Nome ou email" value="{{ busca or '' }}">
+        </div>
+        <div class="col-auto">
+            <label class="form-label small text-muted mb-1" for="filtro-perfil">Perfil</label>
+            <select id="filtro-perfil" name="perfil" class="form-select form-select-sm" onchange="this.form.submit()">
+                <option value="">Todos os perfis</option>
+                {% for perfil in perfis %}
+                    <option value="{{ perfil }}" {% if perfil_filtro == perfil %}selected{% endif %}>{{ perfil }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-auto">
+            <label class="form-label small text-muted mb-1" for="filtro-situacao">Situação</label>
+            <select id="filtro-situacao" name="situacao" class="form-select form-select-sm" onchange="this.form.submit()">
+                <option value="">Todas as situações</option>
+                <option value="1" {% if situacao_filtro == "1" %}selected{% endif %}>Ativo</option>
+                <option value="0" {% if situacao_filtro == "0" %}selected{% endif %}>Inativo</option>
+            </select>
+        </div>
+        <div class="col-auto">
+            <button type="submit" class="btn btn-sm btn-outline-secondary">Filtrar</button>
+        </div>
+        {% if busca or perfil_filtro or situacao_filtro %}
+            <div class="col-auto">
+                <a href="{{ url_for('usuarios.listar') }}" class="btn btn-sm btn-outline-secondary">Limpar filtros</a>
+            </div>
+        {% endif %}
+    </form>
+</div>
 
 {% if usuarios %}
-<div class="table-responsive">
-    <table class="table table-striped align-middle">
+<div class="table-responsive oris-panel p-0">
+    <table class="table table-hover align-middle mb-0">
         <thead>
             <tr>
                 <th>Nome</th>
@@ -45,16 +65,25 @@
                 <th>Perfil</th>
                 <th>Situação</th>
                 <th>Criado em</th>
-                <th>Atualizado em</th>
                 <th class="text-end">Ações</th>
             </tr>
         </thead>
         <tbody>
             {% for usuario in usuarios %}
             <tr>
-                <td>{{ usuario.nome }}</td>
+                <td class="fw-semibold">{{ usuario.nome }}</td>
                 <td>{{ usuario.email }}</td>
-                <td>{{ usuario.perfil.value }}</td>
+                <td>
+                    {% if usuario.perfil.value == "ADMINISTRADOR" %}
+                        <span class="badge bg-dark">Administrador</span>
+                    {% elif usuario.perfil.value == "GESTAO_INFORMACAO" %}
+                        <span class="badge" style="background-color: var(--oris-petroleum);">Gestão da Informação</span>
+                    {% elif usuario.perfil.value == "RESPONSAVEL_SAUDE_BUCAL" %}
+                        <span class="badge" style="background-color: var(--oris-teal); color: var(--oris-navy);">Responsável Saúde Bucal</span>
+                    {% else %}
+                        <span class="badge bg-secondary">Gestor</span>
+                    {% endif %}
+                </td>
                 <td>
                     {% if usuario.ativo %}
                         <span class="badge bg-success">Ativo</span>
@@ -62,18 +91,27 @@
                         <span class="badge bg-secondary">Inativo</span>
                     {% endif %}
                 </td>
-                <td>{{ usuario.created_at.strftime("%d/%m/%Y %H:%M") }}</td>
-                <td>{{ usuario.updated_at.strftime("%d/%m/%Y %H:%M") if usuario.updated_at else "—" }}</td>
-                <td class="text-end">
-                    <a href="{{ url_for('usuarios.editar', usuario_id=usuario.id) }}" class="btn btn-sm btn-outline-primary">Editar</a>
+                <td class="text-nowrap">{{ usuario.created_at.strftime("%d/%m/%Y") }}</td>
+                <td class="text-end text-nowrap">
+                    <a href="{{ url_for('usuarios.editar', usuario_id=usuario.id) }}"
+                       class="btn btn-sm btn-outline-primary"
+                       aria-label="Editar {{ usuario.nome }}" title="Editar">
+                        <i class="bi bi-pencil" aria-hidden="true"></i> Editar
+                    </a>
                     <form method="POST" action="{{ url_for('usuarios.alterar_situacao', usuario_id=usuario.id) }}" class="d-inline">
                         {{ form_acao.hidden_tag() }}
                         {% if usuario.ativo %}
                             <input type="hidden" name="acao" value="desativar">
-                            <button type="submit" class="btn btn-sm btn-outline-danger">Desativar</button>
+                            <button type="submit" class="btn btn-sm btn-outline-danger"
+                                    aria-label="Desativar {{ usuario.nome }}" title="Desativar">
+                                <i class="bi bi-slash-circle" aria-hidden="true"></i> Desativar
+                            </button>
                         {% else %}
                             <input type="hidden" name="acao" value="ativar">
-                            <button type="submit" class="btn btn-sm btn-outline-success">Ativar</button>
+                            <button type="submit" class="btn btn-sm btn-outline-success"
+                                    aria-label="Ativar {{ usuario.nome }}" title="Ativar">
+                                <i class="bi bi-check-circle" aria-hidden="true"></i> Ativar
+                            </button>
                         {% endif %}
                     </form>
                 </td>
@@ -83,10 +121,21 @@
     </table>
 </div>
 {% else %}
-<p class="text-muted">Nenhum usuário encontrado para esses filtros.</p>
+<div class="oris-empty-state">
+    <i class="bi bi-people" aria-hidden="true"></i>
+    <p><strong>Nenhum usuário encontrado.</strong></p>
+    <p class="small">
+        {% if busca or perfil_filtro or situacao_filtro %}
+            Nenhum usuário corresponde a esse filtro — tente ajustar os critérios acima.
+        {% else %}
+            Cadastre o primeiro usuário do sistema.
+        {% endif %}
+    </p>
+</div>
 {% endif %}
 
 <p class="text-muted small mt-3">
+    <i class="bi bi-shield-lock" aria-hidden="true"></i>
     O último ADMINISTRADOR ativo do sistema não pode ser desativado nem
     perder o perfil de administrador — essa proteção é sempre aplicada
     no backend.

@@ -1,6 +1,6 @@
 # ORIS — Plataforma de Governança da Rede de Saúde Bucal
 
-> ⚠️ **Status do projeto:** em desenvolvimento — FASE 13B (Stage 4) concluída (UX/UI da tela de Auditoria).
+> ⚠️ **Status do projeto:** em desenvolvimento — FASE 13B (Stages 5, 6 e 7) concluída (UX/UI de Importação, Usuários, Privacidade e Login).
 > Este README será expandido a cada fase concluída.
 
 ## O que é o ORIS
@@ -297,7 +297,7 @@ Resposta esperada:
 {
   "status": "ok",
   "app": "ORIS",
-  "fase": "13b-stage4 - ux/ui auditoria"
+  "fase": "13b-stage567 - ux/ui importacao usuarios e autenticacao"
 }
 ```
 
@@ -1082,6 +1082,54 @@ ambiente de desenvolvimento) e `auditoria-detalhe-desktop.png`
 (mostrando uma alteração de perfil real, com Antes/Depois), em
 `docs/screenshots/`.
 
+## UX/UI Final — Stages 5, 6 e 7: Importação, Usuários, Privacidade e Login (FASE 13B)
+
+Encerra a aplicação do Design System nas telas de negócio existentes:
+**Stage 5** (as 5 telas do fluxo de importação — início, upload,
+mapeamento, validação e prévia), **Stage 6** (listagem e formulário
+de Administração de Usuários) e **Stage 7** (Login, `/privacidade` e
+a página de erro 403). As três foram feitas em sequência, com um
+checkpoint de testes e validação MySQL real entre cada uma.
+
+**Importação (Stage 5):** cabeçalho de página, área de upload com
+destaque visual (`.oris-upload-area`, um novo utilitário simples do
+Design System), tabela de mapeamento mostrando claramente
+coluna da planilha → campo do ORIS, indicadores de
+total/válidos/com erros na validação, e total/novos/alterados/sem
+alteração na prévia. **O fluxo em si não mudou** — upload → mapeamento
+→ validação → prévia → confirmação → pendente → aprovação → aplicação,
+validado de ponta a ponta com MySQL real.
+
+**Usuários (Stage 6):** mesma hierarquia das demais telas
+administrativas, com um badge de cor própria para cada perfil
+(ADMINISTRADOR, GESTAO_INFORMACAO, RESPONSAVEL_SAUDE_BUCAL, GESTOR).
+RBAC (só ADMINISTRADOR acessa), proteção do último administrador e
+segurança de senha (bcrypt, nunca exibida) — tudo confirmado
+inalterado.
+
+**Privacidade e Login (Stage 7):** a tela de login ganhou uma
+identidade visual mais institucional (um selo circular com o
+gradiente da marca), mantendo exatamente o mesmo formulário e
+comportamento (bcrypt, sessão, rate limiting, CSRF, bloqueio de
+usuário inativo). A página `/privacidade` foi reorganizada em painéis
+temáticos — **todo o conteúdo textual foi preservado palavra por
+palavra**, nada foi adicionado ou reescrito. A tela de erro 403
+(`acesso_negado.html`) ganhou a mesma identidade visual das demais
+páginas internas.
+
+**Componentes reutilizados:** os mesmos de sempre
+(`.oris-page-header`, `.oris-panel`, `.oris-empty-state`,
+`.oris-stat-strip`, `.oris-back-link`) — só dois utilitários novos e
+pequenos: `.oris-upload-area` (Stage 5) e `.oris-login-logo`/
+`.oris-login-row` (Stage 7).
+
+**Screenshots:** `importacao-desktop.png`, `importacao-mobile.png`,
+`importacao-mapeamento-desktop.png`, `importacao-validacao-desktop.png`,
+`importacao-previa-desktop.png`, `usuarios-desktop.png`,
+`usuarios-mobile.png`, `usuario-form-desktop.png`, `login-desktop.png`,
+`login-mobile.png`, `privacidade-desktop.png`,
+`acesso-negado-desktop.png`, em `docs/screenshots/`.
+
 ## Usuário de teste
 
 Não existe usuário fixo/hardcoded no código. Para criar um usuário
@@ -1239,9 +1287,9 @@ de listagem — ver detalhes em `docs/SEGURANCA.md`.
 - [x] FASE 13B — Stage 2B: UX/UI de Serviços e Equipamentos
 - [x] FASE 13B — Stage 3: UX/UI do Módulo de Aprovações
 - [x] FASE 13B — Stage 4: UX/UI da tela de Auditoria
-- [ ] FASE 13B — Próximas etapas: Importação, Usuários, Privacidade,
-      Login
-- [ ] Próximas fases — polimento final
+- [x] FASE 13B — Stages 5, 6, 7: UX/UI de Importação, Usuários,
+      Privacidade e Login
+- [ ] Próximas fases — polimento final e revisão visual geral
 
 ## Dados de demonstração
 

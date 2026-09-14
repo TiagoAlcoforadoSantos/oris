@@ -3,38 +3,43 @@
 {% block title %}Login — ORIS{% endblock %}
 
 {% block content %}
-<div class="row justify-content-center">
+<div class="row justify-content-center oris-login-row">
     <div class="col-md-5">
-        <div class="card shadow-sm">
-            <div class="card-body p-4">
-                <h1 class="h4 mb-1 text-center">ORIS</h1>
-                <p class="text-muted text-center mb-4">
-                    Plataforma de Governança da Rede de Saúde Bucal
-                </p>
-
-                <form method="POST" action="{{ url_for('auth.login') }}" novalidate>
-                    {{ form.hidden_tag() }}
-
-                    <div class="mb-3">
-                        {{ form.email.label(class="form-label") }}
-                        {{ form.email(class="form-control", placeholder="seu.email@exemplo.com", autofocus=true) }}
-                        {% for erro in form.email.errors %}
-                            <div class="text-danger small">{{ erro }}</div>
-                        {% endfor %}
-                    </div>
-
-                    <div class="mb-3">
-                        {{ form.senha.label(class="form-label") }}
-                        {{ form.senha(class="form-control", placeholder="••••••••") }}
-                        {% for erro in form.senha.errors %}
-                            <div class="text-danger small">{{ erro }}</div>
-                        {% endfor %}
-                    </div>
-
-                    {{ form.submit(class="btn btn-primary w-100") }}
-                </form>
-            </div>
+        <div class="text-center mb-4">
+            <span class="oris-login-logo">
+                <i class="bi bi-shield-check" aria-hidden="true"></i>
+            </span>
+            <h1 class="h3 mt-3 mb-1" style="font-family: var(--oris-font-display); color: var(--oris-navy);">ORIS</h1>
+            <p class="text-muted mb-0">Plataforma de Governança da Rede de Saúde Bucal</p>
         </div>
+
+        <div class="oris-panel">
+            <form method="POST" action="{{ url_for('auth.login') }}" novalidate>
+                {{ form.hidden_tag() }}
+
+                <div class="mb-3">
+                    {{ form.email.label(class="form-label") }}
+                    {{ form.email(class="form-control", placeholder="seu.email@exemplo.com", autofocus=true) }}
+                    {% for erro in form.email.errors %}
+                        <div class="text-danger small">{{ erro }}</div>
+                    {% endfor %}
+                </div>
+
+                <div class="mb-3">
+                    {{ form.senha.label(class="form-label") }}
+                    {{ form.senha(class="form-control", placeholder="••••••••") }}
+                    {% for erro in form.senha.errors %}
+                        <div class="text-danger small">{{ erro }}</div>
+                    {% endfor %}
+                </div>
+
+                {{ form.submit(class="btn btn-primary w-100") }}
+            </form>
+        </div>
+
+        <p class="text-center text-muted small mt-3">
+            <i class="bi bi-lock" aria-hidden="true"></i> Conexão protegida — seus dados de acesso nunca são compartilhados.
+        </p>
     </div>
 </div>
 {% endblock %}

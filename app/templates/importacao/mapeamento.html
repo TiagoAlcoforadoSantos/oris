@@ -2,60 +2,86 @@
 
 {% block title %}Mapeamento de Colunas — ORIS{% endblock %}
 
+{% block breadcrumb %}
+    <a href="{{ url_for('dashboard.index') }}">Início</a>
+    <span aria-hidden="true">/</span>
+    <a href="{{ url_for('importacao.index') }}">Importação</a>
+    <span aria-hidden="true">/</span>
+    <span class="oris-breadcrumb-current">Mapeamento</span>
+{% endblock %}
+
 {% block content %}
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <h1 class="h3 mb-0">Mapeamento de Colunas</h1>
-    <a href="{{ url_for('importacao.nova', entidade=entidade) }}" class="btn btn-outline-secondary btn-sm">Cancelar</a>
+<a href="{{ url_for('importacao.nova', entidade=entidade) }}" class="oris-back-link">
+    <i class="bi bi-arrow-left" aria-hidden="true"></i> Cancelar
+</a>
+
+<div class="oris-page-header">
+    <div>
+        <h1>Mapeamento de Colunas</h1>
+        <p>
+            {% if nome_original %}Arquivo: <strong>{{ nome_original }}</strong>. {% endif %}
+            Selecione qual coluna da planilha corresponde a cada campo do ORIS.
+        </p>
+    </div>
 </div>
 
-<p class="text-muted">
-    {% if nome_original %}Arquivo: <strong>{{ nome_original }}</strong>.{% endif %}
-    Selecione qual coluna da planilha corresponde a cada campo do ORIS.
-    Campos marcados com <span class="text-danger">*</span> são obrigatórios.
-</p>
+<div class="oris-panel">
+    <form method="POST" action="{{ url_for('importacao.validar') }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <input type="hidden" name="entidade" value="{{ entidade }}">
+        <input type="hidden" name="token" value="{{ token }}">
+        <input type="hidden" name="extensao" value="{{ extensao }}">
 
-<div class="card">
-    <div class="card-body">
-        <form method="POST" action="{{ url_for('importacao.validar') }}">
-            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-            <input type="hidden" name="entidade" value="{{ entidade }}">
-            <input type="hidden" name="token" value="{{ token }}">
-            <input type="hidden" name="extensao" value="{{ extensao }}">
+        <div class="table-responsive mb-3">
+            <table class="table align-middle mb-0">
+                <thead>
+                    <tr>
+                        <th>Campo do ORIS</th>
+                        <th style="width: 40px;"></th>
+                        <th>Coluna da planilha</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for campo in campos_obrigatorios %}
+                    <tr>
+                        <td>{{ rotulos[campo] }} <span class="text-danger">*</span></td>
+                        <td class="text-muted"><i class="bi bi-arrow-left" aria-hidden="true"></i></td>
+                        <td>
+                            <select name="mapa_{{ campo }}" class="form-select form-select-sm" aria-label="Coluna para {{ rotulos[campo] }}">
+                                <option value="">-- selecione a coluna --</option>
+                                {% for coluna in colunas %}
+                                    <option value="{{ coluna }}" {% if mapeamento_sugerido.get(campo) == coluna %}selected{% endif %}>
+                                        {{ coluna }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                    {% for campo in campos_opcionais %}
+                    <tr>
+                        <td class="text-muted">{{ rotulos[campo] }}</td>
+                        <td class="text-muted"><i class="bi bi-arrow-left" aria-hidden="true"></i></td>
+                        <td>
+                            <select name="mapa_{{ campo }}" class="form-select form-select-sm" aria-label="Coluna para {{ rotulos[campo] }}">
+                                <option value="">-- não mapear --</option>
+                                {% for coluna in colunas %}
+                                    <option value="{{ coluna }}" {% if mapeamento_sugerido.get(campo) == coluna %}selected{% endif %}>
+                                        {{ coluna }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        <p class="text-muted small">
+            <span class="text-danger">*</span> Campos obrigatórios.
+        </p>
 
-            {% for campo in campos_obrigatorios %}
-            <div class="mb-3 row">
-                <label class="col-sm-3 col-form-label">{{ rotulos[campo] }} <span class="text-danger">*</span></label>
-                <div class="col-sm-9">
-                    <select name="mapa_{{ campo }}" class="form-select">
-                        <option value="">-- selecione a coluna --</option>
-                        {% for coluna in colunas %}
-                            <option value="{{ coluna }}" {% if mapeamento_sugerido.get(campo) == coluna %}selected{% endif %}>
-                                {{ coluna }}
-                            </option>
-                        {% endfor %}
-                    </select>
-                </div>
-            </div>
-            {% endfor %}
-
-            {% for campo in campos_opcionais %}
-            <div class="mb-3 row">
-                <label class="col-sm-3 col-form-label">{{ rotulos[campo] }}</label>
-                <div class="col-sm-9">
-                    <select name="mapa_{{ campo }}" class="form-select">
-                        <option value="">-- não mapear --</option>
-                        {% for coluna in colunas %}
-                            <option value="{{ coluna }}" {% if mapeamento_sugerido.get(campo) == coluna %}selected{% endif %}>
-                                {{ coluna }}
-                            </option>
-                        {% endfor %}
-                    </select>
-                </div>
-            </div>
-            {% endfor %}
-
-            <button type="submit" class="btn btn-primary">Validar planilha</button>
-        </form>
-    </div>
+        <button type="submit" class="btn btn-primary">Validar planilha</button>
+    </form>
 </div>
 {% endblock %}

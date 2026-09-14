@@ -337,6 +337,54 @@ footer a:hover {
     grid-column: 1 / -1;
 }
 
+/* ---- Área de upload (Fase 13B, Stage 5) -------------------------------
+ * Um destaque visual simples em volta do <input type="file"> nativo —
+ * não é um componente de drag-and-drop com JavaScript, só uma área
+ * destacada para deixar claro onde o arquivo deve ser selecionado.
+ */
+.oris-upload-area {
+    border: 1.5px dashed var(--oris-border);
+    border-radius: var(--oris-radius-md);
+    background: var(--oris-surface);
+    padding: 1.75rem;
+    text-align: center;
+}
+
+.oris-upload-area i {
+    font-size: 2rem;
+    color: var(--oris-petroleum);
+    display: block;
+    margin-bottom: 0.5rem;
+}
+
+.oris-upload-area input[type="file"] {
+    max-width: 420px;
+    margin: 0.5rem auto 0;
+}
+
+/* ---- Login (Fase 13B, Stage 7) ----------------------------------------
+ * Só usados na tela de login, que renderiza fora da sidebar (usuário
+ * ainda não autenticado) — um toque de identidade visual na entrada
+ * do sistema, sem exagerar.
+ */
+.oris-login-row {
+    min-height: 70vh;
+    align-items: center;
+}
+
+.oris-login-logo {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--oris-navy), var(--oris-petroleum));
+    background-color: var(--oris-navy);
+    color: var(--oris-white);
+    font-size: 1.6rem;
+}
+
 @media (max-width: 575.98px) {
     .oris-detail-grid {
         grid-template-columns: 1fr;

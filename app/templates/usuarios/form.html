@@ -2,91 +2,106 @@
 
 {% block title %}{{ titulo }} — ORIS{% endblock %}
 
+{% block breadcrumb %}
+    <a href="{{ url_for('dashboard.index') }}">Início</a>
+    <span aria-hidden="true">/</span>
+    <a href="{{ url_for('usuarios.listar') }}">Usuários</a>
+    <span aria-hidden="true">/</span>
+    <span class="oris-breadcrumb-current">{{ "Editar" if usuario else "Novo usuário" }}</span>
+{% endblock %}
+
 {% block content %}
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <h1 class="h3 mb-0">{{ titulo }}</h1>
-    <a href="{{ url_for('usuarios.listar') }}" class="btn btn-outline-secondary btn-sm">Voltar para a lista</a>
+<a href="{{ url_for('usuarios.listar') }}" class="oris-back-link">
+    <i class="bi bi-arrow-left" aria-hidden="true"></i> Voltar para a lista
+</a>
+
+<div class="oris-page-header">
+    <div>
+        <h1>{{ titulo }}</h1>
+        <p>
+            {% if usuario %}
+                Atualize os dados deste usuário.
+            {% else %}
+                Cadastre um novo usuário e defina seu perfil de acesso.
+            {% endif %}
+        </p>
+    </div>
 </div>
 
-<div class="card mb-4">
-    <div class="card-body">
-        <form method="POST" novalidate>
-            {{ form.hidden_tag() }}
+<div class="oris-panel mb-4">
+    <form method="POST" novalidate>
+        {{ form.hidden_tag() }}
 
-            <div class="row g-3">
-                <div class="col-md-6">
-                    {{ form.nome.label(class="form-label") }}
-                    {{ form.nome(class="form-control") }}
-                    {% for erro in form.nome.errors %}
-                        <div class="text-danger small">{{ erro }}</div>
-                    {% endfor %}
-                </div>
-
-                <div class="col-md-6">
-                    {{ form.email.label(class="form-label") }}
-                    {{ form.email(class="form-control") }}
-                    {% for erro in form.email.errors %}
-                        <div class="text-danger small">{{ erro }}</div>
-                    {% endfor %}
-                </div>
-
-                {% if form.senha %}
-                <div class="col-md-6">
-                    {{ form.senha.label(class="form-label") }}
-                    {{ form.senha(class="form-control") }}
-                    {% for erro in form.senha.errors %}
-                        <div class="text-danger small">{{ erro }}</div>
-                    {% endfor %}
-                    <div class="form-text">Mínimo de 8 caracteres.</div>
-                </div>
-                {% endif %}
-
-                <div class="col-md-{% if form.senha %}3{% else %}6{% endif %}">
-                    {{ form.perfil.label(class="form-label") }}
-                    {{ form.perfil(class="form-select") }}
-                    {% for erro in form.perfil.errors %}
-                        <div class="text-danger small">{{ erro }}</div>
-                    {% endfor %}
-                </div>
-
-                {% if form.ativo %}
-                <div class="col-md-3">
-                    {{ form.ativo.label(class="form-label") }}
-                    {{ form.ativo(class="form-select") }}
-                </div>
-                {% endif %}
+        <h2 class="oris-section-label">Dados do usuário</h2>
+        <div class="row g-3 mb-4">
+            <div class="col-md-6">
+                {{ form.nome.label(class="form-label") }}
+                {{ form.nome(class="form-control") }}
+                {% for erro in form.nome.errors %}
+                    <div class="text-danger small">{{ erro }}</div>
+                {% endfor %}
             </div>
 
-            <div class="mt-4">
-                {{ form.submit(class="btn btn-primary") }}
+            <div class="col-md-6">
+                {{ form.email.label(class="form-label") }}
+                {{ form.email(class="form-control") }}
+                {% for erro in form.email.errors %}
+                    <div class="text-danger small">{{ erro }}</div>
+                {% endfor %}
             </div>
-        </form>
-    </div>
+
+            {% if form.senha %}
+            <div class="col-md-6">
+                {{ form.senha.label(class="form-label") }}
+                {{ form.senha(class="form-control") }}
+                {% for erro in form.senha.errors %}
+                    <div class="text-danger small">{{ erro }}</div>
+                {% endfor %}
+                <div class="form-text">Mínimo de 8 caracteres.</div>
+            </div>
+            {% endif %}
+
+            <div class="col-md-{% if form.senha %}3{% else %}6{% endif %}">
+                {{ form.perfil.label(class="form-label") }}
+                {{ form.perfil(class="form-select") }}
+                {% for erro in form.perfil.errors %}
+                    <div class="text-danger small">{{ erro }}</div>
+                {% endfor %}
+            </div>
+
+            {% if form.ativo %}
+            <div class="col-md-3">
+                {{ form.ativo.label(class="form-label") }}
+                {{ form.ativo(class="form-select") }}
+            </div>
+            {% endif %}
+        </div>
+
+        {{ form.submit(class="btn btn-primary") }}
+    </form>
 </div>
 
 {% if usuario and form_senha %}
-<div class="card">
-    <div class="card-body">
-        <h2 class="h6">Redefinir senha</h2>
-        <p class="text-muted small">
-            Define uma nova senha para este usuário. A senha atual nunca é
-            exibida nem pode ser recuperada — apenas substituída.
-        </p>
-        <form method="POST" action="{{ url_for('usuarios.redefinir_senha', usuario_id=usuario.id) }}" class="row g-3">
-            {{ form_senha.hidden_tag() }}
-            <div class="col-md-4">
-                {{ form_senha.nova_senha.label(class="form-label") }}
-                {{ form_senha.nova_senha(class="form-control") }}
-            </div>
-            <div class="col-md-4">
-                {{ form_senha.confirmar_senha.label(class="form-label") }}
-                {{ form_senha.confirmar_senha(class="form-control") }}
-            </div>
-            <div class="col-md-4 d-flex align-items-end">
-                {{ form_senha.submit(class="btn btn-outline-primary") }}
-            </div>
-        </form>
-    </div>
+<div class="oris-panel">
+    <h2 class="oris-section-label">Redefinir senha</h2>
+    <p class="text-muted small">
+        Define uma nova senha para este usuário. A senha atual nunca é
+        exibida nem pode ser recuperada — apenas substituída.
+    </p>
+    <form method="POST" action="{{ url_for('usuarios.redefinir_senha', usuario_id=usuario.id) }}" class="row g-3">
+        {{ form_senha.hidden_tag() }}
+        <div class="col-md-4">
+            {{ form_senha.nova_senha.label(class="form-label") }}
+            {{ form_senha.nova_senha(class="form-control") }}
+        </div>
+        <div class="col-md-4">
+            {{ form_senha.confirmar_senha.label(class="form-label") }}
+            {{ form_senha.confirmar_senha(class="form-control") }}
+        </div>
+        <div class="col-md-4 d-flex align-items-end">
+            {{ form_senha.submit(class="btn btn-outline-primary") }}
+        </div>
+    </form>
 </div>
 {% endif %}
 {% endblock %}
