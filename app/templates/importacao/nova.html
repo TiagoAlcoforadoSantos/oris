@@ -10,6 +10,10 @@
     <span class="oris-breadcrumb-current">Novo upload</span>
 {% endblock %}
 
+{% block extra_css %}
+<link href="{{ url_for('static', filename='css/importacao-premium.css') }}" rel="stylesheet">
+{% endblock %}
+
 {% block content %}
 <a href="{{ url_for('importacao.index') }}" class="oris-back-link">
     <i class="bi bi-arrow-left" aria-hidden="true"></i> Voltar
@@ -22,7 +26,7 @@
     </div>
 </div>
 
-<div class="oris-panel">
+<div class="oris-import-panel">
     <form method="POST" action="{{ url_for('importacao.mapear') }}" enctype="multipart/form-data">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 
@@ -38,9 +42,9 @@
         </div>
 
         <h2 class="oris-section-label">Arquivo</h2>
-        <div class="oris-upload-area mb-2">
-            <i class="bi bi-cloud-arrow-up" aria-hidden="true"></i>
-            <label for="arquivo-input" class="fw-semibold mb-1">Selecione uma planilha (.csv ou .xlsx)</label>
+        <div class="oris-import-upload mb-2">
+            <div class="oris-import-upload-icon"><i class="bi bi-cloud-arrow-up" aria-hidden="true"></i></div>
+            <label for="arquivo-input" class="fw-semibold mb-1 d-block">Selecione uma planilha (.csv ou .xlsx)</label>
             <input id="arquivo-input" type="file" name="arquivo" class="form-control" accept=".csv,.xlsx" required>
         </div>
         <div class="form-text mb-4">

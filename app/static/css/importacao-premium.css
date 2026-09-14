@@ -1,0 +1,307 @@
+/*
+ * ORIS — Importação "Premium" (redesign visual, pós-13B)
+ * ---------------------------------------------------------------
+ * Camada de estilo EXCLUSIVA das 5 telas de Importação
+ * (index/nova/mapeamento/validacao_erros/previa), carregada só
+ * nelas via {% block extra_css %} — não afeta nenhuma outra tela
+ * do sistema. Construída inteiramente sobre os tokens já existentes
+ * em tokens.css (nenhuma cor nova foi inventada) e sobre os
+ * componentes do Design System (.oris-panel, .oris-stat-strip etc.),
+ * que continuam funcionando normalmente nas demais telas.
+ *
+ * Direção: Health-Tech / Gov-Tech premium — glassmorphism sutil,
+ * gradiente navy → petróleo → turquesa, profundidade e microinterações
+ * discretas. Sem neon, sem glow exagerado, sem efeitos 3D.
+ *
+ * Todas as classes aqui usam o prefixo "oris-import-" para nunca
+ * colidir com o Design System global.
+ */
+
+/* ---- Hero da página inicial (index.html) -------------------------- */
+
+.oris-import-hero {
+    position: relative;
+    overflow: hidden;
+    border-radius: var(--oris-radius-lg);
+    padding: 2.25rem 2.5rem;
+    margin-bottom: 1.75rem;
+    background: linear-gradient(135deg, var(--oris-navy) 0%, var(--oris-petroleum) 55%, var(--oris-teal) 100%);
+    background-color: var(--oris-navy); /* fallback sólido sem suporte a gradiente */
+    color: var(--oris-text-on-dark);
+    box-shadow: var(--oris-shadow-md);
+}
+
+/* Camada de "vidro" bem sutil por cima do gradiente — glassmorphism
+   discreto, não um efeito chamativo. */
+.oris-import-hero::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(circle at 85% 20%, rgba(255, 255, 255, 0.14), transparent 55%);
+    pointer-events: none;
+}
+
+.oris-import-hero-content {
+    position: relative;
+    z-index: 1;
+    max-width: 640px;
+}
+
+.oris-import-hero h1 {
+    color: var(--oris-white);
+    margin-bottom: 0.4rem;
+}
+
+.oris-import-hero p {
+    color: rgba(247, 250, 250, 0.88);
+    margin-bottom: 0;
+    font-size: var(--oris-fs-sm);
+}
+
+.oris-import-hero .badge {
+    background: rgba(255, 255, 255, 0.16);
+    border: 1px solid rgba(255, 255, 255, 0.28);
+    color: var(--oris-white);
+    font-weight: 500;
+}
+
+/* Ícone decorativo discreto (conectividade / saúde) no canto do hero —
+   um SVG simples embutido no template, estilizado aqui. */
+.oris-import-hero-icon {
+    position: absolute;
+    right: 1.75rem;
+    top: 50%;
+    transform: translateY(-50%);
+    opacity: 0.9;
+    z-index: 1;
+}
+
+@media (max-width: 767.98px) {
+    .oris-import-hero-icon {
+        display: none;
+    }
+}
+
+/* ---- Cards de entidade (glassmorphism) ------------------------------ */
+
+.oris-import-card {
+    position: relative;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    padding: 1.5rem;
+    border-radius: var(--oris-radius-lg);
+    background: rgba(255, 255, 255, 0.72);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    border: 1px solid rgba(255, 255, 255, 0.6);
+    box-shadow: var(--oris-shadow-sm);
+    overflow: hidden;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.oris-import-card::before {
+    content: "";
+    position: absolute;
+    inset: 0 0 auto 0;
+    height: 4px;
+    background: linear-gradient(90deg, var(--oris-navy), var(--oris-petroleum), var(--oris-teal));
+}
+
+.oris-import-card:hover {
+    transform: translateY(-3px);
+    box-shadow: var(--oris-shadow-md);
+}
+
+.oris-import-card-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 46px;
+    height: 46px;
+    border-radius: var(--oris-radius-md);
+    background: linear-gradient(135deg, var(--oris-surface), var(--oris-white));
+    color: var(--oris-petroleum);
+    font-size: 1.4rem;
+    margin-bottom: 0.85rem;
+}
+
+.oris-import-card h2 {
+    font-size: var(--oris-fs-lg);
+    margin-bottom: 0.35rem;
+}
+
+.oris-import-card p {
+    flex-grow: 1;
+}
+
+/* ---- Área de upload (glass + gradiente na borda) -------------------- */
+
+.oris-import-upload {
+    position: relative;
+    text-align: center;
+    padding: 2.5rem 1.75rem;
+    border-radius: var(--oris-radius-lg);
+    background: linear-gradient(180deg, var(--oris-surface) 0%, var(--oris-white) 100%);
+    border: 1.5px dashed var(--oris-petroleum);
+    transition: border-color 0.2s ease, background-color 0.2s ease;
+}
+
+.oris-import-upload:focus-within,
+.oris-import-upload:hover {
+    border-color: var(--oris-teal);
+    background: linear-gradient(180deg, #ffffff 0%, var(--oris-surface) 100%);
+}
+
+.oris-import-upload-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--oris-navy), var(--oris-petroleum));
+    color: var(--oris-white);
+    font-size: 1.75rem;
+    margin: 0 auto 1rem;
+}
+
+.oris-import-upload input[type="file"] {
+    max-width: 420px;
+    margin: 0.75rem auto 0;
+}
+
+/* ---- Painéis em "vidro" (mapeamento / prévia / validação) ------------ */
+
+.oris-import-panel {
+    border-radius: var(--oris-radius-lg);
+    background: rgba(255, 255, 255, 0.78);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.6);
+    box-shadow: var(--oris-shadow-sm);
+    padding: 1.5rem 1.65rem;
+}
+
+/* ---- Indicadores (stat strip) com toque premium ---------------------- */
+
+.oris-import-stat-strip {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.oris-import-stat-card {
+    position: relative;
+    padding: 1.1rem 1.25rem;
+    border-radius: var(--oris-radius-md);
+    background: rgba(255, 255, 255, 0.75);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    border: 1px solid var(--oris-border);
+    overflow: hidden;
+}
+
+.oris-import-stat-card::after {
+    content: "";
+    position: absolute;
+    inset: auto 0 0 0;
+    height: 3px;
+    background: linear-gradient(90deg, var(--oris-navy), var(--oris-teal));
+    opacity: 0.85;
+}
+
+.oris-import-stat-card--success::after { background: var(--oris-success); }
+.oris-import-stat-card--danger::after { background: var(--oris-danger); }
+
+.oris-import-stat-value {
+    display: block;
+    font-family: var(--oris-font-display);
+    font-size: var(--oris-fs-2xl);
+    font-weight: 700;
+    color: var(--oris-navy);
+    line-height: 1.15;
+}
+
+.oris-import-stat-label {
+    display: block;
+    font-size: var(--oris-fs-xs);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--oris-text-muted);
+    font-weight: 600;
+}
+
+/* ---- Mapeamento: chip de conexão coluna -> campo ---------------------- */
+
+.oris-import-map-row {
+    display: flex;
+    align-items: center;
+    gap: 0.9rem;
+    padding: 0.65rem 0;
+    border-bottom: 1px solid var(--oris-border);
+    flex-wrap: wrap;
+}
+
+.oris-import-map-row:last-child {
+    border-bottom: none;
+}
+
+.oris-import-map-field {
+    min-width: 190px;
+    font-weight: 600;
+    color: var(--oris-navy);
+    font-size: var(--oris-fs-sm);
+}
+
+.oris-import-map-field .text-muted {
+    font-weight: 500;
+}
+
+.oris-import-map-arrow {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--oris-surface), var(--oris-white));
+    color: var(--oris-petroleum);
+    font-size: 0.9rem;
+    flex-shrink: 0;
+}
+
+.oris-import-map-select {
+    flex: 1 1 240px;
+    min-width: 200px;
+}
+
+/* ---- Classificação (prévia) com leve gradiente por status ------------- */
+
+.oris-import-badge-novo {
+    background: linear-gradient(120deg, var(--oris-success), #2f9e63);
+    color: var(--oris-white);
+}
+
+.oris-import-badge-alterado {
+    background: linear-gradient(120deg, var(--oris-warning), #d99126);
+    color: var(--oris-text);
+}
+
+.oris-import-badge-sem-alteracao {
+    background: var(--oris-text-muted);
+    color: var(--oris-white);
+}
+
+/* ---- Responsividade -------------------------------------------------- */
+
+@media (max-width: 575.98px) {
+    .oris-import-hero {
+        padding: 1.5rem;
+    }
+
+    .oris-import-upload {
+        padding: 1.75rem 1.1rem;
+    }
+}

@@ -10,6 +10,10 @@
     <span class="oris-breadcrumb-current">Validação</span>
 {% endblock %}
 
+{% block extra_css %}
+<link href="{{ url_for('static', filename='css/importacao-premium.css') }}" rel="stylesheet">
+{% endblock %}
+
 {% block content %}
 <div class="oris-page-header">
     <div>
@@ -23,18 +27,18 @@
     </div>
 </div>
 
-<div class="oris-stat-strip">
-    <div class="oris-stat-card">
-        <span class="oris-stat-value">{{ resultado.total }}</span>
-        <span class="oris-stat-label">Total de registros</span>
+<div class="oris-import-stat-strip">
+    <div class="oris-import-stat-card">
+        <span class="oris-import-stat-value">{{ resultado.total }}</span>
+        <span class="oris-import-stat-label">Total de registros</span>
     </div>
-    <div class="oris-stat-card">
-        <span class="oris-stat-value">{{ resultado.validos }}</span>
-        <span class="oris-stat-label">Válidos</span>
+    <div class="oris-import-stat-card oris-import-stat-card--success">
+        <span class="oris-import-stat-value">{{ resultado.validos }}</span>
+        <span class="oris-import-stat-label">Válidos</span>
     </div>
-    <div class="oris-stat-card">
-        <span class="oris-stat-value">{{ resultado.invalidos }}</span>
-        <span class="oris-stat-label">Com erros</span>
+    <div class="oris-import-stat-card oris-import-stat-card--danger">
+        <span class="oris-import-stat-value">{{ resultado.invalidos }}</span>
+        <span class="oris-import-stat-label">Com erros</span>
     </div>
 </div>
 
@@ -44,7 +48,7 @@
     novamente — esta versão não pode ser confirmada.
 </div>
 
-<div class="table-responsive oris-panel p-0">
+<div class="table-responsive oris-import-panel p-0">
     <table class="table table-hover align-middle mb-0">
         <thead>
             <tr>

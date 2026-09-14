@@ -8,29 +8,44 @@
     <span class="oris-breadcrumb-current">Importação</span>
 {% endblock %}
 
-{% block content %}
-<div class="oris-page-header">
-    <div>
-        <h1>Importação de Dados</h1>
-        <p>Importe dados da rede utilizando uma planilha.</p>
-    </div>
-</div>
+{% block extra_css %}
+<link href="{{ url_for('static', filename='css/importacao-premium.css') }}" rel="stylesheet">
+{% endblock %}
 
-<p class="text-muted">
-    Formatos aceitos: <strong>.xlsx</strong> e <strong>.csv</strong>
-    (até {{ limite_tamanho_mb }} MB, {{ limite_linhas }} linhas). Nenhum
-    dado é gravado diretamente — cada linha nova ou alterada vira uma
-    solicitação de alteração <strong>pendente de aprovação</strong>,
-    exatamente como um cadastro manual (Fase 7).
-</p>
+{% block content %}
+<section class="oris-import-hero">
+    <div class="oris-import-hero-content">
+        <span class="badge mb-2"><i class="bi bi-shield-check" aria-hidden="true"></i> Fluxo com aprovação (Fase 7)</span>
+        <h1>Importação de Dados</h1>
+        <p>
+            Importe dados da rede utilizando uma planilha. Formatos aceitos:
+            <strong>.xlsx</strong> e <strong>.csv</strong> (até
+            {{ limite_tamanho_mb }} MB, {{ limite_linhas }} linhas). Nenhum
+            dado é gravado diretamente — cada linha nova ou alterada vira uma
+            solicitação de alteração pendente de aprovação, exatamente como
+            um cadastro manual.
+        </p>
+    </div>
+    <div class="oris-import-hero-icon" aria-hidden="true">
+        <svg width="120" height="110" viewBox="0 0 120 110" xmlns="http://www.w3.org/2000/svg" fill="none">
+            <circle cx="20" cy="80" r="4.5" fill="#39C6D3" />
+            <circle cx="60" cy="30" r="5.5" fill="#18B7B0" />
+            <circle cx="100" cy="70" r="4.5" fill="#39C6D3" />
+            <circle cx="85" cy="20" r="3.5" fill="#DDF4F5" />
+            <circle cx="40" cy="55" r="3.5" fill="#DDF4F5" />
+            <path d="M20 80 L60 30 L100 70 L85 20 M60 30 L40 55"
+                  stroke="#39C6D3" stroke-opacity="0.6" stroke-width="1.4" />
+        </svg>
+    </div>
+</section>
 
 {% if pode_importar %}
 <div class="row row-cols-1 row-cols-md-3 g-3 mb-4">
     <div class="col">
-        <div class="oris-panel h-100 d-flex flex-column">
-            <i class="bi bi-hospital fs-2 mb-2" style="color: var(--oris-petroleum);" aria-hidden="true"></i>
-            <h2 class="h5">Unidades</h2>
-            <p class="text-muted small flex-grow-1">Nome, CNES, tipo, endereço, cidade, UF, situação.</p>
+        <div class="oris-import-card">
+            <div class="oris-import-card-icon"><i class="bi bi-hospital" aria-hidden="true"></i></div>
+            <h2>Unidades</h2>
+            <p class="text-muted small">Nome, CNES, tipo, endereço, cidade, UF, situação.</p>
             <div class="d-flex gap-2">
                 <a href="{{ url_for('importacao.nova', entidade='unidades') }}" class="btn btn-primary btn-sm">Importar</a>
                 <a href="{{ url_for('importacao.template', entidade='unidades') }}" class="btn btn-outline-secondary btn-sm">
@@ -40,10 +55,10 @@
         </div>
     </div>
     <div class="col">
-        <div class="oris-panel h-100 d-flex flex-column">
-            <i class="bi bi-clipboard2-pulse fs-2 mb-2" style="color: var(--oris-petroleum);" aria-hidden="true"></i>
-            <h2 class="h5">Serviços</h2>
-            <p class="text-muted small flex-grow-1">Nome, CNES da unidade, situação.</p>
+        <div class="oris-import-card">
+            <div class="oris-import-card-icon"><i class="bi bi-clipboard2-pulse" aria-hidden="true"></i></div>
+            <h2>Serviços</h2>
+            <p class="text-muted small">Nome, CNES da unidade, situação.</p>
             <div class="d-flex gap-2">
                 <a href="{{ url_for('importacao.nova', entidade='servicos') }}" class="btn btn-primary btn-sm">Importar</a>
                 <a href="{{ url_for('importacao.template', entidade='servicos') }}" class="btn btn-outline-secondary btn-sm">
@@ -53,10 +68,10 @@
         </div>
     </div>
     <div class="col">
-        <div class="oris-panel h-100 d-flex flex-column">
-            <i class="bi bi-tools fs-2 mb-2" style="color: var(--oris-petroleum);" aria-hidden="true"></i>
-            <h2 class="h5">Equipamentos</h2>
-            <p class="text-muted small flex-grow-1">Nome, tipo, CNES da unidade, serviço (opcional), situação.</p>
+        <div class="oris-import-card">
+            <div class="oris-import-card-icon"><i class="bi bi-tools" aria-hidden="true"></i></div>
+            <h2>Equipamentos</h2>
+            <p class="text-muted small">Nome, tipo, CNES da unidade, serviço (opcional), situação.</p>
             <div class="d-flex gap-2">
                 <a href="{{ url_for('importacao.nova', entidade='equipamentos') }}" class="btn btn-primary btn-sm">Importar</a>
                 <a href="{{ url_for('importacao.template', entidade='equipamentos') }}" class="btn btn-outline-secondary btn-sm">

@@ -10,6 +10,10 @@
     <span class="oris-breadcrumb-current">Pré-visualização</span>
 {% endblock %}
 
+{% block extra_css %}
+<link href="{{ url_for('static', filename='css/importacao-premium.css') }}" rel="stylesheet">
+{% endblock %}
+
 {% block content %}
 <div class="oris-page-header">
     <div>
@@ -21,22 +25,22 @@
     </div>
 </div>
 
-<div class="oris-stat-strip">
-    <div class="oris-stat-card">
-        <span class="oris-stat-value">{{ resultado.total }}</span>
-        <span class="oris-stat-label">Total</span>
+<div class="oris-import-stat-strip">
+    <div class="oris-import-stat-card">
+        <span class="oris-import-stat-value">{{ resultado.total }}</span>
+        <span class="oris-import-stat-label">Total</span>
     </div>
-    <div class="oris-stat-card">
-        <span class="oris-stat-value">{{ contagens.novo }}</span>
-        <span class="oris-stat-label">Novos</span>
+    <div class="oris-import-stat-card oris-import-stat-card--success">
+        <span class="oris-import-stat-value">{{ contagens.novo }}</span>
+        <span class="oris-import-stat-label">Novos</span>
     </div>
-    <div class="oris-stat-card">
-        <span class="oris-stat-value">{{ contagens.alterado }}</span>
-        <span class="oris-stat-label">Alterados</span>
+    <div class="oris-import-stat-card">
+        <span class="oris-import-stat-value">{{ contagens.alterado }}</span>
+        <span class="oris-import-stat-label">Alterados</span>
     </div>
-    <div class="oris-stat-card">
-        <span class="oris-stat-value">{{ contagens.sem_alteracao }}</span>
-        <span class="oris-stat-label">Sem alteração</span>
+    <div class="oris-import-stat-card">
+        <span class="oris-import-stat-value">{{ contagens.sem_alteracao }}</span>
+        <span class="oris-import-stat-label">Sem alteração</span>
     </div>
 </div>
 
@@ -48,7 +52,7 @@
     (Fase 7); linhas "sem alteração" não geram nenhuma solicitação.
 </div>
 
-<div class="table-responsive oris-panel p-0 mb-4">
+<div class="table-responsive oris-import-panel p-0 mb-4">
     <table class="table table-hover align-middle mb-0">
         <thead>
             <tr>
@@ -64,11 +68,11 @@
                 {% for campo in campos_todos %}<td>{{ linha.dados.get(campo) or "—" }}</td>{% endfor %}
                 <td>
                     {% if linha.classificacao == "novo" %}
-                        <span class="badge bg-success">Novo</span>
+                        <span class="badge oris-import-badge-novo">Novo</span>
                     {% elif linha.classificacao == "alterado" %}
-                        <span class="badge bg-warning text-dark">Alterado</span>
+                        <span class="badge oris-import-badge-alterado">Alterado</span>
                     {% else %}
-                        <span class="badge bg-secondary">Sem alteração</span>
+                        <span class="badge oris-import-badge-sem-alteracao">Sem alteração</span>
                     {% endif %}
                 </td>
             </tr>

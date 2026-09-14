@@ -1,6 +1,6 @@
 # ORIS — Plataforma de Governança da Rede de Saúde Bucal
 
-> ⚠️ **Status do projeto:** em desenvolvimento — FASE 13B (Stages 5, 6 e 7) concluída (UX/UI de Importação, Usuários, Privacidade e Login).
+> ⚠️ **Status do projeto:** em desenvolvimento — Redesign Premium da Importação concluído (glassmorphism + gradiente navy→petróleo→turquesa).
 > Este README será expandido a cada fase concluída.
 
 ## O que é o ORIS
@@ -1129,6 +1129,44 @@ pequenos: `.oris-upload-area` (Stage 5) e `.oris-login-logo`/
 `usuarios-mobile.png`, `usuario-form-desktop.png`, `login-desktop.png`,
 `login-mobile.png`, `privacidade-desktop.png`,
 `acesso-negado-desktop.png`, em `docs/screenshots/`.
+
+## Redesign Premium da Importação
+
+Uma segunda passada visual, só sobre as 5 telas de Importação
+(`index`, `nova`, `mapeamento`, `validacao_erros`, `previa`),
+elevando o acabamento visual para um padrão "Health-Tech/Gov-Tech
+premium" — glassmorphism sutil, gradiente navy → petróleo → turquesa,
+profundidade e microinterações discretas, sem neon, sem glow
+exagerado e sem excesso de efeitos 3D.
+
+**O que mudou:** um novo arquivo,
+`app/static/css/importacao-premium.css`, carregado **somente** nessas
+5 telas (via `{% block extra_css %}`) — nenhuma outra tela do sistema
+é afetada. Construído inteiramente sobre os tokens já existentes em
+`tokens.css` (nenhuma cor nova foi inventada): hero com gradiente
+navy→petróleo→turquesa e um elemento gráfico discreto de
+conectividade; cards de entidade em vidro fosco
+(`backdrop-filter: blur`) com uma fina borda gradiente no topo e
+elevação sutil ao passar o mouse; área de upload com borda tracejada
+e ícone circular em gradiente; linhas de mapeamento como "chips"
+fluidos em vez de uma tabela rígida; indicadores com uma barra de cor
+semântica sutil.
+
+**O que NÃO mudou:** nenhuma rota, nenhuma variável de template,
+nenhum `name` de campo de formulário, nenhuma regra de negócio,
+validação, RBAC, CSRF, auditoria ou fluxo de aprovação — só a camada
+visual, confirmado pelos 32 testes de importação existentes passando
+sem nenhuma alteração.
+
+**Achado corrigido durante a validação visual:** o ícone circular da
+área de upload usava `display: inline-flex` com `margin: 0 auto`, que
+não centraliza de forma confiável (a técnica de `margin: auto` exige
+um elemento de nível de bloco) — corrigido para `display: flex`.
+
+**Screenshots:** `importacao-index-premium.png`,
+`importacao-nova-premium.png`, `importacao-mapeamento-premium.png`,
+`importacao-validacao-premium.png`, `importacao-previa-premium.png`,
+em `docs/screenshots/`.
 
 ## Usuário de teste
 
