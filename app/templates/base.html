@@ -33,7 +33,7 @@
         <aside class="oris-sidebar" aria-label="Navegação principal">
             <div class="oris-sidebar-brand">
                 <a href="{{ url_for('main.index') }}" class="oris-sidebar-brand-link text-decoration-none">
-                    <span class="oris-logo-mark" aria-hidden="true">◆</span>
+                    <span class="oris-logo-mark" aria-hidden="true">{% include "_oris_logo_mark.html" %}</span>
                     <span>
                         <span class="oris-sidebar-brand-title">ORIS</span>
                         <span class="oris-sidebar-brand-tagline">Rede de Saúde Bucal</span>
@@ -80,7 +80,7 @@
             </nav>
 
             <div class="oris-sidebar-footer">
-                <span class="oris-logo-mark oris-logo-mark--sm" aria-hidden="true">◆</span>
+                <span class="oris-logo-mark oris-logo-mark--sm" aria-hidden="true">{% include "_oris_logo_mark.html" %}</span>
                 <div>
                     <div class="oris-sidebar-footer-title">ORIS</div>
                     <div class="oris-sidebar-footer-sub">Projeto acadêmico · v1.0</div>
@@ -135,7 +135,7 @@
 
             <footer class="oris-footer">
                 <div class="oris-footer-brand">
-                    <span class="oris-logo-mark oris-logo-mark--sm" aria-hidden="true">◆</span>
+                    <span class="oris-logo-mark oris-logo-mark--sm" aria-hidden="true">{% include "_oris_logo_mark.html" %}</span>
                     <span>ORIS <span class="text-muted">· Governança da Rede de Saúde Bucal</span></span>
                 </div>
                 <div class="oris-footer-links">

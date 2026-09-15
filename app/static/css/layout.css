@@ -105,6 +105,11 @@
     font-size: 0.8rem !important;
 }
 
+.oris-logo-svg {
+    width: 60%;
+    height: 60%;
+}
+
 .oris-sidebar-brand .oris-logo-mark {
     display: inline-flex;
     align-items: center;
@@ -142,7 +147,7 @@
     color: rgba(247, 250, 250, 0.78);
     text-decoration: none;
     font-size: var(--oris-fs-sm);
-    transition: background-color 0.18s ease, color 0.18s ease;
+    transition: background-color 0.18s ease, color 0.18s ease, padding-left 0.18s ease;
 }
 
 .oris-nav-item i {
@@ -156,12 +161,18 @@
 .oris-nav-item:focus-visible {
     background-color: rgba(24, 183, 176, 0.16);
     color: var(--oris-white);
+    padding-left: 1.05rem;
 }
 
 .oris-nav-item.active {
-    background-color: var(--oris-teal);
+    background: linear-gradient(120deg, var(--oris-teal), var(--oris-cyan));
     color: var(--oris-navy);
     font-weight: 600;
+    box-shadow: 0 4px 12px rgba(24, 183, 176, 0.35);
+}
+
+.oris-nav-item.active:hover {
+    padding-left: 0.85rem;
 }
 
 .oris-nav-item.active i {

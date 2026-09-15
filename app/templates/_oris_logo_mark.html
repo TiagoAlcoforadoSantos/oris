@@ -1,0 +1,14 @@
+{#
+  Marca visual do ORIS — um dente estilizado, em referência direta à
+  Saúde Bucal (o domínio do sistema). Desenhado como SVG original do
+  projeto (sem depender de nenhuma imagem/ícone externo), usando
+  currentColor para herdar a cor definida em cada contexto
+  (.oris-logo-mark já define a cor de fundo/texto do "selo").
+
+  Uso: {% include "_oris_logo_mark.html" %} dentro de um elemento com
+  a classe "oris-logo-mark" (base.html e login.html).
+#}
+<svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor" xmlns="http://www.w3.org/2000/svg" class="oris-logo-svg" aria-hidden="true">
+    <path d="M12 2.4c-3.05 0-5.55 2.2-5.55 5.1 0 1.2.3 2.05.65 3 .1.27.2.54.3.82.42 1.18.85 2.51.85 4.68 0 1.32.22 2.4.6 3.16.4.79.99 1.24 1.7 1.24.66 0 1.06-.42 1.31-.9.24-.47.36-1.07.45-1.66.09-.58.16-1.15.3-1.56.06-.2.13-.33.19-.4.06.07.13.2.19.4.14.41.21.98.3 1.56.09.59.21 1.19.45 1.66.25.48.65.9 1.31.9.71 0 1.3-.45 1.7-1.24.38-.76.6-1.84.6-3.16 0-2.17.43-3.5.85-4.68.1-.28.2-.55.3-.82.35-.95.65-1.8.65-3 0-2.9-2.5-5.1-5.55-5.1z"/>
+    <circle cx="16.3" cy="6.1" r="1.15" fill="var(--oris-cyan, currentColor)" opacity="0.9"/>
+</svg>
