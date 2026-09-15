@@ -1,0 +1,374 @@
+/*
+ * ORIS — Usuários "Premium" (Stage 6, redesign visual)
+ * ---------------------------------------------------------------
+ * Camada de estilo EXCLUSIVA das telas de Usuários (lista + form),
+ * carregada só nelas via {% block extra_css %} — não afeta nenhuma
+ * outra tela do sistema. Construída sobre os tokens já existentes em
+ * tokens.css e seguindo o mesmo padrão visual já aplicado em
+ * importacao-premium.css (Stage 5): glassmorphism sutil, gradiente
+ * navy → petróleo → turquesa, profundidade e microinterações
+ * discretas. Sem neon, sem glow exagerado, sem excesso de 3D.
+ *
+ * Todas as classes aqui usam o prefixo "oris-users-" para nunca
+ * colidir com o Design System global.
+ */
+
+/* ---- Hero da listagem -------------------------------------------- */
+
+.oris-users-hero {
+    position: relative;
+    overflow: hidden;
+    border-radius: var(--oris-radius-lg);
+    padding: 2.25rem 2.5rem;
+    margin-bottom: 1.75rem;
+    background: linear-gradient(135deg, var(--oris-navy) 0%, var(--oris-petroleum) 55%, var(--oris-teal) 100%);
+    background-color: var(--oris-navy);
+    color: var(--oris-text-on-dark);
+    box-shadow: var(--oris-shadow-md);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1.5rem;
+    flex-wrap: wrap;
+}
+
+.oris-users-hero::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(circle at 85% 15%, rgba(255, 255, 255, 0.14), transparent 55%);
+    pointer-events: none;
+}
+
+.oris-users-hero-content {
+    position: relative;
+    z-index: 1;
+    max-width: 560px;
+}
+
+.oris-users-hero h1 {
+    color: var(--oris-white);
+    margin-bottom: 0.35rem;
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+}
+
+.oris-users-hero p {
+    color: rgba(247, 250, 250, 0.88);
+    margin-bottom: 0;
+    font-size: var(--oris-fs-sm);
+}
+
+.oris-users-hero-actions {
+    position: relative;
+    z-index: 1;
+}
+
+.oris-users-hero .btn-primary {
+    background: var(--oris-white);
+    border-color: var(--oris-white);
+    color: var(--oris-navy);
+    font-weight: 600;
+}
+
+.oris-users-hero .btn-primary:hover {
+    background: var(--oris-surface);
+    border-color: var(--oris-surface);
+    color: var(--oris-navy);
+}
+
+/* Ícone decorativo de segurança/identidade, sutil, no hero */
+.oris-users-hero-icon {
+    opacity: 0.85;
+    position: relative;
+    z-index: 1;
+}
+
+@media (max-width: 767.98px) {
+    .oris-users-hero-icon {
+        display: none;
+    }
+}
+
+/* ---- Cards de resumo (glassmorphism) ------------------------------ */
+
+.oris-users-summary {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.oris-users-summary-card {
+    position: relative;
+    padding: 1.1rem 1.25rem;
+    border-radius: var(--oris-radius-md);
+    background: rgba(255, 255, 255, 0.75);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.6);
+    box-shadow: var(--oris-shadow-sm);
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    gap: 0.85rem;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.oris-users-summary-card:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--oris-shadow-md);
+}
+
+.oris-users-summary-card::after {
+    content: "";
+    position: absolute;
+    inset: auto 0 0 0;
+    height: 3px;
+    background: linear-gradient(90deg, var(--oris-navy), var(--oris-teal));
+    opacity: 0.85;
+}
+
+.oris-users-summary-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 42px;
+    height: 42px;
+    flex-shrink: 0;
+    border-radius: var(--oris-radius-md);
+    background: linear-gradient(135deg, var(--oris-surface), var(--oris-white));
+    color: var(--oris-petroleum);
+    font-size: 1.2rem;
+}
+
+.oris-users-summary-value {
+    display: block;
+    font-family: var(--oris-font-display);
+    font-size: var(--oris-fs-xl);
+    font-weight: 700;
+    color: var(--oris-navy);
+    line-height: 1.15;
+}
+
+.oris-users-summary-label {
+    display: block;
+    font-size: var(--oris-fs-xs);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--oris-text-muted);
+    font-weight: 600;
+}
+
+/* ---- Painel de filtros (vidro) ------------------------------------- */
+
+.oris-users-filters {
+    border-radius: var(--oris-radius-lg);
+    background: rgba(255, 255, 255, 0.78);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.6);
+    box-shadow: var(--oris-shadow-sm);
+    padding: 1.1rem 1.35rem;
+    margin-bottom: 1.25rem;
+}
+
+/* ---- Lista de usuários: linhas premium ----------------------------- */
+
+.oris-users-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.oris-users-row {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem 1.25rem;
+    border-radius: var(--oris-radius-md);
+    background: rgba(255, 255, 255, 0.78);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    border: 1px solid var(--oris-border);
+    box-shadow: var(--oris-shadow-sm);
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+    flex-wrap: wrap;
+}
+
+.oris-users-row:hover {
+    transform: translateY(-1px);
+    box-shadow: var(--oris-shadow-md);
+}
+
+.oris-users-row-avatar {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    flex-shrink: 0;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--oris-navy), var(--oris-petroleum));
+    color: var(--oris-white);
+    font-weight: 700;
+    font-family: var(--oris-font-display);
+    font-size: 1.05rem;
+}
+
+.oris-users-row-identity {
+    min-width: 200px;
+    flex: 1 1 220px;
+}
+
+.oris-users-row-name {
+    font-weight: 600;
+    color: var(--oris-text);
+    display: block;
+}
+
+.oris-users-row-email {
+    font-size: var(--oris-fs-sm);
+    color: var(--oris-text-muted);
+    display: block;
+}
+
+.oris-users-row-meta {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    flex-wrap: wrap;
+    flex: 1 1 260px;
+}
+
+.oris-users-row-date {
+    font-size: var(--oris-fs-xs);
+    color: var(--oris-text-muted);
+    white-space: nowrap;
+}
+
+.oris-users-row-actions {
+    display: flex;
+    gap: 0.4rem;
+    flex-shrink: 0;
+    margin-left: auto;
+}
+
+/* ---- Badges de perfil (chips) --------------------------------------- */
+
+.oris-users-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.3rem 0.7rem;
+    border-radius: 999px;
+    font-size: var(--oris-fs-xs);
+    font-weight: 600;
+    letter-spacing: 0.01em;
+    white-space: nowrap;
+}
+
+.oris-users-chip-admin {
+    background: linear-gradient(120deg, var(--oris-navy), var(--oris-blue));
+    color: var(--oris-white);
+}
+
+.oris-users-chip-gestao {
+    background: linear-gradient(120deg, var(--oris-petroleum), var(--oris-blue));
+    color: var(--oris-white);
+}
+
+.oris-users-chip-responsavel {
+    background: linear-gradient(120deg, var(--oris-teal), var(--oris-cyan));
+    color: var(--oris-navy);
+}
+
+.oris-users-chip-gestor {
+    background: var(--oris-surface);
+    color: var(--oris-text);
+    border: 1px solid var(--oris-border);
+}
+
+/* ---- Status: nunca só cor — sempre ícone + texto -------------------- */
+
+.oris-users-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    font-size: var(--oris-fs-xs);
+    font-weight: 600;
+    padding: 0.3rem 0.65rem;
+    border-radius: 999px;
+}
+
+.oris-users-status-ativo {
+    background: rgba(57, 169, 107, 0.12);
+    color: #237a4b;
+}
+
+.oris-users-status-inativo {
+    background: rgba(91, 107, 115, 0.12);
+    color: var(--oris-text-muted);
+}
+
+/* ---- Formulário: seções em vidro ------------------------------------- */
+
+.oris-users-form-section {
+    border-radius: var(--oris-radius-lg);
+    background: rgba(255, 255, 255, 0.78);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.6);
+    box-shadow: var(--oris-shadow-sm);
+    padding: 1.5rem 1.65rem;
+    margin-bottom: 1.25rem;
+}
+
+.oris-users-form-section-title {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-family: var(--oris-font-display);
+    font-size: var(--oris-fs-sm);
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--oris-petroleum);
+    margin-bottom: 1.1rem;
+}
+
+.oris-users-form-section-title i {
+    font-size: 1rem;
+}
+
+/* ---- Responsividade -------------------------------------------------- */
+
+@media (max-width: 767.98px) {
+    .oris-users-hero {
+        padding: 1.5rem;
+    }
+
+    .oris-users-row {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    /* Em coluna, o eixo principal do flex passa a ser o vertical —
+       os flex-basis pensados para a largura no layout horizontal
+       (220px/260px) virariam altura aqui e criariam espaços em
+       branco enormes. Neutraliza isso para as caixas ocuparem só a
+       altura do próprio conteúdo. */
+    .oris-users-row-identity,
+    .oris-users-row-meta {
+        flex: 0 0 auto;
+        min-width: 0;
+        width: 100%;
+    }
+
+    .oris-users-row-actions {
+        margin-left: 0;
+        width: 100%;
+    }
+}

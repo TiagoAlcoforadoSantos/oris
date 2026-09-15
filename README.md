@@ -1,6 +1,6 @@
 # ORIS — Plataforma de Governança da Rede de Saúde Bucal
 
-> ⚠️ **Status do projeto:** em desenvolvimento — Redesign Premium da Importação concluído (glassmorphism + gradiente navy→petróleo→turquesa).
+> ⚠️ **Status do projeto:** em desenvolvimento — Redesign Premium de Usuários concluído (Stage 6, glassmorphism + gradiente).
 > Este README será expandido a cada fase concluída.
 
 ## O que é o ORIS
@@ -1167,6 +1167,42 @@ um elemento de nível de bloco) — corrigido para `display: flex`.
 `importacao-nova-premium.png`, `importacao-mapeamento-premium.png`,
 `importacao-validacao-premium.png`, `importacao-previa-premium.png`,
 em `docs/screenshots/`.
+
+## Redesign Premium de Usuários (Stage 6)
+
+Aplica a mesma linguagem visual "premium" da Importação (Stage 5) à
+Administração de Usuários (Fase 11) — a segunda tela a receber esse
+nível de acabamento.
+
+**O que mudou:** novo arquivo `app/static/css/usuarios-premium.css`,
+carregado **somente** nas 2 telas de Usuários. Na listagem: hero com
+gradiente navy→petróleo→turquesa; 4 cards de resumo (Usuários,
+Ativos, Administradores, Perfis de acesso) com **dados 100% reais**,
+calculados a partir da mesma lista já carregada pela rota — nenhuma
+consulta nova; cada usuário passou a ser uma "linha premium" em vidro
+fosco com avatar de iniciais em gradiente, chips de perfil coloridos
+(um tom por perfil) e status sempre com ícone + texto + cor. No
+formulário: campos agrupados em seções "Identidade" e "Acesso", cada
+uma em seu próprio painel de vidro.
+
+**O que NÃO mudou:** nenhuma rota, `name` de campo, regra de negócio,
+RBAC, bcrypt, sessão ou auditoria — confirmado pelos 37 testes de
+usuários existentes passando sem nenhuma alteração de comportamento,
+e validado com MySQL real (RBAC dos 4 perfis, criar/editar/ativar/
+desativar, proteção do último administrador).
+
+**Achado corrigido durante a validação visual:** no layout mobile
+(`flex-direction: column`), os valores de `flex-basis` pensados para
+largura no desktop (220px/260px) eram herdados e interpretados como
+**altura** no eixo principal vertical, criando espaços em branco
+enormes entre os elementos de cada linha — corrigido com uma regra
+específica no breakpoint mobile.
+
+**Screenshots:** `usuarios-desktop-premium.png`,
+`usuarios-mobile-premium.png`, `usuario-novo-desktop-premium.png`,
+`usuario-novo-mobile-premium.png`, `usuario-editar-desktop-premium.png`
+(o estado de usuário inativo aparece naturalmente dentro das capturas
+de lista), em `docs/screenshots/`.
 
 ## Usuário de teste
 

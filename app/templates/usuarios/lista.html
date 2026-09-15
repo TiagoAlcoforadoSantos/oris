@@ -8,20 +8,68 @@
     <span class="oris-breadcrumb-current">Usuários</span>
 {% endblock %}
 
+{% block extra_css %}
+<link href="{{ url_for('static', filename='css/usuarios-premium.css') }}" rel="stylesheet">
+{% endblock %}
+
 {% block content %}
-<div class="oris-page-header">
-    <div>
-        <h1>Usuários</h1>
-        <p>Gerencie os usuários e seus perfis de acesso.</p>
+<section class="oris-users-hero">
+    <div class="oris-users-hero-content">
+        <h1><i class="bi bi-shield-lock" aria-hidden="true"></i> Usuários</h1>
+        <p>Gerencie identidades, perfis e acessos da plataforma ORIS.</p>
     </div>
-    <div class="oris-page-header-actions">
+    <div class="oris-users-hero-actions">
         <a href="{{ url_for('usuarios.novo') }}" class="btn btn-primary">
             <i class="bi bi-person-plus" aria-hidden="true"></i> Novo usuário
         </a>
     </div>
+    <div class="oris-users-hero-icon" aria-hidden="true">
+        <svg width="90" height="90" viewBox="0 0 90 90" xmlns="http://www.w3.org/2000/svg" fill="none">
+            <circle cx="45" cy="45" r="30" stroke="#39C6D3" stroke-opacity="0.5" stroke-width="1.4" />
+            <circle cx="45" cy="45" r="18" stroke="#DDF4F5" stroke-opacity="0.5" stroke-width="1.2" />
+            <circle cx="45" cy="15" r="3.2" fill="#39C6D3" />
+            <circle cx="75" cy="45" r="3.2" fill="#18B7B0" />
+            <circle cx="45" cy="75" r="3.2" fill="#39C6D3" />
+            <circle cx="15" cy="45" r="3.2" fill="#DDF4F5" />
+        </svg>
+    </div>
+</section>
+
+{% set total_usuarios = usuarios|length %}
+{% set total_ativos = usuarios|selectattr("ativo")|list|length %}
+{% set total_admins = usuarios|selectattr("perfil.value", "equalto", "ADMINISTRADOR")|list|length %}
+<div class="oris-users-summary">
+    <div class="oris-users-summary-card">
+        <div class="oris-users-summary-icon"><i class="bi bi-people" aria-hidden="true"></i></div>
+        <div>
+            <span class="oris-users-summary-value">{{ "%02d"|format(total_usuarios) }}</span>
+            <span class="oris-users-summary-label">Usuários</span>
+        </div>
+    </div>
+    <div class="oris-users-summary-card">
+        <div class="oris-users-summary-icon"><i class="bi bi-check-circle" aria-hidden="true"></i></div>
+        <div>
+            <span class="oris-users-summary-value">{{ "%02d"|format(total_ativos) }}</span>
+            <span class="oris-users-summary-label">Ativos</span>
+        </div>
+    </div>
+    <div class="oris-users-summary-card">
+        <div class="oris-users-summary-icon"><i class="bi bi-shield-check" aria-hidden="true"></i></div>
+        <div>
+            <span class="oris-users-summary-value">{{ "%02d"|format(total_admins) }}</span>
+            <span class="oris-users-summary-label">Administradores</span>
+        </div>
+    </div>
+    <div class="oris-users-summary-card">
+        <div class="oris-users-summary-icon"><i class="bi bi-diagram-3" aria-hidden="true"></i></div>
+        <div>
+            <span class="oris-users-summary-value">{{ "%02d"|format(perfis|length) }}</span>
+            <span class="oris-users-summary-label">Perfis de acesso</span>
+        </div>
+    </div>
 </div>
 
-<div class="oris-panel mb-3">
+<div class="oris-users-filters">
     <form method="GET" class="row g-2 align-items-end">
         <div class="col-auto">
             <label class="form-label small text-muted mb-1" for="busca">Buscar</label>
@@ -49,76 +97,67 @@
         </div>
         {% if busca or perfil_filtro or situacao_filtro %}
             <div class="col-auto">
-                <a href="{{ url_for('usuarios.listar') }}" class="btn btn-sm btn-outline-secondary">Limpar filtros</a>
+                <a href="{{ url_for('usuarios.listar') }}" class="btn btn-sm btn-outline-secondary">
+                    <i class="bi bi-x-circle" aria-hidden="true"></i> Limpar filtros
+                </a>
             </div>
         {% endif %}
     </form>
 </div>
 
 {% if usuarios %}
-<div class="table-responsive oris-panel p-0">
-    <table class="table table-hover align-middle mb-0">
-        <thead>
-            <tr>
-                <th>Nome</th>
-                <th>Email</th>
-                <th>Perfil</th>
-                <th>Situação</th>
-                <th>Criado em</th>
-                <th class="text-end">Ações</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for usuario in usuarios %}
-            <tr>
-                <td class="fw-semibold">{{ usuario.nome }}</td>
-                <td>{{ usuario.email }}</td>
-                <td>
-                    {% if usuario.perfil.value == "ADMINISTRADOR" %}
-                        <span class="badge bg-dark">Administrador</span>
-                    {% elif usuario.perfil.value == "GESTAO_INFORMACAO" %}
-                        <span class="badge" style="background-color: var(--oris-petroleum);">Gestão da Informação</span>
-                    {% elif usuario.perfil.value == "RESPONSAVEL_SAUDE_BUCAL" %}
-                        <span class="badge" style="background-color: var(--oris-teal); color: var(--oris-navy);">Responsável Saúde Bucal</span>
-                    {% else %}
-                        <span class="badge bg-secondary">Gestor</span>
-                    {% endif %}
-                </td>
-                <td>
-                    {% if usuario.ativo %}
-                        <span class="badge bg-success">Ativo</span>
-                    {% else %}
-                        <span class="badge bg-secondary">Inativo</span>
-                    {% endif %}
-                </td>
-                <td class="text-nowrap">{{ usuario.created_at.strftime("%d/%m/%Y") }}</td>
-                <td class="text-end text-nowrap">
-                    <a href="{{ url_for('usuarios.editar', usuario_id=usuario.id) }}"
-                       class="btn btn-sm btn-outline-primary"
-                       aria-label="Editar {{ usuario.nome }}" title="Editar">
-                        <i class="bi bi-pencil" aria-hidden="true"></i> Editar
-                    </a>
-                    <form method="POST" action="{{ url_for('usuarios.alterar_situacao', usuario_id=usuario.id) }}" class="d-inline">
-                        {{ form_acao.hidden_tag() }}
-                        {% if usuario.ativo %}
-                            <input type="hidden" name="acao" value="desativar">
-                            <button type="submit" class="btn btn-sm btn-outline-danger"
-                                    aria-label="Desativar {{ usuario.nome }}" title="Desativar">
-                                <i class="bi bi-slash-circle" aria-hidden="true"></i> Desativar
-                            </button>
-                        {% else %}
-                            <input type="hidden" name="acao" value="ativar">
-                            <button type="submit" class="btn btn-sm btn-outline-success"
-                                    aria-label="Ativar {{ usuario.nome }}" title="Ativar">
-                                <i class="bi bi-check-circle" aria-hidden="true"></i> Ativar
-                            </button>
-                        {% endif %}
-                    </form>
-                </td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
+<div class="oris-users-list">
+    {% for usuario in usuarios %}
+    <div class="oris-users-row">
+        <div class="oris-users-row-avatar">{{ usuario.nome[0]|upper }}</div>
+        <div class="oris-users-row-identity">
+            <span class="oris-users-row-name">{{ usuario.nome }}</span>
+            <span class="oris-users-row-email">{{ usuario.email }}</span>
+        </div>
+        <div class="oris-users-row-meta">
+            {% if usuario.perfil.value == "ADMINISTRADOR" %}
+                <span class="oris-users-chip oris-users-chip-admin"><i class="bi bi-shield-check" aria-hidden="true"></i> Administrador</span>
+            {% elif usuario.perfil.value == "GESTAO_INFORMACAO" %}
+                <span class="oris-users-chip oris-users-chip-gestao"><i class="bi bi-bar-chart" aria-hidden="true"></i> Gestão da Informação</span>
+            {% elif usuario.perfil.value == "RESPONSAVEL_SAUDE_BUCAL" %}
+                <span class="oris-users-chip oris-users-chip-responsavel"><i class="bi bi-heart-pulse" aria-hidden="true"></i> Responsável Saúde Bucal</span>
+            {% else %}
+                <span class="oris-users-chip oris-users-chip-gestor"><i class="bi bi-person-badge" aria-hidden="true"></i> Gestor</span>
+            {% endif %}
+
+            {% if usuario.ativo %}
+                <span class="oris-users-status oris-users-status-ativo"><i class="bi bi-check-circle-fill" aria-hidden="true"></i> Ativo</span>
+            {% else %}
+                <span class="oris-users-status oris-users-status-inativo"><i class="bi bi-dash-circle" aria-hidden="true"></i> Inativo</span>
+            {% endif %}
+
+            <span class="oris-users-row-date"><i class="bi bi-calendar3" aria-hidden="true"></i> {{ usuario.created_at.strftime("%d/%m/%Y") }}</span>
+        </div>
+        <div class="oris-users-row-actions">
+            <a href="{{ url_for('usuarios.editar', usuario_id=usuario.id) }}"
+               class="btn btn-sm btn-outline-primary"
+               aria-label="Editar {{ usuario.nome }}" title="Editar">
+                <i class="bi bi-pencil" aria-hidden="true"></i> Editar
+            </a>
+            <form method="POST" action="{{ url_for('usuarios.alterar_situacao', usuario_id=usuario.id) }}" class="d-inline">
+                {{ form_acao.hidden_tag() }}
+                {% if usuario.ativo %}
+                    <input type="hidden" name="acao" value="desativar">
+                    <button type="submit" class="btn btn-sm btn-outline-danger"
+                            aria-label="Desativar {{ usuario.nome }}" title="Desativar">
+                        <i class="bi bi-slash-circle" aria-hidden="true"></i> Desativar
+                    </button>
+                {% else %}
+                    <input type="hidden" name="acao" value="ativar">
+                    <button type="submit" class="btn btn-sm btn-outline-success"
+                            aria-label="Ativar {{ usuario.nome }}" title="Ativar">
+                        <i class="bi bi-check-circle" aria-hidden="true"></i> Ativar
+                    </button>
+                {% endif %}
+            </form>
+        </div>
+    </div>
+    {% endfor %}
 </div>
 {% else %}
 <div class="oris-empty-state">

@@ -10,6 +10,10 @@
     <span class="oris-breadcrumb-current">{{ "Editar" if usuario else "Novo usuário" }}</span>
 {% endblock %}
 
+{% block extra_css %}
+<link href="{{ url_for('static', filename='css/usuarios-premium.css') }}" rel="stylesheet">
+{% endblock %}
+
 {% block content %}
 <a href="{{ url_for('usuarios.listar') }}" class="oris-back-link">
     <i class="bi bi-arrow-left" aria-hidden="true"></i> Voltar para a lista
@@ -28,12 +32,12 @@
     </div>
 </div>
 
-<div class="oris-panel mb-4">
-    <form method="POST" novalidate>
-        {{ form.hidden_tag() }}
+<form method="POST" novalidate>
+    {{ form.hidden_tag() }}
 
-        <h2 class="oris-section-label">Dados do usuário</h2>
-        <div class="row g-3 mb-4">
+    <div class="oris-users-form-section">
+        <h2 class="oris-users-form-section-title"><i class="bi bi-person-vcard" aria-hidden="true"></i> Identidade</h2>
+        <div class="row g-3">
             <div class="col-md-6">
                 {{ form.nome.label(class="form-label") }}
                 {{ form.nome(class="form-control") }}
@@ -60,8 +64,13 @@
                 <div class="form-text">Mínimo de 8 caracteres.</div>
             </div>
             {% endif %}
+        </div>
+    </div>
 
-            <div class="col-md-{% if form.senha %}3{% else %}6{% endif %}">
+    <div class="oris-users-form-section">
+        <h2 class="oris-users-form-section-title"><i class="bi bi-shield-lock" aria-hidden="true"></i> Acesso</h2>
+        <div class="row g-3">
+            <div class="col-md-{% if form.ativo %}6{% else %}12{% endif %}">
                 {{ form.perfil.label(class="form-label") }}
                 {{ form.perfil(class="form-select") }}
                 {% for erro in form.perfil.errors %}
@@ -70,20 +79,20 @@
             </div>
 
             {% if form.ativo %}
-            <div class="col-md-3">
+            <div class="col-md-6">
                 {{ form.ativo.label(class="form-label") }}
                 {{ form.ativo(class="form-select") }}
             </div>
             {% endif %}
         </div>
+    </div>
 
-        {{ form.submit(class="btn btn-primary") }}
-    </form>
-</div>
+    {{ form.submit(class="btn btn-primary") }}
+</form>
 
 {% if usuario and form_senha %}
-<div class="oris-panel">
-    <h2 class="oris-section-label">Redefinir senha</h2>
+<div class="oris-users-form-section mt-4">
+    <h2 class="oris-users-form-section-title"><i class="bi bi-key" aria-hidden="true"></i> Redefinir senha</h2>
     <p class="text-muted small">
         Define uma nova senha para este usuário. A senha atual nunca é
         exibida nem pode ser recuperada — apenas substituída.
