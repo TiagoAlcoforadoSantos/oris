@@ -1,0 +1,132 @@
+/*
+ * ORIS — Login "Premium" (UI/UX Final, Fase 13B)
+ * ---------------------------------------------------------------
+ * Camada de estilo EXCLUSIVA da tela de Login, carregada só nela
+ * via {% block extra_css %}. Construída sobre os tokens já
+ * existentes, seguindo a mesma linguagem visual das Stages 5/6
+ * (Importação/Usuários): glassmorphism sutil, gradiente
+ * navy → petróleo → turquesa, profundidade discreta.
+ *
+ * O login é servido fora da sidebar (usuário ainda não autenticado)
+ * e o base.html o envolve em <div class="container pb-5">. Para dar
+ * a sensação de "primeira impressão" (tela cheia), o fundo usa a
+ * técnica clássica de "sangrar" para fora do container via
+ * width:100vw + margin-left:calc(-50vw + 50%).
+ */
+
+.oris-login-backdrop {
+    position: relative;
+    min-height: calc(100vh - 90px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2.5rem 1.25rem;
+    margin: -1.5rem -0.75rem;
+    border-radius: var(--oris-radius-lg);
+    background: linear-gradient(135deg, var(--oris-navy) 0%, var(--oris-petroleum) 55%, var(--oris-teal) 100%);
+    background-color: var(--oris-navy);
+    overflow: hidden;
+}
+
+.oris-login-backdrop::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(circle at 12% 15%, rgba(255, 255, 255, 0.10), transparent 45%),
+                radial-gradient(circle at 88% 85%, rgba(255, 255, 255, 0.10), transparent 45%);
+    pointer-events: none;
+}
+
+/* Elemento decorativo de conectividade/saúde, atrás do card */
+.oris-login-decor {
+    position: absolute;
+    opacity: 0.5;
+    pointer-events: none;
+}
+
+.oris-login-decor--top { top: 8%; left: 8%; }
+.oris-login-decor--bottom { bottom: 10%; right: 10%; }
+
+@media (max-width: 767.98px) {
+    .oris-login-decor { display: none; }
+}
+
+.oris-login-card-wrap {
+    position: relative;
+    z-index: 1;
+    width: 100%;
+    max-width: 420px;
+}
+
+.oris-login-brand {
+    text-align: center;
+    margin-bottom: 1.5rem;
+}
+
+.oris-login-logo {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 64px;
+    height: 64px;
+    margin: 0 auto 1rem;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.16);
+    border: 1px solid rgba(255, 255, 255, 0.35);
+    color: var(--oris-white);
+    font-size: 1.85rem;
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+}
+
+.oris-login-brand h1 {
+    color: var(--oris-white);
+    font-family: var(--oris-font-display);
+    font-weight: 700;
+    margin-bottom: 0.35rem;
+    letter-spacing: 0.02em;
+}
+
+.oris-login-brand p {
+    color: rgba(247, 250, 250, 0.85);
+    font-size: var(--oris-fs-sm);
+    margin-bottom: 0;
+}
+
+.oris-login-card {
+    border-radius: var(--oris-radius-lg);
+    background: rgba(255, 255, 255, 0.92);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(255, 255, 255, 0.6);
+    box-shadow: 0 20px 45px rgba(11, 42, 74, 0.28);
+    padding: 2rem 1.85rem;
+}
+
+.oris-login-card .form-label {
+    font-weight: 600;
+    color: var(--oris-navy);
+}
+
+.oris-login-card .btn-primary {
+    background: linear-gradient(120deg, var(--oris-navy), var(--oris-petroleum));
+    border: none;
+    font-weight: 600;
+    padding-top: 0.6rem;
+    padding-bottom: 0.6rem;
+}
+
+.oris-login-card .btn-primary:hover {
+    background: linear-gradient(120deg, var(--oris-petroleum), var(--oris-teal));
+}
+
+.oris-login-footnote {
+    text-align: center;
+    color: rgba(247, 250, 250, 0.85);
+    font-size: var(--oris-fs-xs);
+    margin-top: 1.25rem;
+}
+
+.oris-login-footnote a {
+    color: var(--oris-white);
+}

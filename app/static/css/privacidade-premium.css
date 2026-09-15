@@ -1,0 +1,88 @@
+/*
+ * ORIS — Privacidade "Premium" (UI/UX Final, Fase 13B)
+ * ---------------------------------------------------------------
+ * Camada de estilo EXCLUSIVA da página de Privacidade, carregada só
+ * nela via {% block extra_css %}. Mesma linguagem visual das demais
+ * telas premium (Importação, Usuários, Login): glassmorphism sutil,
+ * gradiente navy → petróleo → turquesa, profundidade discreta.
+ * Nenhum conteúdo textual foi alterado — só a apresentação.
+ */
+
+.oris-privacidade-hero {
+    position: relative;
+    overflow: hidden;
+    border-radius: var(--oris-radius-lg);
+    padding: 2rem 2.25rem;
+    margin-bottom: 1.75rem;
+    background: linear-gradient(135deg, var(--oris-navy) 0%, var(--oris-petroleum) 55%, var(--oris-teal) 100%);
+    background-color: var(--oris-navy);
+    color: var(--oris-white);
+    box-shadow: var(--oris-shadow-md);
+}
+
+.oris-privacidade-hero::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(circle at 90% 15%, rgba(255, 255, 255, 0.12), transparent 55%);
+    pointer-events: none;
+}
+
+.oris-privacidade-hero h1 {
+    position: relative;
+    z-index: 1;
+    color: var(--oris-white);
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    margin-bottom: 0.4rem;
+}
+
+.oris-privacidade-hero p {
+    position: relative;
+    z-index: 1;
+    color: rgba(247, 250, 250, 0.88);
+    margin-bottom: 0;
+    max-width: 680px;
+}
+
+.oris-privacidade-section {
+    display: flex;
+    gap: 1rem;
+    border-radius: var(--oris-radius-lg);
+    background: rgba(255, 255, 255, 0.78);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.6);
+    box-shadow: var(--oris-shadow-sm);
+    padding: 1.4rem 1.5rem;
+    margin-bottom: 1.1rem;
+}
+
+.oris-privacidade-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 42px;
+    height: 42px;
+    flex-shrink: 0;
+    border-radius: var(--oris-radius-md);
+    background: linear-gradient(135deg, var(--oris-surface), var(--oris-white));
+    color: var(--oris-petroleum);
+    font-size: 1.15rem;
+}
+
+.oris-privacidade-section-body {
+    flex: 1;
+    min-width: 0;
+}
+
+@media (max-width: 575.98px) {
+    .oris-privacidade-hero {
+        padding: 1.5rem;
+    }
+
+    .oris-privacidade-section {
+        flex-direction: column;
+    }
+}

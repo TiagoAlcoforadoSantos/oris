@@ -1,6 +1,6 @@
 # ORIS — Plataforma de Governança da Rede de Saúde Bucal
 
-> ⚠️ **Status do projeto:** em desenvolvimento — Redesign Premium de Usuários concluído (Stage 6, glassmorphism + gradiente).
+> ⚠️ **Status do projeto:** Fase 13B (UX/UI) concluída — Login, Privacidade e consistência visual global finalizados.
 > Este README será expandido a cada fase concluída.
 
 ## O que é o ORIS
@@ -297,7 +297,7 @@ Resposta esperada:
 {
   "status": "ok",
   "app": "ORIS",
-  "fase": "13b-stage567 - ux/ui importacao usuarios e autenticacao"
+  "fase": "13b-final - ui/ux polish e consistencia global"
 }
 ```
 
@@ -1204,6 +1204,46 @@ específica no breakpoint mobile.
 (o estado de usuário inativo aparece naturalmente dentro das capturas
 de lista), em `docs/screenshots/`.
 
+## UI/UX Final — Login, Privacidade e Consistência Global (Fase 13B)
+
+Etapa de fechamento visual da Fase 13B: finaliza o Login e a
+Privacidade no mesmo padrão premium, e revisa a plataforma inteira em
+busca de inconsistências.
+
+**Login:** novo `app/static/css/login-premium.css` — fundo em
+gradiente navy→petróleo→turquesa cobrindo toda a tela (a "primeira
+impressão" da plataforma), elementos decorativos discretos de
+conectividade, card de vidro centralizado com a identidade ORIS.
+Nenhuma regra de autenticação, bcrypt, sessão, CSRF ou rate limiting
+foi tocada — só a apresentação.
+
+> ⚠️ Durante a implementação, a primeira versão do fundo usava a
+> técnica de "sangrar" para fora do container via `width: 100vw` +
+> margem negativa — isso causou um bug real de overflow horizontal
+> grave. Corrigido trocando por uma abordagem que não depende de
+> unidades de viewport.
+
+**Privacidade:** novo `app/static/css/privacidade-premium.css` — hero
+com gradiente e cada seção como painel de vidro com ícone. **Todo o
+conteúdo textual foi preservado palavra por palavra** — nada foi
+adicionado, removido ou reescrito, só a organização visual.
+
+**Consistência global:** em vez de redesenhar cada tela individualmente,
+os dois componentes mais reutilizados do Design System —
+`.oris-panel` e `.oris-stat-card`, já usados por Dashboard, Unidades,
+Serviços, Equipamentos, Aprovações e Auditoria — foram elevados uma
+única vez (fundo semitransparente com leve desfoque e uma barra de
+destaque em gradiente), propagando automaticamente o mesmo acabamento
+"premium" para todas as telas que já os utilizavam, sem alterar
+nenhum HTML dessas páginas.
+
+**Screenshots finais** (revisão de conjunto de toda a plataforma):
+`login-desktop-final.png`, `login-mobile-final.png`,
+`dashboard-desktop-final.png`, `unidades-final.png`,
+`servicos-final.png`, `equipamentos-final.png`, `alteracoes-final.png`,
+`auditoria-final.png`, `importacao-final.png`, `usuarios-final.png`,
+`privacidade-final.png`, em `docs/screenshots/`.
+
 ## Usuário de teste
 
 Não existe usuário fixo/hardcoded no código. Para criar um usuário
@@ -1363,7 +1403,11 @@ de listagem — ver detalhes em `docs/SEGURANCA.md`.
 - [x] FASE 13B — Stage 4: UX/UI da tela de Auditoria
 - [x] FASE 13B — Stages 5, 6, 7: UX/UI de Importação, Usuários,
       Privacidade e Login
-- [ ] Próximas fases — polimento final e revisão visual geral
+- [x] FASE 13B — Redesign Premium de Importação e Usuários
+      (glassmorphism + gradiente)
+- [x] FASE 13B — UI/UX Final: Login, Privacidade e consistência
+      visual global — **FASE 13B CONCLUÍDA**
+- [ ] Próximas fases — a definir
 
 ## Dados de demonstração
 
