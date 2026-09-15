@@ -85,54 +85,181 @@ textarea:focus-visible,
     background-color: rgba(24, 183, 176, 0.18);
 }
 
-/* ---- Botões ------------------------------------------------------- */
+/* ---- Botões ---------------------------------------------------------
+ * Uma linguagem visual única para todos os botões do sistema — as
+ * classes usadas nos templates continuam sendo as do Bootstrap
+ * (.btn-primary, .btn-outline-secondary etc.), só a aparência é
+ * elevada aqui, uma única vez, para todo o sistema herdar.
+ */
 
 .btn {
     border-radius: var(--oris-radius-sm);
-    font-weight: 500;
+    font-weight: 600;
+    font-size: var(--oris-fs-sm);
+    padding: 0.5rem 1.05rem;
+    letter-spacing: 0.005em;
+    transition: transform 0.15s ease, box-shadow 0.15s ease,
+                background-color 0.15s ease, border-color 0.15s ease,
+                color 0.15s ease;
 }
 
+.btn-sm {
+    padding: 0.32rem 0.75rem;
+    font-size: var(--oris-fs-xs);
+    border-radius: var(--oris-radius-sm);
+}
+
+.btn:active {
+    transform: translateY(0) !important;
+}
+
+.btn:disabled,
+.btn.disabled {
+    transform: none !important;
+    box-shadow: none !important;
+    opacity: 0.55;
+}
+
+/* PRIMARY — gradiente turquesa/cyan, a ação mais importante da tela */
 .btn-primary {
-    background-color: var(--oris-teal);
-    border-color: var(--oris-teal);
+    background: linear-gradient(120deg, var(--oris-teal), var(--oris-cyan));
+    background-color: var(--oris-teal); /* fallback sólido */
+    border: 1px solid transparent;
     color: var(--oris-navy);
+    box-shadow: var(--oris-shadow-btn);
 }
 
 .btn-primary:hover,
 .btn-primary:focus {
-    background-color: var(--oris-cyan);
-    border-color: var(--oris-cyan);
+    background: linear-gradient(120deg, var(--oris-cyan), var(--oris-teal));
     color: var(--oris-navy);
+    transform: translateY(-1px);
+    box-shadow: var(--oris-shadow-btn-hover);
 }
 
+/* OUTLINE PRIMARY — ação secundária com destaque, estilo "ghost" */
 .btn-outline-primary {
     color: var(--oris-petroleum);
-    border-color: var(--oris-petroleum);
+    border: 1.5px solid var(--oris-petroleum);
+    background-color: transparent;
 }
 
-.btn-outline-primary:hover {
-    background-color: var(--oris-petroleum);
+.btn-outline-primary:hover,
+.btn-outline-primary:focus {
+    background: linear-gradient(120deg, var(--oris-petroleum), var(--oris-blue));
     border-color: var(--oris-petroleum);
     color: var(--oris-white);
+    transform: translateY(-1px);
+    box-shadow: var(--oris-shadow-btn);
 }
 
+/* OUTLINE SECONDARY — ação terciária/neutra (ex.: Cancelar, Voltar) */
 .btn-outline-secondary {
     color: var(--oris-text-muted);
-    border-color: var(--oris-border);
+    border: 1.5px solid var(--oris-border);
+    background-color: rgba(255, 255, 255, 0.6);
 }
 
-.btn-outline-secondary:hover {
+.btn-outline-secondary:hover,
+.btn-outline-secondary:focus {
     background-color: var(--oris-navy);
     border-color: var(--oris-navy);
     color: var(--oris-white);
+    transform: translateY(-1px);
+    box-shadow: var(--oris-shadow-btn);
+}
+
+/* SUCCESS — verde sofisticado (não neon), ação positiva (ex.: Aprovar) */
+.btn-success {
+    background: linear-gradient(120deg, var(--oris-success), #2f9e63);
+    background-color: var(--oris-success);
+    border: 1px solid transparent;
+    color: var(--oris-white);
+    box-shadow: var(--oris-shadow-btn);
+}
+
+.btn-success:hover,
+.btn-success:focus {
+    background: linear-gradient(120deg, #2f9e63, var(--oris-success));
+    color: var(--oris-white);
+    transform: translateY(-1px);
+    box-shadow: var(--oris-shadow-btn-hover);
+}
+
+.btn-outline-success {
+    color: var(--oris-success);
+    border: 1.5px solid var(--oris-success);
+    background-color: transparent;
+}
+
+.btn-outline-success:hover,
+.btn-outline-success:focus {
+    background-color: var(--oris-success);
+    border-color: var(--oris-success);
+    color: var(--oris-white);
+    transform: translateY(-1px);
+    box-shadow: var(--oris-shadow-btn);
+}
+
+/* DANGER — vermelho elegante, reservado para ações destrutivas/de rejeição */
+.btn-outline-danger {
+    color: var(--oris-danger);
+    border: 1.5px solid var(--oris-danger);
+    background-color: transparent;
+}
+
+.btn-outline-danger:hover,
+.btn-outline-danger:focus {
+    background-color: var(--oris-danger);
+    border-color: var(--oris-danger);
+    color: var(--oris-white);
+    transform: translateY(-1px);
+    box-shadow: 0 6px 16px rgba(217, 83, 79, 0.28);
+}
+
+.btn-danger {
+    background: linear-gradient(120deg, var(--oris-danger), #c1443f);
+    background-color: var(--oris-danger);
+    border: 1px solid transparent;
+    color: var(--oris-white);
+    box-shadow: var(--oris-shadow-btn);
+}
+
+.btn-danger:hover,
+.btn-danger:focus {
+    background: linear-gradient(120deg, #c1443f, var(--oris-danger));
+    color: var(--oris-white);
+    transform: translateY(-1px);
+    box-shadow: 0 6px 16px rgba(217, 83, 79, 0.28);
+}
+
+/* Links de ação simples (ex.: "Visualizar", breadcrumb) — sem virar botão */
+a.text-decoration-none:hover {
+    text-decoration: underline !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .btn {
+        transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+    }
+
+    .btn:hover,
+    .btn:focus {
+        transform: none !important;
+    }
 }
 
 /* ---- Cards, tabelas e superfícies ----------------------------------- */
 
 .card {
-    border: 1px solid var(--oris-border);
+    border: 1px solid rgba(255, 255, 255, 0.7);
     border-radius: var(--oris-radius-md);
+    background: rgba(255, 255, 255, 0.9);
     box-shadow: var(--oris-shadow-sm);
+}
+
+.table {
+    --bs-table-hover-bg: rgba(24, 183, 176, 0.06);
 }
 
 .table thead {
@@ -141,17 +268,68 @@ textarea:focus-visible,
 
 .table thead th {
     color: var(--oris-navy);
-    font-weight: 600;
+    font-weight: 700;
+    font-size: var(--oris-fs-xs);
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
     border-bottom-width: 1px;
+    padding-top: 0.85rem;
+    padding-bottom: 0.85rem;
 }
 
-/* ---- Badges (status semânticos) -------------------------------------- */
+.table td {
+    padding-top: 0.75rem;
+    padding-bottom: 0.75rem;
+    vertical-align: middle;
+}
 
-.badge.bg-success { background-color: var(--oris-success) !important; }
-.badge.bg-warning { background-color: var(--oris-warning) !important; color: var(--oris-text) !important; }
-.badge.bg-danger  { background-color: var(--oris-danger) !important; }
-.badge.bg-secondary { background-color: var(--oris-text-muted) !important; }
-.badge.bg-dark { background-color: var(--oris-blue) !important; }
+.table tbody tr {
+    transition: background-color 0.15s ease;
+}
+
+/* ---- Badges (status semânticos) --------------------------------------
+ * Sempre em formato pill, com borda sutil da própria cor — mais
+ * refinado que um retângulo de cor sólida, sem perder a leitura
+ * imediata de "isto é um status".
+ */
+
+.badge {
+    font-weight: 600;
+    font-size: var(--oris-fs-xs);
+    letter-spacing: 0.01em;
+    padding: 0.38em 0.75em;
+    border-radius: var(--oris-radius-full);
+}
+
+.badge.bg-success {
+    background-color: rgba(57, 169, 107, 0.14) !important;
+    color: #1E6B44 !important;
+    border: 1px solid rgba(57, 169, 107, 0.35);
+}
+
+.badge.bg-warning {
+    background-color: rgba(233, 162, 59, 0.16) !important;
+    color: #7A5417 !important;
+    border: 1px solid rgba(233, 162, 59, 0.4);
+}
+
+.badge.bg-danger {
+    background-color: rgba(217, 83, 79, 0.12) !important;
+    color: #8C2E2B !important;
+    border: 1px solid rgba(217, 83, 79, 0.32);
+}
+
+.badge.bg-secondary {
+    background-color: rgba(91, 107, 115, 0.12) !important;
+    color: var(--oris-text-muted) !important;
+    border: 1px solid rgba(91, 107, 115, 0.25);
+}
+
+.badge.bg-dark {
+    background: linear-gradient(120deg, var(--oris-navy), var(--oris-blue)) !important;
+    color: var(--oris-white) !important;
+    border: 1px solid transparent;
+}
 
 /* ---- Alertas ------------------------------------------------------- */
 
@@ -166,12 +344,63 @@ textarea:focus-visible,
 .alert-danger  { border-left-color: var(--oris-danger);  background-color: #FBEAEA; color: #8C2E2B; }
 .alert-info    { border-left-color: var(--oris-petroleum); background-color: var(--oris-surface); color: var(--oris-blue); }
 
-/* ---- Formulários ----------------------------------------------------- */
+/* ---- Formulários -----------------------------------------------------
+ * Inputs/selects deixam de usar só o padrão do Bootstrap — ganham
+ * borda mais suave, leve elevação e um anel de foco mais elegante.
+ */
+
+.form-control,
+.form-select {
+    border: 1.5px solid var(--oris-border);
+    border-radius: var(--oris-radius-sm);
+    padding: 0.5rem 0.85rem;
+    background-color: rgba(255, 255, 255, 0.8);
+    transition: border-color 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease;
+}
+
+.form-control:hover,
+.form-select:hover {
+    border-color: var(--oris-petroleum);
+}
 
 .form-control:focus,
 .form-select:focus {
     border-color: var(--oris-teal);
-    box-shadow: 0 0 0 0.2rem rgba(24, 183, 176, 0.25);
+    background-color: var(--oris-white);
+    box-shadow: var(--oris-focus-ring);
+}
+
+.form-control:disabled,
+.form-select:disabled {
+    background-color: var(--oris-surface);
+    opacity: 0.7;
+}
+
+.form-control::placeholder {
+    color: var(--oris-text-muted);
+    opacity: 0.75;
+}
+
+.form-check-input {
+    border: 1.5px solid var(--oris-border);
+    transition: background-color 0.15s ease, border-color 0.15s ease;
+}
+
+.form-check-input:checked {
+    background-color: var(--oris-teal);
+    border-color: var(--oris-teal);
+}
+
+.form-check-input:focus {
+    border-color: var(--oris-teal);
+    box-shadow: var(--oris-focus-ring);
+}
+
+.form-label {
+    font-weight: 600;
+    font-size: var(--oris-fs-sm);
+    color: var(--oris-text);
+    margin-bottom: 0.35rem;
 }
 
 /* ---- Rodapé ------------------------------------------------------------ */
