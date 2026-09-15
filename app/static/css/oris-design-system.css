@@ -254,9 +254,30 @@ footer a:hover {
     -webkit-backdrop-filter: blur(6px);
     border: 1px solid rgba(255, 255, 255, 0.7);
     border-radius: var(--oris-radius-md);
-    padding: 0.9rem 1.1rem;
+    padding: 1.1rem 1.25rem 1.1rem 3.1rem;
     box-shadow: var(--oris-shadow-sm);
     overflow: hidden;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.oris-stat-card:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--oris-shadow-md);
+}
+
+/* Pequeno acento circular decorativo, sugerindo um "ícone", sem
+   depender de nenhum ícone real no HTML — puramente CSS. */
+.oris-stat-card::before {
+    content: "";
+    position: absolute;
+    left: 1.1rem;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--oris-teal), var(--oris-cyan));
+    box-shadow: 0 0 0 6px rgba(24, 183, 176, 0.12);
 }
 
 .oris-stat-card::after {

@@ -32,9 +32,12 @@
 
         <aside class="oris-sidebar" aria-label="Navegação principal">
             <div class="oris-sidebar-brand">
-                <a href="{{ url_for('main.index') }}" class="d-flex align-items-center gap-2 text-decoration-none" style="color: inherit;">
+                <a href="{{ url_for('main.index') }}" class="oris-sidebar-brand-link text-decoration-none">
                     <span class="oris-logo-mark" aria-hidden="true">◆</span>
-                    ORIS
+                    <span>
+                        <span class="oris-sidebar-brand-title">ORIS</span>
+                        <span class="oris-sidebar-brand-tagline">Rede de Saúde Bucal</span>
+                    </span>
                 </a>
             </div>
             <nav class="oris-sidebar-nav">
@@ -75,6 +78,14 @@
                 </a>
                 {% endif %}
             </nav>
+
+            <div class="oris-sidebar-footer">
+                <span class="oris-logo-mark oris-logo-mark--sm" aria-hidden="true">◆</span>
+                <div>
+                    <div class="oris-sidebar-footer-title">ORIS</div>
+                    <div class="oris-sidebar-footer-sub">Projeto acadêmico · v1.0</div>
+                </div>
+            </div>
         </aside>
 
         <label for="oris-sidebar-toggle" class="oris-sidebar-backdrop" aria-hidden="true"></label>
@@ -123,9 +134,15 @@
             </main>
 
             <footer class="oris-footer">
-                <a href="{{ url_for('privacidade.index') }}">Privacidade</a>
-                ·
-                <a href="{{ url_for('design_system.index') }}">Design System</a>
+                <div class="oris-footer-brand">
+                    <span class="oris-logo-mark oris-logo-mark--sm" aria-hidden="true">◆</span>
+                    <span>ORIS <span class="text-muted">· Governança da Rede de Saúde Bucal</span></span>
+                </div>
+                <div class="oris-footer-links">
+                    <a href="{{ url_for('privacidade.index') }}">Privacidade</a>
+                    ·
+                    <a href="{{ url_for('design_system.index') }}">Design System</a>
+                </div>
             </footer>
         </div>
     </div>
