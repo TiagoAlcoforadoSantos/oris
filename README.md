@@ -171,12 +171,14 @@ ORIS/
 ### 2. Clonar o projeto e criar o ambiente virtual
 
 ```bash
+#caminho da pasta
 cd ORIS
-python3 -m venv venv
-
+#usar o venv para criar o ambiente virtual
+python -m venv venv
+#depois entre na pasta para ativar o script de inicialização do ambiente virtual
+#atenção por padrão o windows bloqueia scripts de "autores desconhecidos"
 # Linux/Mac
 source venv/bin/activate
-
 # Windows
 venv\Scripts\activate
 ```
