@@ -1,9 +1,18 @@
 """
 Model Servico.
 
-Representa um Serviço de Saúde Bucal oferecido por uma Unidade.
-Uma Unidade possui vários Serviços; um Serviço pertence a uma única
-Unidade.
+Representa um Serviço de Saúde Bucal. Uma Unidade pode possuir vários
+Serviços — mas, a partir do REDESENHO DO MODELO DE DADOS (ver
+docs/migrations/0001... e o relatório da Stage), um Serviço NÃO
+pertence obrigatoriamente a uma Unidade.
+
+A documentação real do cliente ("Documentação da planilha
+REDE_SAUDE_RECIFE_GEO") descreve serviços sem vínculo com uma unidade
+tradicional (ex.: um ponto municipal de vacinação instalado em um
+shopping) — por isso `unidade_id` passou a ser opcional
+(`nullable=True`). Quando presente, a FK continua garantindo que ele
+aponte para uma Unidade existente; quando ausente, o Serviço
+simplesmente não tem Unidade associada.
 """
 
 from app.extensions import db
@@ -16,10 +25,13 @@ class Servico(db.Model, TimestampMixin):
 
     id = db.Column(db.Integer, primary_key=True)
 
+    # Vínculo opcional (Stage "modelo de dados"): um Serviço pode
+    # existir sem nenhuma Unidade associada. Quando informado, a FK
+    # continua sendo validada normalmente.
     unidade_id = db.Column(
         db.Integer,
         db.ForeignKey("unidades.id"),
-        nullable=False,
+        nullable=True,
         index=True,
     )
 

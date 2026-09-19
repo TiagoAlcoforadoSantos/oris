@@ -41,13 +41,21 @@ CREATE TABLE IF NOT EXISTS usuarios (
 
 -- ----------------------------------------------------------
 -- Tabela: unidades
--- Unidade de Saúde Bucal — entidade central do MVP.
--- O CNES é único para evitar cadastro duplicado da mesma unidade.
+-- Registro de Unidade de Saúde Bucal — entidade central do MVP.
+--
+-- REDESENHO DO MODELO DE DADOS (ver database/migrations/0001_...sql
+-- e docs/STAGE_MODELO_DE_DADOS.md): o CNES NÃO é mais único. A
+-- documentação real do cliente mostra que o mesmo CNES pode
+-- corresponder a mais de um registro de Unidade (unidade mista, ex.:
+-- Policlínica + Maternidade sob o mesmo CNES) — `id` (interno) é o
+-- identificador de negócio, `cnes` é só um atributo de referência.
+-- `unidade_e_mista` marca esse cenário explicitamente.
 -- ----------------------------------------------------------
 CREATE TABLE IF NOT EXISTS unidades (
     id INT NOT NULL AUTO_INCREMENT,
     nome VARCHAR(200) NOT NULL,
     cnes VARCHAR(20) NOT NULL,
+    unidade_e_mista BOOLEAN NOT NULL DEFAULT FALSE,
     tipo VARCHAR(100) NULL,
     endereco VARCHAR(255) NULL,
     bairro VARCHAR(100) NULL,
@@ -57,16 +65,18 @@ CREATE TABLE IF NOT EXISTS unidades (
     created_at DATETIME NOT NULL,
     updated_at DATETIME NOT NULL,
     PRIMARY KEY (id),
-    UNIQUE KEY uk_unidades_cnes (cnes)
+    KEY ix_unidades_cnes (cnes)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ----------------------------------------------------------
 -- Tabela: servicos
--- Um Serviço pertence a uma única Unidade.
+-- Um Serviço pode ou não estar vinculado a uma Unidade — a
+-- documentação real do cliente descreve serviços sem vínculo com
+-- uma unidade tradicional (ex.: ponto de vacinação em shopping).
 -- ----------------------------------------------------------
 CREATE TABLE IF NOT EXISTS servicos (
     id INT NOT NULL AUTO_INCREMENT,
-    unidade_id INT NOT NULL,
+    unidade_id INT NULL,
     nome VARCHAR(150) NOT NULL,
     situacao ENUM('ATIVO', 'INATIVO') NOT NULL DEFAULT 'ATIVO',
     created_at DATETIME NOT NULL,
@@ -79,12 +89,14 @@ CREATE TABLE IF NOT EXISTS servicos (
 
 -- ----------------------------------------------------------
 -- Tabela: equipamentos
--- Sempre pertence a uma Unidade; associação a um Serviço é
--- opcional (servico_id pode ser NULL).
+-- Um Equipamento pode ou não estar vinculado a uma Unidade (ex.:
+-- ambulância do SAMU). Associação a um Serviço continua opcional e é
+-- independente de unidade_id estar preenchido em qualquer um dos
+-- dois lados.
 -- ----------------------------------------------------------
 CREATE TABLE IF NOT EXISTS equipamentos (
     id INT NOT NULL AUTO_INCREMENT,
-    unidade_id INT NOT NULL,
+    unidade_id INT NULL,
     servico_id INT NULL,
     nome VARCHAR(150) NOT NULL,
     tipo VARCHAR(100) NULL,

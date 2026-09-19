@@ -22,7 +22,7 @@ from app.models import (
     Unidade,
     Usuario,
 )
-from app.services.alteracoes_service import aprovar_alteracao
+from app.services.alteracoes_service import aprovar_alteracao, registrar_alteracao
 from app.utils.security import gerar_hash_senha
 from config import TestingConfig
 
@@ -390,21 +390,36 @@ def test_alteracao_aprovada_gera_auditoria(client, app):
 
 
 def test_rollback_nao_gera_auditoria_falsa(client, app):
+    """CONTRATO ATUALIZADO (Stage "modelo de dados"): como em
+    test_fase7_alteracoes.py::test_rollback_ao_aprovar_alteracao_com_conflito_de_dados,
+    este teste usava CNES duplicado para forçar o conflito — isso
+    deixou de ser um conflito (CNES não é mais único). Substituído por
+    uma Alteracao CRIAR com `dados_novos` faltando o campo obrigatório
+    `nome` (violação de NOT NULL), que ainda é um erro real de banco e
+    continua exercitando o mesmo caminho de rollback."""
     _login(client, PerfilUsuario.RESPONSAVEL_SAUDE_BUCAL)
 
     dados_a = {"nome": "UBS Rollback A", "cnes": "1230044", "tipo": "UBS", "cidade": "Recife", "uf": "PE", "situacao": "ATIVA"}
-    dados_b = {"nome": "UBS Rollback B", "cnes": "1230044", "tipo": "UBS", "cidade": "Recife", "uf": "PE", "situacao": "ATIVA"}
     client.post("/unidades/nova", data=dados_a)
-    client.post("/unidades/nova", data=dados_b)
 
     with app.app_context():
+        solicitante = _usuario(app, PerfilUsuario.RESPONSAVEL_SAUDE_BUCAL)
+        alteracao_invalida = registrar_alteracao(
+            solicitante,
+            "unidades",
+            None,
+            "CRIAR",
+            {"cnes": "1230099", "situacao": "ATIVA"},  # sem "nome" -> NOT NULL
+            "Alteração deliberadamente inválida para testar rollback",
+        )
+
         alteracoes = Alteracao.query.filter_by(tabela="unidades", operacao="CRIAR").order_by(Alteracao.id).all()
         aprovador = _usuario(app, PerfilUsuario.ADMINISTRADOR)
 
         aprovar_alteracao(alteracoes[0], aprovador)
         total_auditorias_antes = Auditoria.query.count()
 
-        ok, _ = aprovar_alteracao(alteracoes[1], aprovador)
+        ok, _ = aprovar_alteracao(alteracao_invalida, aprovador)
         assert ok is False
 
         # Nenhuma auditoria nova de CRIAR/APROVAR_ALTERACAO para a

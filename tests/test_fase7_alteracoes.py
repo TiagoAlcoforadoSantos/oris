@@ -20,7 +20,7 @@ from app.models import (
     Unidade,
     Usuario,
 )
-from app.services.alteracoes_service import aprovar_alteracao, rejeitar_alteracao
+from app.services.alteracoes_service import aprovar_alteracao, registrar_alteracao, rejeitar_alteracao
 from app.utils.security import gerar_hash_senha
 from config import TestingConfig
 
@@ -408,17 +408,36 @@ def test_alteracao_relacionada_a_equipamento(client, app):
 # ----------------------------------------------------------------
 
 def test_rollback_ao_aprovar_alteracao_com_conflito_de_dados(client, app):
+    """CONTRATO ATUALIZADO (Stage "modelo de dados"): este teste usava
+    duas solicitações de CRIAR Unidade com o MESMO CNES para forçar um
+    conflito de banco na aprovação da segunda — isso deixou de ser um
+    conflito, porque o CNES não é mais único (unidade mista é um
+    cenário válido; ver test_fase2_models.py). O teste continua
+    existindo para cobrir o mesmo comportamento (rollback seguro
+    quando `_aplicar_alteracao` esbarra num erro inesperado do banco
+    ao aprovar), só que agora com um conflito genuíno e independente
+    de CNES: uma segunda Alteracao CRIAR cujos `dados_novos` omitem o
+    campo obrigatório `nome` (violação de NOT NULL), montada
+    diretamente via `registrar_alteracao` (a validação de
+    obrigatoriedade do formulário não entra em jogo aqui de propósito
+    — o objetivo é testar a defesa que existe na camada de aplicação
+    da alteração, não a validação do formulário)."""
     _login(client, PerfilUsuario.RESPONSAVEL_SAUDE_BUCAL)
 
     dados_a = dict(DADOS_UNIDADE_NOVA)
-    dados_b = dict(DADOS_UNIDADE_NOVA)
-    dados_b["nome"] = "UBS Outro Nome"
-    # mesmo CNES em A e B — nenhuma delas existe ainda, então nenhuma
-    # bloqueia a outra na hora de SOLICITAR.
     client.post("/unidades/nova", data=dados_a)
-    client.post("/unidades/nova", data=dados_b)
 
     with app.app_context():
+        solicitante = _usuario(app, PerfilUsuario.RESPONSAVEL_SAUDE_BUCAL)
+        alteracao_invalida = registrar_alteracao(
+            solicitante,
+            "unidades",
+            None,
+            "CRIAR",
+            {"cnes": "9990001", "situacao": "ATIVA"},  # sem "nome" -> NOT NULL
+            "Alteração deliberadamente inválida para testar rollback",
+        )
+
         alteracoes = Alteracao.query.filter_by(tabela="unidades", operacao="CRIAR").order_by(Alteracao.id).all()
         assert len(alteracoes) == 2
         aprovador = _usuario(app, PerfilUsuario.ADMINISTRADOR)
@@ -426,14 +445,14 @@ def test_rollback_ao_aprovar_alteracao_com_conflito_de_dados(client, app):
         ok_a, _ = aprovar_alteracao(alteracoes[0], aprovador)
         assert ok_a is True
 
-        ok_b, mensagem_b = aprovar_alteracao(alteracoes[1], aprovador)
+        ok_b, mensagem_b = aprovar_alteracao(alteracao_invalida, aprovador)
         assert ok_b is False
         assert "conflito" in mensagem_b.lower()
 
         # A segunda alteração continua PENDENTE — nada foi aplicado
-        # parcialmente, e só existe uma unidade com esse CNES.
-        assert alteracoes[1].status == StatusAlteracao.PENDENTE
-        assert Unidade.query.filter_by(cnes="7654321").count() == 1
+        # parcialmente, e nenhuma unidade sem nome foi criada.
+        assert alteracao_invalida.status == StatusAlteracao.PENDENTE
+        assert Unidade.query.filter_by(cnes="9990001").count() == 0
 
 
 # ----------------------------------------------------------------
