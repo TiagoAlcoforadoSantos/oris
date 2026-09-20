@@ -52,11 +52,24 @@
     (Fase 7); linhas "sem alteração" não geram nenhuma solicitação.
 </div>
 
+{% if resultado.avisos %}
+<div class="alert alert-warning">
+    <i class="bi bi-exclamation-triangle" aria-hidden="true"></i>
+    <strong>Avisos (não impedem a importação):</strong>
+    <ul class="mb-0">
+        {% for aviso in resultado.avisos %}
+        <li>Linha {{ aviso.linha }}: {{ aviso.mensagem }}</li>
+        {% endfor %}
+    </ul>
+</div>
+{% endif %}
+
 <div class="table-responsive oris-import-panel p-0 mb-4">
     <table class="table table-hover align-middle mb-0">
         <thead>
             <tr>
                 <th>Linha</th>
+                <th>Tipo</th>
                 {% for campo in campos_todos %}<th>{{ rotulos[campo] }}</th>{% endfor %}
                 <th>Classificação</th>
             </tr>
@@ -65,6 +78,7 @@
             {% for linha in linhas_previa %}
             <tr>
                 <td>{{ linha.numero_linha }}</td>
+                <td>{{ linha.tipo or "—" }}</td>
                 {% for campo in campos_todos %}<td>{{ linha.dados.get(campo) or "—" }}</td>{% endfor %}
                 <td>
                     {% if linha.classificacao == "novo" %}

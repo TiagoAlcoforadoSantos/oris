@@ -43,6 +43,19 @@
 <div class="row row-cols-1 row-cols-md-3 g-3 mb-4">
     <div class="col">
         <div class="oris-import-card">
+            <div class="oris-import-card-icon"><i class="bi bi-diagram-3" aria-hidden="true"></i></div>
+            <h2>Rede (formato unificado)</h2>
+            <p class="text-muted small">Unidade, Equipamento e Serviço na mesma planilha — ex.: REDE_SAUDE_RECIFE_GEO.</p>
+            <div class="d-flex gap-2">
+                <a href="{{ url_for('importacao.nova', entidade='rede') }}" class="btn btn-primary btn-sm">Importar</a>
+                <a href="{{ url_for('importacao.template', entidade='rede') }}" class="btn btn-outline-secondary btn-sm">
+                    <i class="bi bi-download" aria-hidden="true"></i> Modelo
+                </a>
+            </div>
+        </div>
+    </div>
+    <div class="col">
+        <div class="oris-import-card">
             <div class="oris-import-card-icon"><i class="bi bi-hospital" aria-hidden="true"></i></div>
             <h2>Unidades</h2>
             <p class="text-muted small">Nome, CNES, tipo, endereço, cidade, UF, situação.</p>

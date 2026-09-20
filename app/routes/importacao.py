@@ -54,9 +54,17 @@ PERFIS_QUE_IMPORTAM = (
     PerfilUsuario.RESPONSAVEL_SAUDE_BUCAL.value,
 )
 
-ENTIDADES_VALIDAS = ("unidades", "servicos", "equipamentos")
+ENTIDADES_VALIDAS = ("unidades", "servicos", "equipamentos", "rede")
 
-NOMES_SINGULAR = {"unidades": "unidade", "servicos": "serviço", "equipamentos": "equipamento"}
+NOMES_SINGULAR = {"unidades": "unidade", "servicos": "serviço", "equipamentos": "equipamento", "rede": "registro"}
+
+# Entidade "rede" (formato unificado, ex.: REDE_SAUDE_RECIFE_GEO): uma
+# linha pode gerar sub-registros de mais de um tipo (ver
+# app/services/importacao_service.py). Cada sub-registro precisa ser
+# direcionado à sua própria tabela/nome singular na confirmação, em
+# vez de usar a entidade "rede" (que não é uma tabela de negócio).
+_TABELA_POR_TIPO_REDE = {"UNIDADE": "unidades", "SERVICO": "servicos", "EQUIPAMENTO": "equipamentos"}
+_SINGULAR_POR_TIPO_REDE = {"UNIDADE": "unidade", "SERVICO": "serviço", "EQUIPAMENTO": "equipamento"}
 
 
 # ----------------------------------------------------------------
@@ -355,18 +363,25 @@ def confirmar():
         classificacao = linha["classificacao"]
         contagens[classificacao] += 1
 
+        if entidade == "rede":
+            tabela_alvo = _TABELA_POR_TIPO_REDE[linha["tipo"]]
+            singular_alvo = _SINGULAR_POR_TIPO_REDE[linha["tipo"]]
+        else:
+            tabela_alvo = entidade
+            singular_alvo = singular
+
         if classificacao == "novo":
             descricao = (
                 f"Importação de planilha — linha {linha['numero_linha']}: "
-                f"criação de {singular} '{linha['dados'].get('nome')}'."
+                f"criação de {singular_alvo} '{linha['dados'].get('nome')}'."
             )
-            registrar_alteracao(usuario, entidade, None, "CRIAR", linha["dados"], descricao)
+            registrar_alteracao(usuario, tabela_alvo, None, "CRIAR", linha["dados"], descricao)
         elif classificacao == "alterado":
             descricao = (
                 f"Importação de planilha — linha {linha['numero_linha']}: "
-                f"edição de {singular} '{linha['dados'].get('nome')}'."
+                f"edição de {singular_alvo} '{linha['dados'].get('nome')}'."
             )
-            registrar_alteracao(usuario, entidade, linha["registro_existente_id"], "EDITAR", linha["dados"], descricao)
+            registrar_alteracao(usuario, tabela_alvo, linha["registro_existente_id"], "EDITAR", linha["dados"], descricao)
         # "sem_alteracao": nada a fazer — não gera solicitação.
 
     registrar_auditoria(

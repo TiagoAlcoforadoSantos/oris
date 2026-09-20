@@ -17,7 +17,10 @@ from app.extensions import db
 from app.models import (
     Alteracao,
     Auditoria,
+    Equipamento,
     PerfilUsuario,
+    Servico,
+    SituacaoAtivoInativo,
     SituacaoUnidade,
     Unidade,
     Usuario,
@@ -47,6 +50,38 @@ MAPA_UNIDADES = {
     "mapa_endereco": "",
     "mapa_bairro": "",
 }
+
+# Formato unificado (Stage "importador x modelo de dados redesenhado"),
+# ex.: REDE_SAUDE_RECIFE_GEO — uma linha pode descrever Unidade,
+# Equipamento e/ou Serviço ao mesmo tempo (ver
+# app/services/importacao_service.py).
+CABECALHO_REDE = [
+    "UNIDADE", "EQUIPAMENTO DE SAUDE", "TIPO EQUIPAMENTO", "TIPO SERVICO",
+    "CNES", "UNIDADE E MISTA", "NOME", "NOME CURTO", "DS", "ENDERECO", "BAIRRO", "ATIVO",
+]
+
+MAPA_REDE = {
+    "mapa_unidade_flag": "UNIDADE",
+    "mapa_equipamento_flag": "EQUIPAMENTO DE SAUDE",
+    "mapa_tipo_equipamento": "TIPO EQUIPAMENTO",
+    "mapa_tipo_servico": "TIPO SERVICO",
+    "mapa_cnes": "CNES",
+    "mapa_unidade_mista": "UNIDADE E MISTA",
+    "mapa_nome": "NOME",
+    "mapa_nome_curto": "NOME CURTO",
+    "mapa_ds": "DS",
+    "mapa_endereco": "ENDERECO",
+    "mapa_bairro": "BAIRRO",
+    "mapa_ativo": "ATIVO",
+}
+
+
+def _linha_rede(unidade="N", equipamento="N", tipo_equip="", tipo_servico="", cnes="9999999",
+                 mista="N", nome="", nome_curto="", ds="", endereco="", bairro="", ativo="S"):
+    """Monta uma linha no formato unificado, na ordem de CABECALHO_REDE,
+    com valores default sensatos — só é preciso informar o que o teste
+    realmente exercita."""
+    return [unidade, equipamento, tipo_equip, tipo_servico, cnes, mista, nome, nome_curto, ds, endereco, bairro, ativo]
 
 
 def _csv_bytes(linhas):
@@ -138,6 +173,26 @@ def _fluxo_completo_unidade_valida(client, linhas, mapa=None):
         data={"entidade": "unidades", "token": token, "extensao": ".csv", **(mapa or MAPA_UNIDADES)},
     )
     return token, resp
+
+
+def _fluxo_completo_rede(client, linhas, mapa=None):
+    """Mesmo fluxo de `_fluxo_completo_unidade_valida`, mas para a
+    entidade "rede" (formato unificado)."""
+    resp = _upload_e_mapear(client, _csv_bytes(linhas), "rede.csv", entidade="rede")
+    token = _extrair_token(resp.get_data(as_text=True))
+    resp = client.post(
+        "/importacao/validar",
+        data={"entidade": "rede", "token": token, "extensao": ".csv", **(mapa or MAPA_REDE)},
+    )
+    return token, resp
+
+
+def _confirmar_rede(client, token, mapa=None, follow_redirects=True):
+    return client.post(
+        "/importacao/confirmar",
+        data={"entidade": "rede", "token": token, "extensao": ".csv", **(mapa or MAPA_REDE)},
+        follow_redirects=follow_redirects,
+    )
 
 
 # ----------------------------------------------------------------
@@ -251,7 +306,11 @@ def test_cnes_invalido_gera_erro(client):
     assert "CNES deve conter apenas números" in resp.get_data(as_text=True)
 
 
-def test_cnes_duplicado_dentro_da_planilha_gera_erro(client):
+def test_cnes_duplicado_dentro_da_planilha_nao_e_mais_erro(client):
+    # Stage "modelo de dados" (migration 0001): CNES deixou de ser
+    # identificador único — o mesmo CNES pode aparecer em mais de um
+    # registro de Unidade (ex.: unidade mista). Duas linhas com o
+    # mesmo CNES na mesma planilha não é mais um erro de validação.
     _login(client, PerfilUsuario.ADMINISTRADOR)
     linhas = [
         CABECALHO_UNIDADES,
@@ -259,8 +318,12 @@ def test_cnes_duplicado_dentro_da_planilha_gera_erro(client):
         ["UBS B", "1112227", "Recife", "PE", "ATIVA"],
     ]
     _, resp = _fluxo_completo_unidade_valida(client, linhas)
+    html = resp.get_data(as_text=True)
     assert resp.status_code == 200
-    assert "duplicado" in resp.get_data(as_text=True).lower()
+    assert "duplicado" not in html.lower()
+    assert "UBS A" in html
+    assert "UBS B" in html
+    assert html.count("oris-import-badge-novo") == 2
 
 
 def test_uf_invalida_gera_erro(client):
@@ -525,3 +588,287 @@ def test_rotas_da_aplicacao_continuam_registradas_apos_fase10(app):
     assert "auditoria.listar" in endpoints
     assert "dashboard.index" in endpoints
     assert "importacao.index" in endpoints
+
+
+# ==================================================================
+# Entidade "rede" — formato unificado (Stage "importador x modelo de
+# dados redesenhado", ex.: REDE_SAUDE_RECIFE_GEO). Uma linha pode
+# descrever Unidade, Serviço e/ou Equipamento simultaneamente; CNES
+# não é identificador único; vínculos com Unidade são opcionais.
+# ==================================================================
+
+def _aprovar_todas_pendentes(app, tabela=None):
+    """Aprova, como ADMINISTRADOR, toda Alteracao PENDENTE (opcionalmente
+    filtrando por tabela) criada por outro usuário — helper só para
+    reduzir repetição nos testes abaixo."""
+    with app.app_context():
+        aprovador = _usuario(app, PerfilUsuario.ADMINISTRADOR)
+        query = Alteracao.query.filter_by(status="PENDENTE") if tabela is None else Alteracao.query.filter_by(status="PENDENTE", tabela=tabela)
+        for alteracao in query.all():
+            ok, mensagem = aprovar_alteracao(alteracao, aprovador)
+            assert ok is True, mensagem
+
+
+# 1. Duas unidades com o mesmo CNES (unidade mista)
+def test_rede_duas_unidades_com_mesmo_cnes(client, app):
+    _login(client, PerfilUsuario.RESPONSAVEL_SAUDE_BUCAL)
+    linhas = [
+        CABECALHO_REDE,
+        _linha_rede(unidade="S", cnes="5551111", nome="Policlínica Recife"),
+        _linha_rede(unidade="S", cnes="5551111", nome="Maternidade Recife", mista="S"),
+    ]
+    token, resp = _fluxo_completo_rede(client, linhas)
+    html = resp.get_data(as_text=True)
+    assert resp.status_code == 200
+    assert "Policlínica Recife" in html
+    assert "Maternidade Recife" in html
+    assert html.count("oris-import-badge-novo") == 2
+
+    _confirmar_rede(client, token)
+    _aprovar_todas_pendentes(app, tabela="unidades")
+
+    with app.app_context():
+        unidades = Unidade.query.filter_by(cnes="5551111").all()
+        assert len(unidades) == 2
+        assert {u.nome for u in unidades} == {"Policlínica Recife", "Maternidade Recife"}
+
+
+# 2. Unidade com CNES 9999999 (convenção "sem CNES real")
+def test_rede_unidade_com_cnes_9999999(client):
+    _login(client, PerfilUsuario.RESPONSAVEL_SAUDE_BUCAL)
+    linhas = [CABECALHO_REDE, _linha_rede(unidade="S", cnes="9999999", nome="UBS Sem CNES Próprio")]
+    _, resp = _fluxo_completo_rede(client, linhas)
+    html = resp.get_data(as_text=True)
+    assert resp.status_code == 200
+    assert "UBS Sem CNES Próprio" in html
+    assert "Novo" in html
+
+
+# 3. Serviço sem unidade
+def test_rede_servico_sem_unidade(client, app):
+    _login(client, PerfilUsuario.RESPONSAVEL_SAUDE_BUCAL)
+    linhas = [CABECALHO_REDE, _linha_rede(tipo_servico="Vacinação em Shopping", cnes="9999999")]
+    token, resp = _fluxo_completo_rede(client, linhas)
+    assert resp.status_code == 200
+    assert "erro" not in resp.get_data(as_text=True).lower() or "SERVICO" in resp.get_data(as_text=True)
+
+    _confirmar_rede(client, token)
+    _aprovar_todas_pendentes(app, tabela="servicos")
+
+    with app.app_context():
+        servico = Servico.query.filter_by(nome="Vacinação em Shopping").first()
+        assert servico is not None
+        assert servico.unidade_id is None
+
+
+# 4. Equipamento sem unidade
+def test_rede_equipamento_sem_unidade(client, app):
+    _login(client, PerfilUsuario.RESPONSAVEL_SAUDE_BUCAL)
+    linhas = [CABECALHO_REDE, _linha_rede(equipamento="S", cnes="9999999", nome="Ambulância SAMU", tipo_equip="Ambulância")]
+    token, _ = _fluxo_completo_rede(client, linhas)
+
+    _confirmar_rede(client, token)
+    _aprovar_todas_pendentes(app, tabela="equipamentos")
+
+    with app.app_context():
+        equipamento = Equipamento.query.filter_by(nome="Ambulância SAMU").first()
+        assert equipamento is not None
+        assert equipamento.unidade_id is None
+
+
+# 5. Equipamento relacionado a um Serviço já existente (link seguro:
+#    exatamente uma correspondência por nome)
+def test_rede_equipamento_relacionado_a_servico_existente(client, app):
+    with app.app_context():
+        db.session.add(Servico(nome="Endodontia", unidade_id=None, situacao=SituacaoAtivoInativo.ATIVO))
+        db.session.commit()
+
+    _login(client, PerfilUsuario.RESPONSAVEL_SAUDE_BUCAL)
+    linhas = [
+        CABECALHO_REDE,
+        _linha_rede(equipamento="S", cnes="9999999", nome="Cadeira Odontológica", tipo_equip="Cadeira", tipo_servico="Endodontia"),
+    ]
+    token, _ = _fluxo_completo_rede(client, linhas)
+    _confirmar_rede(client, token)
+    _aprovar_todas_pendentes(app, tabela="equipamentos")
+
+    with app.app_context():
+        servico = Servico.query.filter_by(nome="Endodontia").first()
+        equipamento = Equipamento.query.filter_by(nome="Cadeira Odontológica").first()
+        assert equipamento is not None
+        assert equipamento.servico_id == servico.id
+
+
+# 6. Serviço com nome ambíguo (mais de uma correspondência) não é
+#    vinculado automaticamente ao Equipamento — vira aviso, não erro
+def test_rede_equipamento_relacionado_a_servico_ambiguo_gera_aviso_sem_erro(client, app):
+    with app.app_context():
+        db.session.add(Servico(nome="Fisioterapia", unidade_id=None, situacao=SituacaoAtivoInativo.ATIVO))
+        db.session.add(Servico(nome="Fisioterapia", unidade_id=None, situacao=SituacaoAtivoInativo.ATIVO))
+        db.session.commit()
+
+    _login(client, PerfilUsuario.RESPONSAVEL_SAUDE_BUCAL)
+    linhas = [
+        CABECALHO_REDE,
+        _linha_rede(equipamento="S", cnes="9999999", nome="Aparelho de Fisioterapia", tipo_equip="Aparelho", tipo_servico="Fisioterapia"),
+    ]
+    token, resp = _fluxo_completo_rede(client, linhas)
+    assert resp.status_code == 200
+    assert "ambígua" in resp.get_data(as_text=True).lower()
+
+    _confirmar_rede(client, token)
+    _aprovar_todas_pendentes(app, tabela="equipamentos")
+
+    with app.app_context():
+        equipamento = Equipamento.query.filter_by(nome="Aparelho de Fisioterapia").first()
+        assert equipamento is not None
+        assert equipamento.servico_id is None  # ambíguo -> sem vínculo automático, não é erro
+
+
+# 7. Unidade com múltiplos serviços (vínculo seguro via CNES único)
+def test_rede_unidade_com_multiplos_servicos(client, app):
+    _login(client, PerfilUsuario.RESPONSAVEL_SAUDE_BUCAL)
+    linhas = [
+        CABECALHO_REDE,
+        _linha_rede(unidade="S", cnes="5552222", nome="UBS Multi Serviço"),
+    ]
+    token, _ = _fluxo_completo_rede(client, linhas)
+    _confirmar_rede(client, token)
+    _aprovar_todas_pendentes(app, tabela="unidades")
+
+    linhas_servicos = [
+        CABECALHO_REDE,
+        _linha_rede(tipo_servico="Clínica Geral", cnes="5552222"),
+        _linha_rede(tipo_servico="Odontopediatria", cnes="5552222"),
+    ]
+    token, resp = _fluxo_completo_rede(client, linhas_servicos)
+    assert resp.status_code == 200
+    _confirmar_rede(client, token)
+    _aprovar_todas_pendentes(app, tabela="servicos")
+
+    with app.app_context():
+        unidade = Unidade.query.filter_by(cnes="5552222").first()
+        assert unidade.servicos.count() == 2
+
+
+# 8-10. Classificação de linha (UNIDADE / EQUIPAMENTO / SERVICO)
+def test_rede_classificacao_unidade(client):
+    _login(client, PerfilUsuario.RESPONSAVEL_SAUDE_BUCAL)
+    linhas = [CABECALHO_REDE, _linha_rede(unidade="S", cnes="5553333", nome="UBS Classificação")]
+    _, resp = _fluxo_completo_rede(client, linhas)
+    html = resp.get_data(as_text=True)
+    # O nome das colunas mapeadas ("TIPO SERVICO" etc.) sempre aparece
+    # nos campos ocultos do formulário, então a checagem é pela célula
+    # de "Tipo" da prévia, não por substring solta na página inteira.
+    assert "<td>UNIDADE</td>" in html
+    assert "<td>SERVICO</td>" not in html
+    assert "<td>EQUIPAMENTO</td>" not in html
+
+
+def test_rede_classificacao_equipamento(client):
+    _login(client, PerfilUsuario.RESPONSAVEL_SAUDE_BUCAL)
+    linhas = [CABECALHO_REDE, _linha_rede(equipamento="S", cnes="5554444", nome="Autoclave", tipo_equip="Esterilização")]
+    _, resp = _fluxo_completo_rede(client, linhas)
+    html = resp.get_data(as_text=True)
+    assert "<td>EQUIPAMENTO</td>" in html
+    assert "<td>UNIDADE</td>" not in html
+
+
+def test_rede_classificacao_servico(client):
+    _login(client, PerfilUsuario.RESPONSAVEL_SAUDE_BUCAL)
+    linhas = [CABECALHO_REDE, _linha_rede(tipo_servico="Prótese Dentária", cnes="5555555")]
+    _, resp = _fluxo_completo_rede(client, linhas)
+    html = resp.get_data(as_text=True)
+    assert "<td>SERVICO</td>" in html
+    assert "<td>UNIDADE</td>" not in html
+
+
+# 11. Linha com dados insuficientes (nenhum indicador preenchido)
+def test_rede_linha_com_dados_insuficientes_gera_erro(client):
+    _login(client, PerfilUsuario.RESPONSAVEL_SAUDE_BUCAL)
+    linhas = [CABECALHO_REDE, _linha_rede(unidade="N", equipamento="N", tipo_servico="", cnes="5556666")]
+    _, resp = _fluxo_completo_rede(client, linhas)
+    assert resp.status_code == 200
+    assert "dados suficientes" in resp.get_data(as_text=True).lower()
+
+
+# 12. Prévia contendo tipos diferentes na mesma planilha
+def test_rede_previa_contendo_tipos_diferentes(client):
+    _login(client, PerfilUsuario.RESPONSAVEL_SAUDE_BUCAL)
+    linhas = [
+        CABECALHO_REDE,
+        _linha_rede(unidade="S", cnes="5557777", nome="UBS Mista Tipos"),
+        _linha_rede(equipamento="S", cnes="5557777", nome="Cadeira X", tipo_equip="Cadeira"),
+        _linha_rede(tipo_servico="Clínica Geral", cnes="5557777"),
+    ]
+    _, resp = _fluxo_completo_rede(client, linhas)
+    html = resp.get_data(as_text=True)
+    assert resp.status_code == 200
+    assert "UNIDADE" in html
+    assert "EQUIPAMENTO" in html
+    assert "SERVICO" in html
+
+
+# 13. Fluxo de aprovação após importação (fica PENDENTE, só aplica ao aprovar)
+def test_rede_fluxo_de_aprovacao_apos_importacao(client, app):
+    _login(client, PerfilUsuario.RESPONSAVEL_SAUDE_BUCAL)
+    linhas = [CABECALHO_REDE, _linha_rede(unidade="S", cnes="5558888", nome="UBS Aprovação Rede")]
+    token, _ = _fluxo_completo_rede(client, linhas)
+    _confirmar_rede(client, token)
+
+    with app.app_context():
+        assert Unidade.query.filter_by(cnes="5558888").first() is None
+        alteracao = Alteracao.query.filter_by(tabela="unidades", operacao="CRIAR").order_by(Alteracao.id.desc()).first()
+        assert alteracao.status.value == "PENDENTE"
+
+        solicitante = _usuario(app, PerfilUsuario.RESPONSAVEL_SAUDE_BUCAL)
+        ok, mensagem = aprovar_alteracao(alteracao, solicitante)
+        assert ok is False  # segregação de funções também vale para a importação "rede"
+
+        aprovador = _usuario(app, PerfilUsuario.ADMINISTRADOR)
+        ok, _ = aprovar_alteracao(alteracao, aprovador)
+        assert ok is True
+        assert Unidade.query.filter_by(cnes="5558888").first() is not None
+
+
+# 14. Auditoria gerada corretamente para a importação "rede"
+def test_rede_auditoria_apos_aplicacao_aprovada(client, app):
+    _login(client, PerfilUsuario.RESPONSAVEL_SAUDE_BUCAL)
+    linhas = [CABECALHO_REDE, _linha_rede(unidade="S", cnes="5559999", nome="UBS Auditoria Rede")]
+    token, _ = _fluxo_completo_rede(client, linhas)
+    _confirmar_rede(client, token)
+
+    with app.app_context():
+        assert Auditoria.query.filter_by(acao="IMPORTAR_PLANILHA", tabela="rede").first() is not None
+        assert Auditoria.query.filter_by(acao="SOLICITAR_ALTERACAO", tabela="unidades").first() is not None
+
+        alteracao = Alteracao.query.filter_by(tabela="unidades", operacao="CRIAR").order_by(Alteracao.id.desc()).first()
+        aprovador = _usuario(app, PerfilUsuario.ADMINISTRADOR)
+        aprovar_alteracao(alteracao, aprovador)
+
+        assert Auditoria.query.filter_by(acao="CRIAR", tabela="unidades", registro_id=alteracao.registro_id).first() is not None
+
+
+# 15. Revalidação na confirmação evita gravação parcial ("rollback" a
+#     nível de importação): se os dados mudaram entre a prévia e a
+#     confirmação (aqui simulado com um mapeamento que invalida uma
+#     linha), nenhuma Alteracao é criada para o lote.
+def test_rede_confirmacao_com_revalidacao_invalida_nao_grava_nada(client, app):
+    _login(client, PerfilUsuario.RESPONSAVEL_SAUDE_BUCAL)
+    linhas = [CABECALHO_REDE, _linha_rede(unidade="S", cnes="5551010", nome="UBS Rollback")]
+    token, resp = _fluxo_completo_rede(client, linhas)
+    assert resp.status_code == 200
+
+    with app.app_context():
+        antes = Alteracao.query.count()
+
+    mapa_quebrado = dict(MAPA_REDE)
+    mapa_quebrado["mapa_cnes"] = ""  # desmapeia CNES -> linha fica inválida na revalidação
+    resp = _confirmar_rede(client, token, mapa=mapa_quebrado, follow_redirects=True)
+    assert resp.status_code == 200
+    assert "mudaram" in resp.get_data(as_text=True).lower() or "novamente" in resp.get_data(as_text=True).lower()
+
+    with app.app_context():
+        depois = Alteracao.query.count()
+        assert depois == antes
+        assert Unidade.query.filter_by(cnes="5551010").first() is None
