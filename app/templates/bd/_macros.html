@@ -1,0 +1,13 @@
+{% macro sql_box(titulo, sql, aberto=false) -%}
+<details class="bd-sql-box" {% if aberto %}open{% endif %}>
+    <summary><i class="bi bi-code-slash" aria-hidden="true"></i> {{ titulo }}</summary>
+    <pre class="bd-sql"><code>{{ sql }}</code></pre>
+</details>
+{%- endmacro %}
+
+{% macro badge_situacao(valor) -%}
+{% if valor in ("ATIVA", "ATIVO") %}<span class="badge bg-success">{{ valor|capitalize }}</span>
+{% elif valor == "MANUTENCAO" %}<span class="badge bg-warning text-dark">Manutenção</span>
+{% elif valor in ("INATIVA", "INATIVO") %}<span class="badge bg-secondary">{{ valor|capitalize }}</span>
+{% else %}{{ valor if valor is not none else "—" }}{% endif %}
+{%- endmacro %}

@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+
+{% block title %}Banco de Dados — ORIS{% endblock %}
+
+{% block breadcrumb %}
+    <a href="{{ url_for('dashboard.index') }}">Início</a>
+    <span aria-hidden="true">/</span>
+    <span class="oris-breadcrumb-current">Banco de Dados</span>
+{% endblock %}
+
+{% block extra_css %}
+<link href="{{ url_for('static', filename='css/bd.css') }}" rel="stylesheet">
+{% endblock %}
+
+{% block content %}
+<div class="oris-page-header">
+    <div>
+        <h1>Banco de Dados</h1>
+        <p>Comandos SQL explícitos no MySQL — inserção, alteração, exclusão, consultas e estatística.</p>
+    </div>
+    <div class="oris-page-header-actions">
+        <a href="{{ url_for('bd.estatistica_painel') }}" class="btn btn-primary">
+            <i class="bi bi-bar-chart-line" aria-hidden="true"></i> Painel estatístico
+        </a>
+    </div>
+</div>
+
+{% if erro %}<div class="alert alert-danger">{{ erro }}</div>{% endif %}
+
+<p class="oris-section-label">Tabelas (SELECT · INSERT · UPDATE · DELETE)</p>
+<div class="bd-grid">
+    {% for nome, cfg in entidades.items() %}
+    <a class="oris-panel bd-card" href="{{ url_for('bd.listar', entidade=nome) }}">
+        <i class="bi {{ cfg.icone }}" aria-hidden="true"></i>
+        <span class="bd-card-num">{{ totais.get(nome, "—") }}</span>
+        <span class="fw-semibold">{{ cfg.titulo }}</span>
+        <span class="bd-card-label">
+            Tabela <code>{{ nome }}</code>{% if pode_escrever %} · CRUD completo{% else %} · somente leitura{% endif %}
+        </span>
+    </a>
+    {% endfor %}
+</div>
+
+<div class="d-flex justify-content-between align-items-end">
+    <p class="oris-section-label mb-2">Consultas da Etapa 03 ({{ consultas|length }})</p>
+    <a href="{{ url_for('bd.consultas') }}" class="small">Ver catálogo completo</a>
+</div>
+<div class="row g-3 mb-4">
+    {% for c in consultas %}
+    <div class="col-md-6 col-xl-4">
+        <a class="oris-panel bd-consulta-item border" href="{{ url_for('bd.executar_consulta', consulta_id=c.id) }}">
+            <span class="bd-nivel">{{ c.id|upper }} · {{ c.nivel }}</span>
+            <h3>{{ c.titulo }}</h3>
+            <p class="small text-muted mb-2">{{ c.pergunta }}</p>
+            {% for conceito in c.conceitos[:3] %}<span class="bd-chip">{{ conceito }}</span>{% endfor %}
+        </a>
+    </div>
+    {% endfor %}
+</div>
+
+<div class="oris-panel">
+    <p class="oris-section-label">Como este módulo acessa o banco</p>
+    <p class="small mb-2">
+        Todas as telas deste módulo usam a camada <code>app/bd/</code>: o driver <strong>PyMySQL</strong>
+        (padrão Python DB-API 2.0, equivalente ao JDBC) abre a conexão, executa o SQL escrito à mão com
+        parâmetros (<code>%s</code> ≈ <code>?</code> do <code>PreparedStatement</code>) e controla a transação com
+        <code>commit()</code>/<code>rollback()</code>. Cada tela mostra o SQL exato que está sendo executado.
+    </p>
+    <p class="small text-muted mb-0">
+        Inserção, alteração e exclusão são permitidas a ADMINISTRADOR e GESTÃO DA INFORMAÇÃO e ficam
+        registradas na Auditoria (mesma transação). Demais perfis visualizam e executam consultas.
+    </p>
+</div>
+{% endblock %}

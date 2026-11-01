@@ -1,0 +1,134 @@
+{% extends "base.html" %}
+{% from "bd/_macros.html" import sql_box %}
+
+{% block title %}Painel estatístico — ORIS{% endblock %}
+
+{% block breadcrumb %}
+    <a href="{{ url_for('dashboard.index') }}">Início</a>
+    <span aria-hidden="true">/</span>
+    <span class="oris-breadcrumb-current">Painel estatístico</span>
+{% endblock %}
+
+{% block extra_css %}
+<link href="{{ url_for('static', filename='css/bd.css') }}" rel="stylesheet">
+{% endblock %}
+
+{% block content %}
+<div class="oris-page-header">
+    <div>
+        <h1>Painel estatístico</h1>
+        <p>Gráficos e estatística descritiva calculados em tempo real a partir do MySQL.</p>
+    </div>
+    <div class="oris-page-header-actions">
+        <a href="{{ url_for('bd.consultas') }}" class="btn btn-outline-primary">
+            <i class="bi bi-search" aria-hidden="true"></i> Consultas
+        </a>
+    </div>
+</div>
+
+{% if erro %}<div class="alert alert-danger">{{ erro }}</div>{% else %}
+
+<div class="row g-3 mb-3">
+    <div class="col-lg-4">
+        <div class="oris-panel h-100">
+            <p class="oris-section-label">Unidades por situação</p>
+            <div class="bd-chart-wrap bd-chart-wrap--sm"><canvas id="g-situacao"></canvas></div>
+        </div>
+    </div>
+    <div class="col-lg-8">
+        <div class="oris-panel h-100">
+            <p class="oris-section-label">Equipamentos por tipo (ativos × inativos)</p>
+            <div class="bd-chart-wrap bd-chart-wrap--sm"><canvas id="g-tipo-equip"></canvas></div>
+        </div>
+    </div>
+</div>
+
+<div class="oris-panel mb-3">
+    <div class="row g-4">
+        <div class="col-lg-7">
+            <p class="oris-section-label">Distribuição de frequências — equipamentos ativos por unidade ativa</p>
+            <div class="bd-chart-wrap"><canvas id="g-histograma"></canvas></div>
+        </div>
+        <div class="col-lg-5">
+            <p class="oris-section-label">Estatística descritiva (amostra: unidades ativas)</p>
+            <div class="bd-medidas mb-3">
+                {% for chave, rotulo in [("n","n"),("media","Média"),("mediana","Mediana"),("moda","Moda"),
+                                          ("desvio_padrao","Desvio padrão (s)"),("variancia","Variância (s²)"),
+                                          ("cv","Coef. variação (%)"),("minimo","Mínimo"),("maximo","Máximo"),
+                                          ("q1","Q1"),("q3","Q3"),("iqr","Amplitude interquartil")] %}
+                <div class="bd-medida"><span>{{ rotulo }}</span><strong>{{ medidas[chave] if medidas[chave] is not none else "—" }}</strong></div>
+                {% endfor %}
+            </div>
+            <p class="small text-muted">
+                Média, desvio padrão e variância amostrais, mínimo e máximo vêm do próprio SQL
+                (<code>AVG</code>, <code>STDDEV_SAMP</code>, <code>VAR_SAMP</code>); mediana, moda e quartis
+                são calculados em Python sobre a mesma amostra.
+            </p>
+            {{ sql_box("SQL das medidas", sql_amostra) }}
+        </div>
+    </div>
+</div>
+
+<div class="row g-3 mb-3">
+    <div class="col-lg-6">
+        <div class="oris-panel h-100">
+            <p class="oris-section-label">Unidades por tipo</p>
+            <div class="bd-chart-wrap bd-chart-wrap--sm"><canvas id="g-tipo-unidade"></canvas></div>
+        </div>
+    </div>
+    <div class="col-lg-6">
+        <div class="oris-panel h-100">
+            <p class="oris-section-label">Fluxo de aprovação por mês</p>
+            {% if dados.alteracoes_mes.rotulos %}
+            <div class="bd-chart-wrap bd-chart-wrap--sm"><canvas id="g-alteracoes"></canvas></div>
+            {% else %}<p class="text-muted small">Ainda não há alterações registradas.</p>{% endif %}
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<div class="oris-panel">
+    <p class="oris-section-label">Gráficos produzidos para a disciplina de Estatística</p>
+    {% if imagens %}
+    <div class="bd-galeria">
+        {% for img in imagens %}
+        <figure>
+            <a href="{{ url_for('static', filename='estatistica/' ~ img) }}" target="_blank" rel="noopener">
+                <img src="{{ url_for('static', filename='estatistica/' ~ img) }}" alt="{{ img.rsplit('.', 1)[0]|replace('_', ' ') }}" loading="lazy">
+            </a>
+            <figcaption>{{ img.rsplit('.', 1)[0]|replace('_', ' ')|replace('-', ' ') }}</figcaption>
+        </figure>
+        {% endfor %}
+    </div>
+    {% else %}
+    <p class="small text-muted mb-0">
+        Nenhuma imagem encontrada. Coloque os arquivos (.png, .jpg, .svg) gerados na disciplina de Estatística em
+        <code>app/static/estatistica/</code> — eles aparecem aqui automaticamente, com o nome do arquivo como legenda.
+    </p>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+{% if not erro %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script src="{{ url_for('static', filename='js/bd-charts.js') }}"></script>
+<script>
+(function () {
+    const d = {{ dados|tojson }};
+    OrisCharts.rosca("g-situacao", d.situacao.rotulos, d.situacao.total);
+    OrisCharts.barras("g-tipo-equip", d.tipo_equipamento.rotulos,
+        { ativos: d.tipo_equipamento.ativos, inativos: d.tipo_equipamento.inativos },
+        { empilhado: true, horizontal: true });
+    OrisCharts.barras("g-histograma", d.histograma.rotulos, { frequencia: d.histograma.frequencias },
+        { nomes: { frequencia: "Nº de unidades" }, tituloX: "Equipamentos ativos na unidade",
+          tituloY: "Frequência (nº de unidades)" });
+    OrisCharts.barras("g-tipo-unidade", d.tipo_unidade.rotulos, { total: d.tipo_unidade.total },
+        { horizontal: true, nomes: { total: "Unidades" } });
+    OrisCharts.barras("g-alteracoes", d.alteracoes_mes.rotulos,
+        { aprovadas: d.alteracoes_mes.aprovadas, rejeitadas: d.alteracoes_mes.rejeitadas,
+          pendentes: d.alteracoes_mes.pendentes }, { empilhado: true });
+})();
+</script>
+{% endif %}
+{% endblock %}

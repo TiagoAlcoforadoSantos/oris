@@ -342,6 +342,11 @@
 
 @media (max-width: 991.98px) {
     .oris-sidebar {
+        /* fixed: fora do fluxo flex — antes, a sidebar escondida (sticky)
+           continuava ocupando a largura e espremia o conteúdo no celular */
+        position: fixed;
+        left: 0;
+        top: 0;
         transform: translateX(-100%);
     }
 

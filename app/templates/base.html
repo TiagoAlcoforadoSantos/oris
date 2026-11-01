@@ -67,6 +67,14 @@
                     <i class="bi bi-clock-history"></i> <span>Auditoria</span>
                 </a>
                 {% endif %}
+                <a class="oris-nav-item {% if request.blueprint == 'bd' and request.endpoint != 'bd.estatistica_painel' %}active{% endif %}"
+                   href="{{ url_for('bd.index') }}">
+                    <i class="bi bi-database"></i> <span>Banco de Dados</span>
+                </a>
+                <a class="oris-nav-item {% if request.endpoint == 'bd.estatistica_painel' %}active{% endif %}"
+                   href="{{ url_for('bd.estatistica_painel') }}">
+                    <i class="bi bi-bar-chart-line"></i> <span>Estatística</span>
+                </a>
                 <a class="oris-nav-item {% if request.blueprint == 'importacao' %}active{% endif %}"
                    href="{{ url_for('importacao.index') }}">
                     <i class="bi bi-file-earmark-arrow-up"></i> <span>Importar</span>
@@ -167,5 +175,6 @@
         </footer>
     </div>
     {% endif %}
+    {% block scripts %}{% endblock %}
 </body>
 </html>

@@ -1,0 +1,73 @@
+/* ORIS — Módulo Banco de Dados (Etapa 03). Usa só os tokens existentes. */
+
+.bd-grid {
+    display: grid;
+    gap: 1rem;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    margin-bottom: 1.5rem;
+}
+
+.bd-card {
+    display: flex;
+    flex-direction: column;
+    gap: .4rem;
+    text-decoration: none;
+    color: var(--oris-text);
+    transition: transform .15s ease, box-shadow .15s ease;
+}
+.bd-card:hover { transform: translateY(-2px); box-shadow: var(--oris-shadow-md, 0 6px 18px rgba(11,42,74,.10)); color: var(--oris-text); }
+.bd-card i { font-size: 1.5rem; color: var(--oris-teal); }
+.bd-card .bd-card-num { font-family: "Space Grotesk", sans-serif; font-size: 1.8rem; font-weight: 700; line-height: 1; }
+.bd-card .bd-card-label { color: var(--oris-text-muted); font-size: .875rem; }
+
+.bd-chip {
+    display: inline-block;
+    font-size: .72rem;
+    font-weight: 600;
+    padding: .15rem .55rem;
+    border-radius: 999px;
+    background: var(--oris-surface);
+    color: var(--oris-petroleum);
+    margin: 0 .25rem .25rem 0;
+}
+.bd-nivel { font-size: .72rem; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; color: var(--oris-petroleum); }
+
+.bd-sql {
+    background: #0B2A4A;
+    color: #DDF4F5;
+    border-radius: var(--oris-radius-md, 10px);
+    padding: 1rem 1.1rem;
+    font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+    font-size: .8rem;
+    line-height: 1.55;
+    overflow-x: auto;
+    white-space: pre;
+    margin: .5rem 0 0;
+}
+.bd-sql-box summary { cursor: pointer; font-weight: 600; color: var(--oris-petroleum); }
+.bd-sql-box + .bd-sql-box { margin-top: .75rem; }
+
+.bd-consulta-item { display: block; text-decoration: none; color: var(--oris-text); height: 100%; }
+.bd-consulta-item:hover { color: var(--oris-text); border-color: var(--oris-teal) !important; }
+.bd-consulta-item h3 { font-size: 1.02rem; margin: .25rem 0 .4rem; }
+
+.bd-chart-wrap { position: relative; height: 300px; }
+.bd-chart-wrap--sm { height: 260px; }
+
+.bd-medidas { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: .6rem; }
+.bd-medida { background: var(--oris-surface); border-radius: 10px; padding: .6rem .75rem; }
+.bd-medida span { display: block; font-size: .72rem; color: var(--oris-text-muted); text-transform: uppercase; letter-spacing: .03em; }
+.bd-medida strong { font-family: "Space Grotesk", sans-serif; font-size: 1.15rem; }
+
+.bd-galeria { display: grid; gap: 1rem; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); }
+.bd-galeria figure { margin: 0; }
+.bd-galeria img { width: 100%; border-radius: 10px; border: 1px solid var(--oris-border); background: #fff; }
+.bd-galeria figcaption { font-size: .8rem; color: var(--oris-text-muted); margin-top: .35rem; }
+
+.bd-filtros { display: flex; flex-wrap: wrap; gap: .5rem; align-items: end; margin-bottom: 1rem; }
+.bd-filtros .form-select, .bd-filtros .form-control { min-width: 170px; }
+
+.bd-tabela th { white-space: nowrap; }
+.bd-tabela td { white-space: normal; }
+.bd-tabela td.bd-quebra { min-width: 180px; }
+.bd-tabela td.bd-acoes { white-space: nowrap; }

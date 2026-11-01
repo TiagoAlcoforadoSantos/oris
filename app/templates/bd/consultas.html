@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% from "bd/_macros.html" import sql_box %}
+
+{% block title %}Consultas — ORIS{% endblock %}
+
+{% block breadcrumb %}
+    <a href="{{ url_for('dashboard.index') }}">Início</a>
+    <span aria-hidden="true">/</span>
+    <a href="{{ url_for('bd.index') }}">Banco de Dados</a>
+    <span aria-hidden="true">/</span>
+    <span class="oris-breadcrumb-current">Consultas</span>
+{% endblock %}
+
+{% block extra_css %}
+<link href="{{ url_for('static', filename='css/bd.css') }}" rel="stylesheet">
+{% endblock %}
+
+{% block content %}
+<div class="oris-page-header">
+    <div>
+        <h1>Consultas da Etapa 03</h1>
+        <p>{{ consultas|length }} consultas de governança da rede, do nível intermediário ao avançado.</p>
+    </div>
+</div>
+
+{% for c in consultas %}
+<section class="oris-panel mb-3">
+    <div class="d-flex flex-wrap justify-content-between gap-2 align-items-start">
+        <div>
+            <span class="bd-nivel">{{ c.id|upper }} · {{ c.nivel }}</span>
+            <h2 class="h5 mt-1 mb-1">{{ c.titulo }}</h2>
+            <p class="mb-2">{{ c.pergunta }}</p>
+        </div>
+        <a class="btn btn-primary btn-sm" href="{{ url_for('bd.executar_consulta', consulta_id=c.id) }}">
+            <i class="bi bi-play-fill"></i> Executar
+        </a>
+    </div>
+    <div class="mb-2">{% for conceito in c.conceitos %}<span class="bd-chip">{{ conceito }}</span>{% endfor %}</div>
+    <p class="small text-muted">{{ c.explicacao }}</p>
+    {{ sql_box("Ver SQL", c.sql.strip()) }}
+</section>
+{% endfor %}
+{% endblock %}

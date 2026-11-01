@@ -1,0 +1,126 @@
+{% extends "base.html" %}
+{% from "bd/_macros.html" import sql_box, badge_situacao %}
+
+{% block title %}{{ consulta.titulo }} — ORIS{% endblock %}
+
+{% block breadcrumb %}
+    <a href="{{ url_for('dashboard.index') }}">Início</a>
+    <span aria-hidden="true">/</span>
+    <a href="{{ url_for('bd.index') }}">Banco de Dados</a>
+    <span aria-hidden="true">/</span>
+    <a href="{{ url_for('bd.consultas') }}">Consultas</a>
+    <span aria-hidden="true">/</span>
+    <span class="oris-breadcrumb-current">{{ consulta.id|upper }}</span>
+{% endblock %}
+
+{% block extra_css %}
+<link href="{{ url_for('static', filename='css/bd.css') }}" rel="stylesheet">
+{% endblock %}
+
+{% block content %}
+<div class="oris-page-header">
+    <div>
+        <span class="bd-nivel">{{ consulta.id|upper }} · {{ consulta.nivel }}</span>
+        <h1>{{ consulta.titulo }}</h1>
+        <p>{{ consulta.pergunta }}</p>
+    </div>
+    <div class="oris-page-header-actions">
+        <select class="form-select form-select-sm" aria-label="Trocar consulta"
+                onchange="window.location.href=this.value">
+            {% for c in consultas %}
+            <option value="{{ url_for('bd.executar_consulta', consulta_id=c.id) }}" {% if c.id == consulta.id %}selected{% endif %}>
+                {{ c.id|upper }} — {{ c.titulo }}
+            </option>
+            {% endfor %}
+        </select>
+    </div>
+</div>
+
+<div class="mb-3">{% for conceito in consulta.conceitos %}<span class="bd-chip">{{ conceito }}</span>{% endfor %}</div>
+
+{% if consulta.parametros %}
+<form method="get" class="bd-filtros oris-panel">
+    {% for p in consulta.parametros %}
+    <div>
+        <label class="form-label small mb-1" for="p-{{ p.nome }}">{{ p.rotulo }}</label>
+        {% if p.tipo == "select" %}
+        <select class="form-select form-select-sm" id="p-{{ p.nome }}" name="{{ p.nome }}">
+            {% for valor, rotulo in p.opcoes %}
+            <option value="{{ valor }}" {% if (parametros[p.nome] or "") == valor %}selected{% endif %}>{{ rotulo }}</option>
+            {% endfor %}
+        </select>
+        {% else %}
+        <input class="form-control form-control-sm" type="number" id="p-{{ p.nome }}" name="{{ p.nome }}"
+               min="{{ p.min }}" max="{{ p.max }}" value="{{ parametros[p.nome] }}">
+        {% endif %}
+    </div>
+    {% endfor %}
+    <button class="btn btn-sm btn-primary" type="submit"><i class="bi bi-play-fill"></i> Executar</button>
+</form>
+{% endif %}
+
+{% if erro %}<div class="alert alert-danger">{{ erro }}</div>{% endif %}
+
+{% if consulta.grafico and linhas %}
+<div class="oris-panel mb-3">
+    <div class="bd-chart-wrap"><canvas id="grafico-consulta" aria-label="Gráfico do resultado"></canvas></div>
+</div>
+{% endif %}
+
+<div class="oris-panel p-0 mb-3">
+    <div class="px-3 pt-3 pb-2 d-flex justify-content-between">
+        <span class="oris-section-label mb-0">Resultado</span>
+        <span class="small text-muted">{{ linhas|length }} linha(s)</span>
+    </div>
+    {% if linhas %}
+    <div class="table-responsive">
+        <table class="table table-sm table-hover align-middle mb-0 bd-tabela">
+            <thead><tr>{% for col in colunas %}<th>{{ col }}</th>{% endfor %}</tr></thead>
+            <tbody>
+                {% for linha in linhas %}
+                <tr>
+                    {% for col in colunas %}
+                    <td {% if col in ("unidades", "revisores", "diagnostico") %}class="bd-quebra"{% endif %}>
+                        {% if col == "situacao" %}{{ badge_situacao(linha[col]) }}
+                        {% else %}{{ linha[col] if linha[col] is not none else "—" }}{% endif %}
+                    </td>
+                    {% endfor %}
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% elif not erro %}
+    <p class="px-3 pb-3 text-muted mb-0">A consulta não retornou linhas para os parâmetros informados.</p>
+    {% endif %}
+</div>
+
+<div class="oris-panel">
+    <p class="small text-muted">{{ consulta.explicacao }}</p>
+    {{ sql_box("SQL executado", consulta.sql.strip(), aberto=true) }}
+    {% if parametros %}
+    <p class="small mt-2 mb-0">Parâmetros enviados ao driver: <code>{{ parametros|tojson }}</code></p>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+{% if consulta.grafico and linhas %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script src="{{ url_for('static', filename='js/bd-charts.js') }}"></script>
+<script>
+(function () {
+    const g = {{ consulta.grafico|tojson }};
+    const linhas = {{ linhas|tojson }};
+    const rotulos = linhas.map(l => l[g.rotulo]);
+    const serie = nome => linhas.map(l => Number(l[nome] || 0));
+    if (g.tipo === "pareto") {
+        OrisCharts.pareto("grafico-consulta", rotulos, serie(g.series[0]), serie(g.linha), g.series[0]);
+    } else {
+        const series = Object.fromEntries(g.series.map(s => [s, serie(s)]));
+        OrisCharts.barras("grafico-consulta", rotulos, series, { empilhado: g.tipo === "stacked" });
+    }
+})();
+</script>
+{% endif %}
+{% endblock %}

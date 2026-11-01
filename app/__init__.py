@@ -63,6 +63,7 @@ def create_app(config_object=None):
     from app.routes.usuarios import usuarios_bp
     from app.routes.privacidade import privacidade_bp
     from app.routes.design_system import design_system_bp
+    from app.routes.bd import bd_bp
 
     app.register_blueprint(auth_bp)
     app.register_blueprint(main_bp)
@@ -77,6 +78,8 @@ def create_app(config_object=None):
     app.register_blueprint(usuarios_bp)
     app.register_blueprint(privacidade_bp)
     app.register_blueprint(design_system_bp)
+    # Etapa 03 (Banco de Dados): módulo com SQL explícito — ver app/bd/
+    app.register_blueprint(bd_bp)
 
     # Registra o comando de CLI para criar usuários (ver app/cli.py).
     from app.cli import register_cli_commands

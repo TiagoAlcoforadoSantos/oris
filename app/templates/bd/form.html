@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+{% from "bd/_macros.html" import sql_box %}
+
+{% set titulo = ("Inserir " if modo == "novo" else "Alterar ") ~ cfg.singular %}
+{% block title %}{{ titulo|capitalize }} (BD) — ORIS{% endblock %}
+
+{% block breadcrumb %}
+    <a href="{{ url_for('dashboard.index') }}">Início</a>
+    <span aria-hidden="true">/</span>
+    <a href="{{ url_for('bd.index') }}">Banco de Dados</a>
+    <span aria-hidden="true">/</span>
+    <a href="{{ url_for('bd.listar', entidade=entidade) }}">{{ cfg.titulo }}</a>
+    <span aria-hidden="true">/</span>
+    <span class="oris-breadcrumb-current">{{ titulo|capitalize }}</span>
+{% endblock %}
+
+{% block extra_css %}
+<link href="{{ url_for('static', filename='css/bd.css') }}" rel="stylesheet">
+{% endblock %}
+
+{% block content %}
+<div class="oris-page-header">
+    <div>
+        <h1>{{ titulo|capitalize }}{% if registro %} #{{ registro.id }}{% endif %}</h1>
+        <p>Tabela <code>{{ entidade }}</code> · comando <strong>{{ "INSERT" if modo == "novo" else "UPDATE" }}</strong> com parâmetros.</p>
+    </div>
+</div>
+
+<div class="row g-4">
+    <div class="col-lg-7">
+        <form method="post" class="oris-panel" novalidate>
+            {{ form.hidden_tag() }}
+            {% for campo in form if campo.type not in ("CSRFTokenField", "SubmitField") %}
+                {% if campo.type == "BooleanField" %}
+                <div class="form-check mb-3">
+                    {{ campo(class="form-check-input") }}
+                    {{ campo.label(class="form-check-label") }}
+                </div>
+                {% else %}
+                <div class="mb-3">
+                    {{ campo.label(class="form-label") }}
+                    {% if campo.type == "SelectField" %}
+                        {{ campo(class="form-select" ~ (" is-invalid" if campo.errors else "")) }}
+                    {% else %}
+                        {{ campo(class="form-control" ~ (" is-invalid" if campo.errors else "")) }}
+                    {% endif %}
+                    {% for erro in campo.errors %}<div class="invalid-feedback">{{ erro }}</div>{% endfor %}
+                </div>
+                {% endif %}
+            {% endfor %}
+            <div class="d-flex gap-2">
+                <button type="submit" class="btn btn-primary">
+                    <i class="bi bi-check-lg"></i> {{ "Inserir" if modo == "novo" else "Salvar alteração" }}
+                </button>
+                <a href="{{ url_for('bd.listar', entidade=entidade) }}" class="btn btn-outline-secondary">Cancelar</a>
+            </div>
+        </form>
+    </div>
+    <div class="col-lg-5">
+        <div class="oris-panel">
+            <p class="oris-section-label">SQL que será executado</p>
+            {% for nome, sql in sql_exibido %}{{ sql_box(nome, sql, aberto=loop.last) }}{% endfor %}
+            {{ sql_box("SQL_INSERIR_AUDITORIA (mesma transação)", "INSERT INTO auditorias (usuario_id, acao, tabela, registro_id, descricao,\n                        valor_anterior, valor_novo, data_hora)\nVALUES (%s, %s, %s, %s, %s, %s, %s, UTC_TIMESTAMP())") }}
+            <p class="small text-muted mt-3 mb-0">
+                Os valores digitados viajam separados do texto SQL (parâmetros <code>%s</code>), o que
+                impede SQL Injection. Se qualquer comando falhar, a transação inteira sofre ROLLBACK.
+            </p>
+        </div>
+    </div>
+</div>
+{% endblock %}

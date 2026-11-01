@@ -1,0 +1,116 @@
+{% extends "base.html" %}
+{% from "bd/_macros.html" import sql_box, badge_situacao %}
+
+{% block title %}{{ cfg.titulo }} (BD) — ORIS{% endblock %}
+
+{% block breadcrumb %}
+    <a href="{{ url_for('dashboard.index') }}">Início</a>
+    <span aria-hidden="true">/</span>
+    <a href="{{ url_for('bd.index') }}">Banco de Dados</a>
+    <span aria-hidden="true">/</span>
+    <span class="oris-breadcrumb-current">{{ cfg.titulo }}</span>
+{% endblock %}
+
+{% block extra_css %}
+<link href="{{ url_for('static', filename='css/bd.css') }}" rel="stylesheet">
+{% endblock %}
+
+{% block content %}
+<div class="oris-page-header">
+    <div>
+        <h1><i class="bi {{ cfg.icone }}" aria-hidden="true"></i> {{ cfg.titulo }}</h1>
+        <p>Tabela <code>{{ entidade }}</code> — {{ linhas|length }} registro(s) retornado(s) pelo SELECT.</p>
+    </div>
+    <div class="oris-page-header-actions">
+        {% if pode_escrever %}
+        <a href="{{ url_for('bd.novo', entidade=entidade) }}" class="btn btn-primary">
+            <i class="bi bi-plus-lg" aria-hidden="true"></i> Inserir {{ cfg.singular }}
+        </a>
+        {% endif %}
+    </div>
+</div>
+
+{% if erro %}<div class="alert alert-danger">{{ erro }}</div>{% endif %}
+
+<form method="get" class="bd-filtros">
+    {% if cfg.busca %}
+    <div>
+        <label class="form-label small mb-1" for="busca">Buscar (nome, CNES, bairro)</label>
+        <input class="form-control form-control-sm" id="busca" name="busca" value="{{ filtros.busca or '' }}">
+    </div>
+    {% endif %}
+    <div>
+        <label class="form-label small mb-1" for="situacao">Situação</label>
+        <select class="form-select form-select-sm" id="situacao" name="situacao">
+            <option value="">Todas</option>
+            {% for valor, rotulo in cfg.filtro_situacao %}
+            <option value="{{ valor }}" {% if filtros.situacao == valor %}selected{% endif %}>{{ rotulo }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    {% if cfg.filtro_unidade %}
+    <div>
+        <label class="form-label small mb-1" for="unidade_id">Unidade</label>
+        <select class="form-select form-select-sm" id="unidade_id" name="unidade_id">
+            <option value="">Todas</option>
+            {% for uid, unome in unidades %}
+            <option value="{{ uid }}" {% if filtros.unidade_id == uid %}selected{% endif %}>{{ unome }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    {% endif %}
+    <button class="btn btn-sm btn-outline-primary" type="submit"><i class="bi bi-funnel"></i> Filtrar</button>
+    <a class="btn btn-sm btn-link" href="{{ url_for('bd.listar', entidade=entidade) }}">Limpar</a>
+</form>
+
+{% if linhas %}
+<div class="table-responsive oris-panel p-0 mb-3">
+    <table class="table table-hover align-middle mb-0 bd-tabela">
+        <thead>
+            <tr>
+                <th>#</th>
+                {% for campo, rotulo in cfg.colunas %}<th>{{ rotulo }}</th>{% endfor %}
+                {% if pode_escrever %}<th class="text-end">Ações</th>{% endif %}
+            </tr>
+        </thead>
+        <tbody>
+            {% for linha in linhas %}
+            <tr>
+                <td class="text-muted">{{ linha.id }}</td>
+                {% for campo, rotulo in cfg.colunas %}
+                <td {% if campo == 'nome' %}class="fw-semibold bd-quebra"{% endif %}>
+                    {% if campo == "situacao" %}{{ badge_situacao(linha[campo]) }}
+                    {% else %}{{ linha[campo] if linha[campo] is not none else "—" }}{% endif %}
+                    {% if campo == "cnes" and linha.unidade_e_mista %}<span class="bd-chip">mista</span>{% endif %}
+                </td>
+                {% endfor %}
+                {% if pode_escrever %}
+                <td class="text-end bd-acoes">
+                    <a class="btn btn-sm btn-outline-primary" href="{{ url_for('bd.editar', entidade=entidade, registro_id=linha.id) }}"
+                       title="Alterar (UPDATE)"><i class="bi bi-pencil"></i> Alterar</a>
+                    <form method="post" action="{{ url_for('bd.excluir', entidade=entidade, registro_id=linha.id) }}"
+                          class="d-inline"
+                          onsubmit="return confirm('Excluir definitivamente o registro #{{ linha.id }} de {{ entidade }}? (DELETE)');">
+                        {{ form_excluir.hidden_tag() }}
+                        <button class="btn btn-sm btn-outline-danger" type="submit" title="Excluir (DELETE)">
+                            <i class="bi bi-trash"></i> Excluir
+                        </button>
+                    </form>
+                </td>
+                {% endif %}
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% elif not erro %}
+<div class="oris-empty-state">
+    <i class="bi {{ cfg.icone }}" aria-hidden="true"></i>
+    <p><strong>Nenhum registro encontrado.</strong></p>
+</div>
+{% endif %}
+
+<div class="oris-panel">
+    {% for nome, sql in sql_exibido %}{{ sql_box("SQL executado nesta tela — " ~ nome, sql) }}{% endfor %}
+</div>
+{% endblock %}

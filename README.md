@@ -403,6 +403,98 @@ ORIS/
 └── README.md
 ```
 
+## Etapa 03 — Interface funcional com dashboard (Banco de Dados)
+
+Módulo **Banco de Dados** (menu lateral → *Banco de Dados* e *Estatística*),
+criado para a disciplina de Banco de Dados. Todo acesso ao banco neste
+módulo usa **SQL explícito**, sem ORM.
+
+### Integração linguagem ↔ SGBD (equivalente ao JDBC)
+
+O backend em Python usa o driver **PyMySQL**, que implementa a especificação
+**DB-API 2.0 (PEP 249)** — o equivalente Python do JDBC. A camada fica em
+`app/bd/`:
+
+| JDBC (Java)                               | ORIS (Python / PyMySQL)                       |
+|-------------------------------------------|-----------------------------------------------|
+| `DriverManager.getConnection(...)`        | `pymysql.connect(...)` — `app/bd/conexao.py`  |
+| `PreparedStatement` com `?`               | `cursor.execute(sql, params)` com `%s`        |
+| `executeQuery()` / `ResultSet`            | `cursor.fetchall()` (linhas como dicionário)  |
+| `executeUpdate()` / `getGeneratedKeys()`  | `cursor.execute(...)` / `cursor.lastrowid`    |
+| `commit()` / `rollback()`                 | `conn.commit()` / `conn.rollback()`           |
+
+Os comandos SQL estão escritos literalmente em `app/bd/dao_unidades.py`,
+`dao_servicos.py`, `dao_equipamentos.py`, `consultas.py` e `estatistica.py`,
+e cada tela mostra o SQL que está executando.
+
+### Comandos no banco pela interface
+
+| Tela                 | SELECT | INSERT | UPDATE | DELETE |
+|----------------------|:------:|:------:|:------:|:------:|
+| `/bd/unidades`       | ✔︎ (filtro + busca) | ✔︎ | ✔︎ | ✔︎ (bloqueado se houver vínculos) |
+| `/bd/servicos`       | ✔︎ (LEFT JOIN) | ✔︎ | ✔︎ | ✔︎ (bloqueado se houver equipamentos) |
+| `/bd/equipamentos`   | ✔︎ (LEFT JOIN ×2) | ✔︎ | ✔︎ | ✔︎ |
+
+- Inserção/alteração/exclusão: perfis `ADMINISTRADOR` e `GESTAO_INFORMACAO`
+  (verificado no backend). Os demais perfis visualizam e executam consultas.
+- Cada escrita grava um registro em `auditorias` **na mesma transação**
+  (`commit` dos dois ou `rollback` dos dois).
+- A exclusão física existe só neste módulo; nas telas de negócio do ORIS
+  continua valendo a regra de inativar em vez de excluir.
+
+### Consultas (7)
+
+Catálogo em `/bd/consultas`; cada uma pode ser executada com parâmetros e
+mostra resultado, gráfico (quando faz sentido) e o SQL executado.
+
+| #  | Consulta | Recursos de SQL |
+|----|----------|-----------------|
+| C1 | Capacidade instalada por unidade | LEFT JOIN em 3 tabelas, `COUNT(DISTINCT CASE…)`, `NULLIF` |
+| C2 | Cobertura da rede por bairro | tabela derivada, `GROUP BY` + `HAVING` parametrizado, `AVG` |
+| C3 | Unidades ativas sem equipamento operante | `NOT EXISTS`, subconsulta correlacionada, `DATEDIFF` |
+| C4 | Ranking de bairros (Pareto) | CTE (`WITH`), `RANK() OVER`, `SUM() OVER` acumulado |
+| C5 | Desempenho do fluxo de aprovação | JOIN duplo com `usuarios`, `TIMESTAMPDIFF`, `GROUP_CONCAT` |
+| C6 | CNES compartilhado (unidades mistas) | `HAVING COUNT(*) > 1`, `GROUP_CONCAT`, `CASE` |
+| C7 | Equipamento ligado a serviço de outra unidade | `unidades` usada 2×, operador null-safe `<=>` |
+
+O arquivo **`database/consultas_etapa03.sql`** contém todas elas (e os
+comandos de INSERT/UPDATE/DELETE), gerado a partir do próprio código por
+`python scripts/gerar_sql_consultas.py` — assim o SQL entregue é o mesmo
+que a aplicação executa.
+
+### Painel estatístico (`/bd/estatistica`)
+
+Gráficos (Chart.js) calculados direto do MySQL: unidades por situação e por
+tipo, equipamentos por tipo, distribuição de frequências de equipamentos por
+unidade e fluxo de aprovação por mês, além de estatística descritiva (média,
+mediana, moda, desvio padrão, variância, CV, quartis e IQR — média, desvio e
+variância via `AVG`/`STDDEV_SAMP`/`VAR_SAMP` no próprio SQL).
+
+**Gráficos da disciplina de Estatística:** coloque as imagens (`.png`, `.jpg`,
+`.svg`) em `app/static/estatistica/`. Elas aparecem automaticamente no painel,
+com o nome do arquivo como legenda (ex.: `histograma_equipamentos.png`).
+
+### Dados de demonstração
+
+```bash
+mysql -u oris_user -p oris_db < database/seed_etapa03.sql
+```
+
+Cria 32 unidades, 60 serviços, 119 equipamentos e 48 alterações **fictícias**
+(nomes e CNES inventados), incluindo casos que as consultas C3, C6 e C7
+precisam detectar, e 5 usuários de demonstração — um de cada perfil
+(`admin.demo@oris.example`, `gi.demo@oris.example`, `rsb.demo@oris.example`,
+`rsb2.demo@oris.example`, `gestor.demo@oris.example`), todos com a senha
+`Oris@2026`. **Atenção:** o seed apaga unidades/serviços/equipamentos/alterações
+antes de inserir; use só em banco de desenvolvimento/apresentação.
+
+### Testes da Etapa 03
+
+```bash
+python -m pytest tests/test_etapa03_bd.py            # sem MySQL (catálogo e RBAC)
+ORIS_TEST_MYSQL=1 python -m pytest tests/test_etapa03_bd.py   # + integração com MySQL
+```
+
 ## Como executar
 
 ### Pré-requisitos
@@ -500,8 +592,8 @@ O comando pergunta nome completo, email, senha (duas vezes, para
 confirmar) e perfil (`ADMINISTRADOR`, `GESTAO_INFORMACAO`,
 `RESPONSAVEL_SAUDE_BUCAL` ou `GESTOR`).
 
-> Evite domínios reservados para teste como `.local`, `.test` ou
-> `.example` no email — a validação de formato os rejeita. Prefira
+> Evite domínios reservados para teste como `.local` ou `.test`
+> no email — a validação de formato os rejeita. Prefira
 > algo como `usuario@oris.com.br`.
 
 Crie um usuário de cada perfil para demonstrar a matriz de acesso.
