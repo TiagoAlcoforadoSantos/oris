@@ -15,6 +15,13 @@ LIMITE_PADRAO = 50
 LIMITE_MAXIMO = 200
 
 
+@api_bp.after_request
+def _nao_cachear(resposta):
+    """Respostas da API dependem da sessão: proxies e navegadores não devem guardá-las."""
+    resposta.headers.setdefault("Cache-Control", "no-store")
+    return resposta
+
+
 def api_login_required(view):
     @wraps(view)
     def wrapper(*args, **kwargs):
