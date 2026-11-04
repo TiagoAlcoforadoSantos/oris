@@ -1,19 +1,4 @@
-"""
-Rate limiting leve para tentativas de login (Fase 12 — achado
-SEC-005).
-
-Implementação propositalmente simples: um dicionário em memória do
-próprio processo, sem Redis nem infraestrutura externa — adequado ao
-escopo acadêmico do ORIS. Isso significa que o contador zera se a
-aplicação for reiniciada, e não é compartilhado entre múltiplos
-processos/workers; para produção com múltiplos workers, a
-recomendação (documentada em docs/SEGURANCA.md) é usar um backend
-compartilhado (ex.: Redis) — fora do escopo desta fase.
-
-A trava é por (endereço IP, email tentado), para não bloquear todo o
-prédio/rede por causa de uma única conta, nem deixar um único IP
-tentar todas as contas do sistema sem limite.
-"""
+"""Rate limiting leve para tentativas de login (Fase 12 - achado SEC-005)."""
 
 import time
 from collections import defaultdict
@@ -46,9 +31,7 @@ def limpar_tentativas(ip, email):
 
 
 def bloqueado(ip, email):
-    """True se (ip, email) excedeu o limite de tentativas na janela
-    atual — o chamador decide a mensagem/; nunca revela aqui se a
-    conta existe ou não."""
+    """True se (ip, email) excedeu o limite de tentativas na janela atual - o chamador..."""
     agora = time.time()
     with _lock:
         chave = _chave(ip, email)

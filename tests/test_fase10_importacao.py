@@ -1,10 +1,4 @@
-"""
-Testes da FASE 10 — importador de planilhas.
-
-Roda contra SQLite em memória (TestingConfig). Gera arquivos CSV/XLSX
-em memória (sem tocar disco fora do que a própria aplicação usa como
-armazenamento temporário) para simular os uploads.
-"""
+"""Testes da FASE 10 - importador de planilhas."""
 
 import io
 import os
@@ -51,10 +45,6 @@ MAPA_UNIDADES = {
     "mapa_bairro": "",
 }
 
-# Formato unificado (Stage "importador x modelo de dados redesenhado"),
-# ex.: REDE_SAUDE_RECIFE_GEO — uma linha pode descrever Unidade,
-# Equipamento e/ou Serviço ao mesmo tempo (ver
-# app/services/importacao_service.py).
 CABECALHO_REDE = [
     "UNIDADE", "EQUIPAMENTO DE SAUDE", "TIPO EQUIPAMENTO", "TIPO SERVICO",
     "CNES", "UNIDADE E MISTA", "NOME", "NOME CURTO", "DS", "ENDERECO", "BAIRRO", "ATIVO",
@@ -78,15 +68,12 @@ MAPA_REDE = {
 
 def _linha_rede(unidade="N", equipamento="N", tipo_equip="", tipo_servico="", cnes="9999999",
                  mista="N", nome="", nome_curto="", ds="", endereco="", bairro="", ativo="S"):
-    """Monta uma linha no formato unificado, na ordem de CABECALHO_REDE,
-    com valores default sensatos — só é preciso informar o que o teste
-    realmente exercita."""
+    """Monta uma linha no formato unificado, na ordem de CABECALHO_REDE, com valores..."""
     return [unidade, equipamento, tipo_equip, tipo_servico, cnes, mista, nome, nome_curto, ds, endereco, bairro, ativo]
 
 
 def _csv_bytes(linhas):
-    """`linhas` é uma lista de listas (cada uma uma linha da planilha,
-    já incluindo o cabeçalho se houver)."""
+    """`linhas` é uma lista de listas (cada uma uma linha da planilha, já incluindo o..."""
     conteudo = "\n".join(",".join(str(v) for v in linha) for linha in linhas) + "\n"
     return conteudo.encode("utf-8")
 
@@ -164,8 +151,7 @@ def _extrair_token(html):
 
 
 def _fluxo_completo_unidade_valida(client, linhas, mapa=None):
-    """Faz upload + mapeamento + validação de uma planilha de unidades
-    válida, retornando (token, resposta_da_previa)."""
+    """Faz upload + mapeamento + validação de uma planilha de unidades válida, retornando..."""
     resp = _upload_e_mapear(client, _csv_bytes(linhas), "unidades.csv")
     token = _extrair_token(resp.get_data(as_text=True))
     resp = client.post(
@@ -176,8 +162,7 @@ def _fluxo_completo_unidade_valida(client, linhas, mapa=None):
 
 
 def _fluxo_completo_rede(client, linhas, mapa=None):
-    """Mesmo fluxo de `_fluxo_completo_unidade_valida`, mas para a
-    entidade "rede" (formato unificado)."""
+    """Mesmo fluxo de `_fluxo_completo_unidade_valida`, mas para a     entidade "rede"..."""
     resp = _upload_e_mapear(client, _csv_bytes(linhas), "rede.csv", entidade="rede")
     token = _extrair_token(resp.get_data(as_text=True))
     resp = client.post(
@@ -194,10 +179,6 @@ def _confirmar_rede(client, token, mapa=None, follow_redirects=True):
         follow_redirects=follow_redirects,
     )
 
-
-# ----------------------------------------------------------------
-# 1-3. Acesso
-# ----------------------------------------------------------------
 
 def test_pagina_de_importacao_acessivel_para_perfil_autorizado(client):
     _login(client, PerfilUsuario.ADMINISTRADOR)
@@ -217,10 +198,6 @@ def test_usuario_nao_autenticado_nao_acessa(client):
     assert "/login" in resp.headers["Location"]
 
 
-# ----------------------------------------------------------------
-# 4-5. Upload XLSX e CSV válidos
-# ----------------------------------------------------------------
-
 def test_upload_xlsx_valido(client):
     _login(client, PerfilUsuario.ADMINISTRADOR)
     linhas = [CABECALHO_UNIDADES, ["UBS Nova XLSX", "1112223", "Recife", "PE", "ATIVA"]]
@@ -236,10 +213,6 @@ def test_upload_csv_valido(client):
     assert resp.status_code == 200
     assert "Mapeamento de Colunas" in resp.get_data(as_text=True)
 
-
-# ----------------------------------------------------------------
-# 6-9. Rejeições de arquivo
-# ----------------------------------------------------------------
 
 def test_extensao_invalida_e_rejeitada(client):
     _login(client, PerfilUsuario.ADMINISTRADOR)
@@ -274,10 +247,6 @@ def test_planilha_sem_dados_e_rejeitada(client):
     assert "nenhuma linha" in resp.get_data(as_text=True).lower()
 
 
-# ----------------------------------------------------------------
-# 10. Mapeamento correto funciona
-# ----------------------------------------------------------------
-
 def test_mapeamento_correto_funciona(client):
     _login(client, PerfilUsuario.ADMINISTRADOR)
     linhas = [CABECALHO_UNIDADES, ["UBS Mapeada", "1112225", "Recife", "PE", "ATIVA"]]
@@ -285,10 +254,6 @@ def test_mapeamento_correto_funciona(client):
     assert resp.status_code == 200
     assert "UBS Mapeada" in resp.get_data(as_text=True)
 
-
-# ----------------------------------------------------------------
-# 11-15. Erros de validação
-# ----------------------------------------------------------------
 
 def test_campo_obrigatorio_ausente_gera_erro(client):
     _login(client, PerfilUsuario.ADMINISTRADOR)
@@ -307,10 +272,6 @@ def test_cnes_invalido_gera_erro(client):
 
 
 def test_cnes_duplicado_dentro_da_planilha_nao_e_mais_erro(client):
-    # Stage "modelo de dados" (migration 0001): CNES deixou de ser
-    # identificador único — o mesmo CNES pode aparecer em mais de um
-    # registro de Unidade (ex.: unidade mista). Duas linhas com o
-    # mesmo CNES na mesma planilha não é mais um erro de validação.
     _login(client, PerfilUsuario.ADMINISTRADOR)
     linhas = [
         CABECALHO_UNIDADES,
@@ -342,10 +303,6 @@ def test_situacao_invalida_gera_erro(client):
     assert "ATIVA, INATIVA ou MANUTENCAO" in resp.get_data(as_text=True)
 
 
-# ----------------------------------------------------------------
-# 16. Prévia mostra os dados corretos
-# ----------------------------------------------------------------
-
 def test_previa_mostra_dados_corretos(client):
     _login(client, PerfilUsuario.ADMINISTRADOR)
     linhas = [CABECALHO_UNIDADES, ["UBS Prévia", "1112230", "Recife", "PE", "ATIVA"]]
@@ -355,10 +312,6 @@ def test_previa_mostra_dados_corretos(client):
     assert "1112230" in html
     assert "Recife" in html
 
-
-# ----------------------------------------------------------------
-# 17-19. Classificação novo/existente sem alteração/existente alterado
-# ----------------------------------------------------------------
 
 def test_registro_novo_e_identificado(client):
     _login(client, PerfilUsuario.ADMINISTRADOR)
@@ -370,7 +323,6 @@ def test_registro_novo_e_identificado(client):
 
 def test_registro_existente_sem_alteracao_e_identificado(client):
     _login(client, PerfilUsuario.ADMINISTRADOR)
-    # Mesmos dados da unidade já existente (criada no fixture)
     linhas = [CABECALHO_UNIDADES, ["UBS Existente", "9990001", "Recife", "PE", "ATIVA"]]
     _, resp = _fluxo_completo_unidade_valida(client, linhas)
     html = resp.get_data(as_text=True)
@@ -379,16 +331,11 @@ def test_registro_existente_sem_alteracao_e_identificado(client):
 
 def test_registro_existente_alterado_e_identificado(client):
     _login(client, PerfilUsuario.ADMINISTRADOR)
-    # Mesmo CNES da unidade existente, mas nome diferente
     linhas = [CABECALHO_UNIDADES, ["UBS Existente (Renomeada)", "9990001", "Recife", "PE", "ATIVA"]]
     _, resp = _fluxo_completo_unidade_valida(client, linhas)
     html = resp.get_data(as_text=True)
     assert "Alterado" in html
 
-
-# ----------------------------------------------------------------
-# 20-21. Confirmação não aplica direto; fica PENDENTE
-# ----------------------------------------------------------------
 
 def test_confirmacao_nao_aplica_diretamente_e_fica_pendente(client, app):
     _login(client, PerfilUsuario.RESPONSAVEL_SAUDE_BUCAL)
@@ -403,17 +350,11 @@ def test_confirmacao_nao_aplica_diretamente_e_fica_pendente(client, app):
     assert resp.status_code == 200
 
     with app.app_context():
-        # 20. não foi aplicada diretamente
         assert Unidade.query.filter_by(cnes="1112232").first() is None
-        # 21. fica PENDENTE
         alteracao = Alteracao.query.filter_by(tabela="unidades", operacao="CRIAR").first()
         assert alteracao is not None
         assert alteracao.status.value == "PENDENTE"
 
-
-# ----------------------------------------------------------------
-# 22-24. Segregação de funções e aprovação (Fase 7)
-# ----------------------------------------------------------------
 
 def test_solicitante_nao_aprova_a_propria_importacao(client, app):
     _login(client, PerfilUsuario.RESPONSAVEL_SAUDE_BUCAL)
@@ -438,22 +379,15 @@ def test_usuario_autorizado_aprova_e_alteracao_e_aplicada(client, app):
     with app.app_context():
         alteracao = Alteracao.query.filter_by(tabela="unidades", operacao="CRIAR").first()
         aprovador = _usuario(app, PerfilUsuario.ADMINISTRADOR)
-        # 23. usuário autorizado consegue aprovar
         ok, _ = aprovar_alteracao(alteracao, aprovador)
         assert ok is True
-        # 24. após aprovação, a alteração é aplicada
         unidade = Unidade.query.filter_by(cnes="1112234").first()
         assert unidade is not None
         assert unidade.nome == "UBS Aprovada"
 
 
-# ----------------------------------------------------------------
-# 25. Rejeição não altera o registro original
-# ----------------------------------------------------------------
-
 def test_rejeicao_nao_altera_registro_original(client, app):
     _login(client, PerfilUsuario.RESPONSAVEL_SAUDE_BUCAL)
-    # Solicita edição da unidade já existente
     linhas = [CABECALHO_UNIDADES, ["UBS Existente (Tentativa)", "9990001", "Recife", "PE", "ATIVA"]]
     token, _ = _fluxo_completo_unidade_valida(client, linhas)
     client.post("/importacao/confirmar", data={"entidade": "unidades", "token": token, "extensao": ".csv", **MAPA_UNIDADES})
@@ -467,10 +401,6 @@ def test_rejeicao_nao_altera_registro_original(client, app):
         unidade = Unidade.query.filter_by(cnes="9990001").first()
         assert unidade.nome == "UBS Existente"  # nome original, não o da planilha
 
-
-# ----------------------------------------------------------------
-# 26. Auditoria gerada corretamente
-# ----------------------------------------------------------------
 
 def test_auditoria_e_gerada_corretamente(client, app):
     _login(client, PerfilUsuario.RESPONSAVEL_SAUDE_BUCAL)
@@ -490,10 +420,6 @@ def test_auditoria_e_gerada_corretamente(client, app):
         assert Auditoria.query.filter_by(acao="APROVAR_ALTERACAO").first() is not None
 
 
-# ----------------------------------------------------------------
-# 27. Senha/hash nunca aparecem nos dados registrados
-# ----------------------------------------------------------------
-
 def test_senha_e_hash_nao_aparecem_nos_dados_registrados(client, app):
     _login(client, PerfilUsuario.ADMINISTRADOR)
     linhas = [CABECALHO_UNIDADES, ["UBS Segura", "1112236", "Recife", "PE", "ATIVA"]]
@@ -510,10 +436,6 @@ def test_senha_e_hash_nao_aparecem_nos_dados_registrados(client, app):
             assert "$2b$" not in texto
             assert SENHA not in texto
 
-
-# ----------------------------------------------------------------
-# 28. Arquivo temporário é removido após processamento
-# ----------------------------------------------------------------
 
 def test_arquivo_temporario_e_removido_apos_processamento(client):
     from app.routes.importacao import _caminho_do_token
@@ -556,10 +478,6 @@ def test_arquivo_temporario_e_removido_quando_validacao_falha(client):
     assert not os.path.exists(caminho)
 
 
-# ----------------------------------------------------------------
-# 29. Template de planilha pode ser obtido
-# ----------------------------------------------------------------
-
 @pytest.mark.parametrize("entidade", ["unidades", "servicos", "equipamentos"])
 def test_template_de_planilha_pode_ser_obtido(client, entidade):
     _login(client, PerfilUsuario.ADMINISTRADOR)
@@ -575,12 +493,6 @@ def test_gestor_nao_pode_baixar_template(client):
     assert resp.status_code == 403
 
 
-# ----------------------------------------------------------------
-# 30. A suíte completa das Fases 1-9 é executada junto com esta —
-# ver `pytest tests/` (relatório da fase). Este teste apenas garante
-# que os blueprints/serviços novos não quebraram o restante da app.
-# ----------------------------------------------------------------
-
 def test_rotas_da_aplicacao_continuam_registradas_apos_fase10(app):
     endpoints = {rule.endpoint for rule in app.url_map.iter_rules()}
     assert "unidades.listar" in endpoints
@@ -590,17 +502,8 @@ def test_rotas_da_aplicacao_continuam_registradas_apos_fase10(app):
     assert "importacao.index" in endpoints
 
 
-# ==================================================================
-# Entidade "rede" — formato unificado (Stage "importador x modelo de
-# dados redesenhado", ex.: REDE_SAUDE_RECIFE_GEO). Uma linha pode
-# descrever Unidade, Serviço e/ou Equipamento simultaneamente; CNES
-# não é identificador único; vínculos com Unidade são opcionais.
-# ==================================================================
-
 def _aprovar_todas_pendentes(app, tabela=None):
-    """Aprova, como ADMINISTRADOR, toda Alteracao PENDENTE (opcionalmente
-    filtrando por tabela) criada por outro usuário — helper só para
-    reduzir repetição nos testes abaixo."""
+    """Aprova, como ADMINISTRADOR, toda Alteracao PENDENTE (opcionalmente filtrando por..."""
     with app.app_context():
         aprovador = _usuario(app, PerfilUsuario.ADMINISTRADOR)
         query = Alteracao.query.filter_by(status="PENDENTE") if tabela is None else Alteracao.query.filter_by(status="PENDENTE", tabela=tabela)
@@ -609,7 +512,6 @@ def _aprovar_todas_pendentes(app, tabela=None):
             assert ok is True, mensagem
 
 
-# 1. Duas unidades com o mesmo CNES (unidade mista)
 def test_rede_duas_unidades_com_mesmo_cnes(client, app):
     _login(client, PerfilUsuario.RESPONSAVEL_SAUDE_BUCAL)
     linhas = [
@@ -633,7 +535,6 @@ def test_rede_duas_unidades_com_mesmo_cnes(client, app):
         assert {u.nome for u in unidades} == {"Policlínica Recife", "Maternidade Recife"}
 
 
-# 2. Unidade com CNES 9999999 (convenção "sem CNES real")
 def test_rede_unidade_com_cnes_9999999(client):
     _login(client, PerfilUsuario.RESPONSAVEL_SAUDE_BUCAL)
     linhas = [CABECALHO_REDE, _linha_rede(unidade="S", cnes="9999999", nome="UBS Sem CNES Próprio")]
@@ -644,7 +545,6 @@ def test_rede_unidade_com_cnes_9999999(client):
     assert "Novo" in html
 
 
-# 3. Serviço sem unidade
 def test_rede_servico_sem_unidade(client, app):
     _login(client, PerfilUsuario.RESPONSAVEL_SAUDE_BUCAL)
     linhas = [CABECALHO_REDE, _linha_rede(tipo_servico="Vacinação em Shopping", cnes="9999999")]
@@ -661,7 +561,6 @@ def test_rede_servico_sem_unidade(client, app):
         assert servico.unidade_id is None
 
 
-# 4. Equipamento sem unidade
 def test_rede_equipamento_sem_unidade(client, app):
     _login(client, PerfilUsuario.RESPONSAVEL_SAUDE_BUCAL)
     linhas = [CABECALHO_REDE, _linha_rede(equipamento="S", cnes="9999999", nome="Ambulância SAMU", tipo_equip="Ambulância")]
@@ -676,8 +575,6 @@ def test_rede_equipamento_sem_unidade(client, app):
         assert equipamento.unidade_id is None
 
 
-# 5. Equipamento relacionado a um Serviço já existente (link seguro:
-#    exatamente uma correspondência por nome)
 def test_rede_equipamento_relacionado_a_servico_existente(client, app):
     with app.app_context():
         db.session.add(Servico(nome="Endodontia", unidade_id=None, situacao=SituacaoAtivoInativo.ATIVO))
@@ -699,8 +596,6 @@ def test_rede_equipamento_relacionado_a_servico_existente(client, app):
         assert equipamento.servico_id == servico.id
 
 
-# 6. Serviço com nome ambíguo (mais de uma correspondência) não é
-#    vinculado automaticamente ao Equipamento — vira aviso, não erro
 def test_rede_equipamento_relacionado_a_servico_ambiguo_gera_aviso_sem_erro(client, app):
     with app.app_context():
         db.session.add(Servico(nome="Fisioterapia", unidade_id=None, situacao=SituacaoAtivoInativo.ATIVO))
@@ -725,7 +620,6 @@ def test_rede_equipamento_relacionado_a_servico_ambiguo_gera_aviso_sem_erro(clie
         assert equipamento.servico_id is None  # ambíguo -> sem vínculo automático, não é erro
 
 
-# 7. Unidade com múltiplos serviços (vínculo seguro via CNES único)
 def test_rede_unidade_com_multiplos_servicos(client, app):
     _login(client, PerfilUsuario.RESPONSAVEL_SAUDE_BUCAL)
     linhas = [
@@ -751,15 +645,11 @@ def test_rede_unidade_com_multiplos_servicos(client, app):
         assert unidade.servicos.count() == 2
 
 
-# 8-10. Classificação de linha (UNIDADE / EQUIPAMENTO / SERVICO)
 def test_rede_classificacao_unidade(client):
     _login(client, PerfilUsuario.RESPONSAVEL_SAUDE_BUCAL)
     linhas = [CABECALHO_REDE, _linha_rede(unidade="S", cnes="5553333", nome="UBS Classificação")]
     _, resp = _fluxo_completo_rede(client, linhas)
     html = resp.get_data(as_text=True)
-    # O nome das colunas mapeadas ("TIPO SERVICO" etc.) sempre aparece
-    # nos campos ocultos do formulário, então a checagem é pela célula
-    # de "Tipo" da prévia, não por substring solta na página inteira.
     assert "<td>UNIDADE</td>" in html
     assert "<td>SERVICO</td>" not in html
     assert "<td>EQUIPAMENTO</td>" not in html
@@ -783,7 +673,6 @@ def test_rede_classificacao_servico(client):
     assert "<td>UNIDADE</td>" not in html
 
 
-# 11. Linha com dados insuficientes (nenhum indicador preenchido)
 def test_rede_linha_com_dados_insuficientes_gera_erro(client):
     _login(client, PerfilUsuario.RESPONSAVEL_SAUDE_BUCAL)
     linhas = [CABECALHO_REDE, _linha_rede(unidade="N", equipamento="N", tipo_servico="", cnes="5556666")]
@@ -792,7 +681,6 @@ def test_rede_linha_com_dados_insuficientes_gera_erro(client):
     assert "dados suficientes" in resp.get_data(as_text=True).lower()
 
 
-# 12. Prévia contendo tipos diferentes na mesma planilha
 def test_rede_previa_contendo_tipos_diferentes(client):
     _login(client, PerfilUsuario.RESPONSAVEL_SAUDE_BUCAL)
     linhas = [
@@ -809,7 +697,6 @@ def test_rede_previa_contendo_tipos_diferentes(client):
     assert "SERVICO" in html
 
 
-# 13. Fluxo de aprovação após importação (fica PENDENTE, só aplica ao aprovar)
 def test_rede_fluxo_de_aprovacao_apos_importacao(client, app):
     _login(client, PerfilUsuario.RESPONSAVEL_SAUDE_BUCAL)
     linhas = [CABECALHO_REDE, _linha_rede(unidade="S", cnes="5558888", nome="UBS Aprovação Rede")]
@@ -831,7 +718,6 @@ def test_rede_fluxo_de_aprovacao_apos_importacao(client, app):
         assert Unidade.query.filter_by(cnes="5558888").first() is not None
 
 
-# 14. Auditoria gerada corretamente para a importação "rede"
 def test_rede_auditoria_apos_aplicacao_aprovada(client, app):
     _login(client, PerfilUsuario.RESPONSAVEL_SAUDE_BUCAL)
     linhas = [CABECALHO_REDE, _linha_rede(unidade="S", cnes="5559999", nome="UBS Auditoria Rede")]
@@ -849,10 +735,6 @@ def test_rede_auditoria_apos_aplicacao_aprovada(client, app):
         assert Auditoria.query.filter_by(acao="CRIAR", tabela="unidades", registro_id=alteracao.registro_id).first() is not None
 
 
-# 15. Revalidação na confirmação evita gravação parcial ("rollback" a
-#     nível de importação): se os dados mudaram entre a prévia e a
-#     confirmação (aqui simulado com um mapeamento que invalida uma
-#     linha), nenhuma Alteracao é criada para o lote.
 def test_rede_confirmacao_com_revalidacao_invalida_nao_grava_nada(client, app):
     _login(client, PerfilUsuario.RESPONSAVEL_SAUDE_BUCAL)
     linhas = [CABECALHO_REDE, _linha_rede(unidade="S", cnes="5551010", nome="UBS Rollback")]

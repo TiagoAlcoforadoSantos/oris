@@ -1,19 +1,4 @@
-"""
-Comando de linha de comando (Flask CLI) para criar usuários.
-
-Criado para permitir gerar um usuário de teste/desenvolvimento sem
-nunca colocar uma senha fixa no código-fonte. A senha é digitada
-interativamente (oculta no terminal) e é imediatamente transformada
-em hash bcrypt antes de ser salva — o texto puro nunca chega a ser
-gravado em nenhum lugar.
-
-Uso:
-
-    flask criar-usuario
-
-O comando pergunta nome, email, senha (duas vezes, para confirmar) e
-perfil, e cria o registro em `usuarios` caso o email ainda não exista.
-"""
+"""Comando de linha de comando (Flask CLI) para criar usuários."""
 
 import click
 from flask.cli import with_appcontext

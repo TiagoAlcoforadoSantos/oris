@@ -1,29 +1,4 @@
-"""
-Módulo "Banco de Dados" — Etapa 03 (interface funcional com dashboard).
-
-Rotas:
-    /bd                                  → painel do módulo (hub)
-    /bd/<entidade>                       → visualização (SELECT) com filtros
-    /bd/<entidade>/novo                  → INSERT
-    /bd/<entidade>/<id>/editar           → UPDATE
-    /bd/<entidade>/<id>/excluir  (POST)  → DELETE
-    /bd/consultas                        → catálogo das consultas
-    /bd/consultas/<id>                   → executa e mostra resultado + SQL
-    /bd/estatistica                      → gráficos (disciplina de Estatística)
-
-<entidade> ∈ {unidades, servicos, equipamentos} — 3 tabelas com CRUD
-completo (o requisito mínimo é 2).
-
-TODO acesso ao banco aqui passa pela camada app/bd (SQL explícito via
-PyMySQL/DB-API, equivalente ao JDBC) — nenhuma linha usa o ORM.
-
-Acesso:
-- Visualizar, consultas e estatística: qualquer usuário autenticado.
-- INSERT/UPDATE/DELETE: ADMINISTRADOR e GESTAO_INFORMACAO (curadores
-  de dados). Como estas escritas são diretas (não passam pelo fluxo de
-  aprovação da Fase 7), ficam restritas a esses perfis e TODAS geram
-  registro na trilha de auditoria, na mesma transação.
-"""
+"""Módulo "Banco de Dados" — Etapa 03 (interface funcional com dashboard)."""
 
 import os
 
@@ -43,10 +18,6 @@ PERFIS_ESCRITA_BD = (PerfilUsuario.ADMINISTRADOR.value, PerfilUsuario.GESTAO_INF
 
 EXTENSOES_IMAGEM = {".png", ".jpg", ".jpeg", ".svg", ".webp", ".gif"}
 
-
-# ----------------------------------------------------------------------
-# Configuração de cada entidade (tela genérica de CRUD)
-# ----------------------------------------------------------------------
 
 ENTIDADES = {
     "unidades": {
@@ -113,10 +84,6 @@ def _sql_da_tela(cfg, *nomes):
     return [(n, getattr(dao, n).strip()) for n in nomes if hasattr(dao, n)]
 
 
-# ----------------------------------------------------------------------
-# Hub
-# ----------------------------------------------------------------------
-
 @bd_bp.route("")
 @login_required
 def index():
@@ -133,10 +100,6 @@ def index():
         consultas=cat_consultas.CONSULTAS, pode_escrever=_pode_escrever(),
     )
 
-
-# ----------------------------------------------------------------------
-# Consultas da Etapa 03
-# ----------------------------------------------------------------------
 
 @bd_bp.route("/consultas")
 @login_required
@@ -163,10 +126,6 @@ def executar_consulta(consulta_id):
     )
 
 
-# ----------------------------------------------------------------------
-# Painel estatístico
-# ----------------------------------------------------------------------
-
 def _imagens_estatistica():
     pasta = os.path.join(current_app.static_folder, "estatistica")
     if not os.path.isdir(pasta):
@@ -192,10 +151,6 @@ def estatistica_painel():
         sql_amostra=estatistica.SQL_MEDIDAS_EQUIP_POR_UNIDADE.strip(),
     )
 
-
-# ----------------------------------------------------------------------
-# CRUD genérico (SELECT / INSERT / UPDATE / DELETE)
-# ----------------------------------------------------------------------
 
 @bd_bp.route("/<entidade>")
 @login_required

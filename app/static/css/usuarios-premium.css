@@ -1,8 +1,8 @@
 /*
- * ORIS — Usuários "Premium" (Stage 6, redesign visual)
+ * ORIS - Usuários "Premium" (Stage 6, redesign visual)
  * ---------------------------------------------------------------
  * Camada de estilo EXCLUSIVA das telas de Usuários (lista + form),
- * carregada só nelas via {% block extra_css %} — não afeta nenhuma
+ * carregada só nelas via {% block extra_css %} - não afeta nenhuma
  * outra tela do sistema. Construída sobre os tokens já existentes em
  * tokens.css e seguindo o mesmo padrão visual já aplicado em
  * importacao-premium.css (Stage 5): glassmorphism sutil, gradiente
@@ -291,7 +291,7 @@
     border: 1px solid var(--oris-border);
 }
 
-/* ---- Status: nunca só cor — sempre ícone + texto -------------------- */
+/* ---- Status: nunca só cor - sempre ícone + texto -------------------- */
 
 .oris-users-status {
     display: inline-flex;

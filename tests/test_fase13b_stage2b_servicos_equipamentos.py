@@ -1,19 +1,4 @@
-"""
-Testes da FASE 13B — Stage 2B (UX/UI de Serviços e Equipamentos).
-
-Esta etapa é puramente visual — não altera rotas, models, RBAC,
-validações ou o fluxo de aprovação. Os testes aqui confirmam que:
-
-1. As 8 telas (4 de Serviços + 4 de Equipamentos) continuam
-   acessíveis, com o mesmo RBAC de sempre.
-2. Os indicadores agregados (total/ativos/inativos) batem com os
-   dados reais já carregados — nenhuma consulta nova.
-3. O fluxo de aprovação (Fase 7) continua exatamente igual para as
-   duas entidades.
-4. A regra de compatibilidade Equipamento → Serviço → mesma Unidade
-   continua intacta.
-5. Os estados vazios continuam funcionando.
-"""
+"""Testes da FASE 13B - Stage 2B (UX/UI de Serviços e Equipamentos)."""
 
 import pytest
 
@@ -103,10 +88,6 @@ def _id(app, model, **filtros):
         return model.query.filter_by(**filtros).first().id
 
 
-# ----------------------------------------------------------------
-# SERVIÇOS — telas acessíveis
-# ----------------------------------------------------------------
-
 def test_lista_servicos_acessivel(client):
     _login(client, PerfilUsuario.ADMINISTRADOR)
     resp = client.get("/servicos")
@@ -141,10 +122,6 @@ def test_servico_inexistente_retorna_404(client):
     assert resp.status_code == 404
 
 
-# ----------------------------------------------------------------
-# EQUIPAMENTOS — telas acessíveis
-# ----------------------------------------------------------------
-
 def test_lista_equipamentos_acessivel(client):
     _login(client, PerfilUsuario.ADMINISTRADOR)
     resp = client.get("/equipamentos")
@@ -178,10 +155,6 @@ def test_equipamento_inexistente_retorna_404(client):
     resp = client.get("/equipamentos/999999")
     assert resp.status_code == 404
 
-
-# ----------------------------------------------------------------
-# Indicadores agregados batem com dados reais (sem consulta nova)
-# ----------------------------------------------------------------
 
 def test_indicadores_de_servicos_batem_com_dados_reais(client):
     _login(client, PerfilUsuario.ADMINISTRADOR)
@@ -219,10 +192,6 @@ def test_lista_equipamentos_vazia_mostra_estado_vazio(client, app):
     assert "Nenhum equipamento encontrado." in html
 
 
-# ----------------------------------------------------------------
-# Filtros continuam funcionando (mesma lógica, só visual)
-# ----------------------------------------------------------------
-
 def test_filtro_de_servicos_por_unidade_continua_funcionando(client, app):
     _login(client, PerfilUsuario.ADMINISTRADOR)
     unidade_b_id = _id(app, Unidade, nome="UBS Beta")
@@ -238,10 +207,6 @@ def test_filtro_de_equipamentos_por_servico_continua_funcionando(client, app):
     assert "Cadeira Odontológica" in html
     assert "Compressor" not in html
 
-
-# ----------------------------------------------------------------
-# RBAC preservado para os 4 perfis (nada mudou)
-# ----------------------------------------------------------------
 
 @pytest.mark.parametrize("perfil", list(EMAILS.keys()))
 def test_todos_os_perfis_visualizam_servicos_e_equipamentos(client, perfil):
@@ -293,10 +258,6 @@ def test_responsavel_pode_criar_servicos_e_equipamentos(client):
     assert "Novo serviço" in client.get("/servicos").get_data(as_text=True)
     assert "Novo equipamento" in client.get("/equipamentos").get_data(as_text=True)
 
-
-# ----------------------------------------------------------------
-# Fluxo de aprovação (Fase 7) permanece intacto para as 2 entidades
-# ----------------------------------------------------------------
 
 def test_criacao_de_servico_continua_gerando_alteracao_pendente(client, app):
     _login(client, PerfilUsuario.RESPONSAVEL_SAUDE_BUCAL)
@@ -358,10 +319,6 @@ def test_fluxo_completo_de_aprovacao_de_servico(client, app):
         assert Auditoria.query.filter_by(acao="CRIAR", tabela="servicos").first() is not None
         assert Auditoria.query.filter_by(acao="APROVAR_ALTERACAO").first() is not None
 
-
-# ----------------------------------------------------------------
-# Regra de compatibilidade Equipamento -> Serviço -> mesma Unidade
-# ----------------------------------------------------------------
 
 def test_equipamento_com_servico_de_outra_unidade_e_bloqueado(client, app):
     _login(client, PerfilUsuario.ADMINISTRADOR)

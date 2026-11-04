@@ -1,12 +1,4 @@
-"""
-Testes da FASE 6 — CRUD de Serviços e Equipamentos.
-
-Roda contra SQLite em memória (TestingConfig), reaproveitando o
-padrão de fixtures das fases anteriores. Cria um usuário para cada
-perfil, uma unidade "A" com um serviço próprio, e uma unidade "B"
-(sem serviços) — usada para testar a inconsistência
-serviço-de-outra-unidade.
-"""
+"""Testes da FASE 6 - CRUD de Serviços e Equipamentos."""
 
 import pytest
 
@@ -113,18 +105,12 @@ def _usuario(app, perfil):
         return Usuario.query.filter_by(email=EMAILS[perfil]).first()
 
 
-# ==================================================================
-# SERVIÇOS
-# ==================================================================
-
-# 1. Usuário não autenticado não acessa serviços
 def test_nao_autenticado_nao_acessa_servicos(client):
     resp = client.get("/servicos", follow_redirects=False)
     assert resp.status_code == 302
     assert "/login" in resp.headers["Location"]
 
 
-# 2. Perfil autorizado consegue listar serviços
 def test_gestor_lista_servicos(client):
     _login(client, PerfilUsuario.GESTOR)
     resp = client.get("/servicos")
@@ -132,8 +118,6 @@ def test_gestor_lista_servicos(client):
     assert "Odontologia Geral" in resp.get_data(as_text=True)
 
 
-# 3. Perfil autorizado consegue SOLICITAR a criação de um serviço
-# (Fase 7: fica PENDENTE até ser aprovado)
 def test_administrador_solicita_criacao_de_servico(client, app):
     ids = _ids(app)
     _login(client, PerfilUsuario.ADMINISTRADOR)
@@ -168,7 +152,6 @@ def test_aprovar_criacao_de_servico_efetiva_o_registro(client, app):
         assert Servico.query.filter_by(nome="Prótese Dentária").first() is not None
 
 
-# 4. Perfil autorizado consegue visualizar serviço
 def test_visualizar_servico(client, app):
     ids = _ids(app)
     _login(client, PerfilUsuario.RESPONSAVEL_SAUDE_BUCAL)
@@ -179,7 +162,6 @@ def test_visualizar_servico(client, app):
     assert "UBS Unidade A" in resp.get_data(as_text=True)
 
 
-# 5. Perfil autorizado consegue SOLICITAR a edição de um serviço
 def test_solicita_edicao_de_servico(client, app):
     ids = _ids(app)
     _login(client, PerfilUsuario.GESTAO_INFORMACAO)
@@ -216,7 +198,6 @@ def test_aprovar_edicao_de_servico_aplica_a_mudanca(client, app):
         assert servico.nome == "Odontologia Geral (Renomeado)"
 
 
-# 6. Perfil autorizado consegue SOLICITAR alteração de situação
 def test_solicita_alteracao_de_situacao_servico(client, app):
     ids = _ids(app)
     _login(client, PerfilUsuario.ADMINISTRADOR)
@@ -246,7 +227,6 @@ def test_aprovar_alteracao_de_situacao_de_servico_aplica_a_mudanca(client, app):
         assert servico.situacao == SituacaoAtivoInativo.INATIVO
 
 
-# 7. GESTOR consegue consultar
 def test_gestor_consulta_servico(client, app):
     ids = _ids(app)
     _login(client, PerfilUsuario.GESTOR)
@@ -255,7 +235,6 @@ def test_gestor_consulta_servico(client, app):
     assert client.get(f"/servicos/{ids['servico_a']}").status_code == 200
 
 
-# 8. GESTOR não consegue criar
 def test_gestor_nao_cria_servico(client, app):
     ids = _ids(app)
     _login(client, PerfilUsuario.GESTOR)
@@ -265,7 +244,6 @@ def test_gestor_nao_cria_servico(client, app):
     assert resp.status_code == 403
 
 
-# 9. GESTOR não consegue editar
 def test_gestor_nao_edita_servico(client, app):
     ids = _ids(app)
     _login(client, PerfilUsuario.GESTOR)
@@ -275,7 +253,6 @@ def test_gestor_nao_edita_servico(client, app):
     assert resp.status_code == 403
 
 
-# 10. Unidade inexistente é rejeitada
 def test_servico_com_unidade_inexistente_e_rejeitado(client, app):
     _login(client, PerfilUsuario.ADMINISTRADOR)
 
@@ -290,7 +267,6 @@ def test_servico_com_unidade_inexistente_e_rejeitado(client, app):
         assert Servico.query.filter_by(nome="Serviço Órfão").first() is None
 
 
-# 11. Serviço sem unidade é rejeitado
 def test_servico_sem_unidade_e_rejeitado(client, app):
     _login(client, PerfilUsuario.ADMINISTRADOR)
 
@@ -305,7 +281,6 @@ def test_servico_sem_unidade_e_rejeitado(client, app):
         assert Servico.query.filter_by(nome="Serviço Sem Unidade").first() is None
 
 
-# 12. Situação inválida é rejeitada
 def test_situacao_invalida_e_rejeitada_no_cadastro_servico(client, app):
     ids = _ids(app)
     _login(client, PerfilUsuario.ADMINISTRADOR)
@@ -321,18 +296,12 @@ def test_situacao_invalida_e_rejeitada_no_cadastro_servico(client, app):
         assert Servico.query.filter_by(nome="Serviço Situação Inválida").first() is None
 
 
-# ==================================================================
-# EQUIPAMENTOS
-# ==================================================================
-
-# 13. Usuário não autenticado não acessa equipamentos
 def test_nao_autenticado_nao_acessa_equipamentos(client):
     resp = client.get("/equipamentos", follow_redirects=False)
     assert resp.status_code == 302
     assert "/login" in resp.headers["Location"]
 
 
-# 14. Perfil autorizado consegue listar equipamentos
 def test_gestor_lista_equipamentos(client):
     _login(client, PerfilUsuario.GESTOR)
     resp = client.get("/equipamentos")
@@ -340,7 +309,6 @@ def test_gestor_lista_equipamentos(client):
     assert "Cadeira Odontológica" in resp.get_data(as_text=True)
 
 
-# 15. Perfil autorizado consegue SOLICITAR a criação de um equipamento
 def test_administrador_solicita_criacao_de_equipamento(client, app):
     ids = _ids(app)
     _login(client, PerfilUsuario.ADMINISTRADOR)
@@ -419,7 +387,6 @@ def test_solicita_criacao_de_equipamento_sem_servico(client, app):
         assert criado.servico_id is None
 
 
-# 16. Perfil autorizado consegue visualizar equipamento
 def test_visualizar_equipamento(client, app):
     ids = _ids(app)
     _login(client, PerfilUsuario.RESPONSAVEL_SAUDE_BUCAL)
@@ -430,7 +397,6 @@ def test_visualizar_equipamento(client, app):
     assert "UBS Unidade A" in resp.get_data(as_text=True)
 
 
-# 17. Perfil autorizado consegue SOLICITAR a edição de um equipamento
 def test_solicita_edicao_de_equipamento(client, app):
     ids = _ids(app)
     _login(client, PerfilUsuario.GESTAO_INFORMACAO)
@@ -479,7 +445,6 @@ def test_aprovar_edicao_de_equipamento_aplica_a_mudanca(client, app):
         assert equipamento.nome == "Cadeira Odontológica (Nova)"
 
 
-# 18. Perfil autorizado consegue SOLICITAR alteração de situação
 def test_solicita_alteracao_de_situacao_equipamento(client, app):
     ids = _ids(app)
     _login(client, PerfilUsuario.ADMINISTRADOR)
@@ -511,7 +476,6 @@ def test_aprovar_alteracao_de_situacao_de_equipamento_aplica_a_mudanca(client, a
         assert equipamento.situacao == SituacaoAtivoInativo.INATIVO
 
 
-# 19. GESTOR consegue consultar
 def test_gestor_consulta_equipamento(client, app):
     ids = _ids(app)
     _login(client, PerfilUsuario.GESTOR)
@@ -520,7 +484,6 @@ def test_gestor_consulta_equipamento(client, app):
     assert client.get(f"/equipamentos/{ids['equipamento_a']}").status_code == 200
 
 
-# 20. GESTOR não consegue criar
 def test_gestor_nao_cria_equipamento(client, app):
     ids = _ids(app)
     _login(client, PerfilUsuario.GESTOR)
@@ -533,7 +496,6 @@ def test_gestor_nao_cria_equipamento(client, app):
     assert resp.status_code == 403
 
 
-# 21. GESTOR não consegue editar
 def test_gestor_nao_edita_equipamento(client, app):
     ids = _ids(app)
     _login(client, PerfilUsuario.GESTOR)
@@ -543,7 +505,6 @@ def test_gestor_nao_edita_equipamento(client, app):
     assert resp.status_code == 403
 
 
-# 22. Unidade inexistente é rejeitada
 def test_equipamento_com_unidade_inexistente_e_rejeitado(client, app):
     _login(client, PerfilUsuario.ADMINISTRADOR)
 
@@ -558,7 +519,6 @@ def test_equipamento_com_unidade_inexistente_e_rejeitado(client, app):
         assert Equipamento.query.filter_by(nome="Equip Órfão").first() is None
 
 
-# 23. Serviço inexistente é rejeitado
 def test_equipamento_com_servico_inexistente_e_rejeitado(client, app):
     ids = _ids(app)
     _login(client, PerfilUsuario.ADMINISTRADOR)
@@ -580,12 +540,10 @@ def test_equipamento_com_servico_inexistente_e_rejeitado(client, app):
         assert Equipamento.query.filter_by(nome="Equip Servico Invalido").first() is None
 
 
-# 24. Equipamento com serviço pertencente a outra unidade é rejeitado
 def test_equipamento_com_servico_de_outra_unidade_e_rejeitado(client, app):
     ids = _ids(app)
     _login(client, PerfilUsuario.ADMINISTRADOR)
 
-    # servico_a pertence à unidade_a; tentamos associá-lo à unidade_b
     resp = client.post(
         "/equipamentos/novo",
         data={
@@ -604,7 +562,6 @@ def test_equipamento_com_servico_de_outra_unidade_e_rejeitado(client, app):
         assert Equipamento.query.filter_by(nome="Equip Inconsistente").first() is None
 
 
-# 25. Situação inválida é rejeitada
 def test_situacao_invalida_e_rejeitada_no_cadastro_equipamento(client, app):
     ids = _ids(app)
     _login(client, PerfilUsuario.ADMINISTRADOR)

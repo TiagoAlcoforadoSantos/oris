@@ -1,12 +1,4 @@
-"""
-Painel estatístico — consultas SQL explícitas + estatística descritiva.
-
-Alimenta os gráficos da tela /bd/estatistica (integração com a
-disciplina de Estatística). As medidas que o SQL calcula nativamente
-(média, desvio padrão, variância, mínimo, máximo) vêm do próprio
-banco; mediana, quartis e moda — que o MySQL não tem como função
-agregada padrão — são calculadas em Python sobre a amostra lida.
-"""
+"""Painel estatístico - consultas SQL explícitas + estatística descritiva."""
 
 import statistics
 
@@ -35,7 +27,6 @@ SQL_EQUIPAMENTOS_POR_TIPO = """
      ORDER BY COUNT(*) DESC
 """
 
-# Amostra: nº de equipamentos ATIVOS em cada unidade ATIVA (inclui zero)
 SQL_AMOSTRA_EQUIP_POR_UNIDADE = """
     SELECT u.id, COUNT(e.id) AS qtd
       FROM unidades u
@@ -113,7 +104,6 @@ def medidas_descritivas():
     if medidas["media"] and medidas["desvio_padrao"] is not None:
         medidas["cv"] = _num(100 * medidas["desvio_padrao"] / medidas["media"], 1)
 
-    # Distribuição de frequências (histograma de valores discretos)
     frequencias = {}
     for valor in amostra:
         frequencias[valor] = frequencias.get(valor, 0) + 1

@@ -1,24 +1,4 @@
-"""
-Conexão explícita com o SGBD (MySQL/MariaDB) via PyMySQL — DB-API 2.0.
-
-Equivalência com JDBC (para a disciplina de Banco de Dados):
-
-    Java / JDBC                              Python / DB-API (PyMySQL)
-    ---------------------------------------  ---------------------------------------
-    DriverManager.getConnection(url,u,p)     pymysql.connect(host, user, password…)
-    conn.setAutoCommit(false)                autocommit=False (padrão aqui)
-    conn.prepareStatement("… ? …")           cursor = conn.cursor()
-    ps.setString(1, x); ps.executeUpdate()   cursor.execute("… %s …", (x,))
-    ResultSet rs = ps.executeQuery()         cursor.fetchall() / fetchone()
-    rs.getString("nome")                     linha["nome"]  (DictCursor)
-    ps.getGeneratedKeys()                    cursor.lastrowid
-    conn.commit() / conn.rollback()          conn.commit() / conn.rollback()
-    conn.close()                             conn.close()
-
-Os parâmetros SEMPRE são passados separados do texto SQL (nunca por
-concatenação de strings): o driver faz o escape, o que impede SQL
-Injection — mesma garantia do PreparedStatement.
-"""
+"""Conexão explícita com o SGBD (MySQL/MariaDB) via PyMySQL - DB-API 2.0."""
 
 from contextlib import contextmanager
 
@@ -28,16 +8,11 @@ from pymysql.cursors import DictCursor
 
 
 class ErroBanco(Exception):
-    """Erro de banco já traduzido para uma mensagem amigável, que pode
-    ser mostrada ao usuário sem expor detalhes internos (SQL, stack)."""
+    """Erro de banco com mensagem amigável."""
 
 
 def abrir_conexao():
-    """Abre uma nova conexão com o banco configurado no .env.
-
-    Equivale a `DriverManager.getConnection(...)` no JDBC.
-    `autocommit=False` → toda escrita precisa de commit explícito.
-    """
+    """Abre uma nova conexão com o banco configurado no .env."""
     cfg = current_app.config
     return pymysql.connect(
         host=cfg.get("DB_HOST", "localhost"),
@@ -53,17 +28,7 @@ def abrir_conexao():
 
 @contextmanager
 def transacao():
-    """Abre conexão + cursor e controla a transação explicitamente.
-
-    Uso:
-        with transacao() as cur:
-            cur.execute("INSERT INTO ... VALUES (%s, %s)", (a, b))
-            cur.execute("INSERT INTO auditorias ...", (...))
-        # sem exceção → COMMIT; com exceção → ROLLBACK
-
-    Assim a operação de negócio e o seu registro de auditoria são
-    gravados juntos (atomicidade) — ou nenhum dos dois é gravado.
-    """
+    """Abre conexão + cursor e controla a transação explicitamente."""
     conn = abrir_conexao()
     try:
         with conn.cursor() as cur:
@@ -80,11 +45,7 @@ def transacao():
 
 
 def consultar(sql, parametros=None):
-    """Executa um SELECT e devolve (colunas, linhas).
-
-    Usado pelas telas de listagem e pelas consultas da Etapa 03.
-    Não abre transação de escrita — é só leitura.
-    """
+    """Executa um SELECT e devolve (colunas, linhas)."""
     conn = abrir_conexao()
     try:
         with conn.cursor() as cur:

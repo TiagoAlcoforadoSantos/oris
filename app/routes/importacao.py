@@ -1,24 +1,4 @@
-"""
-Importador de planilhas (Fase 10).
-
-Fluxo: upload → leitura → mapeamento de colunas → validação →
-pré-visualização → confirmação → solicitação PENDENTE → aprovação
-(Fase 7) → aplicação → auditoria (Fase 8).
-
-O upload NUNCA escreve direto nas tabelas de negócio. Cada linha
-válida da planilha vira uma solicitação de Alteracao PENDENTE (via
-app.services.alteracoes_service.registrar_alteracao) — a aplicação
-de fato só acontece quando alguém aprova em /alteracoes, exatamente
-como qualquer outra alteração desde a Fase 7. Nenhum mecanismo novo
-de aprovação foi criado aqui.
-
-Segurança do upload: extensão validada contra uma lista fechada,
-tamanho limitado, nome de arquivo em disco sempre gerado pelo
-servidor (nunca o nome enviado pelo usuário), armazenamento em uma
-pasta temporária dedicada (fora de `static`/`templates`), e remoção
-do arquivo assim que ele deixa de ser necessário (falha de validação
-ou confirmação concluída).
-"""
+"""Importador de planilhas (Fase 10)."""
 
 import csv
 import io
@@ -58,32 +38,19 @@ ENTIDADES_VALIDAS = ("unidades", "servicos", "equipamentos", "rede")
 
 NOMES_SINGULAR = {"unidades": "unidade", "servicos": "serviço", "equipamentos": "equipamento", "rede": "registro"}
 
-# Entidade "rede" (formato unificado, ex.: REDE_SAUDE_RECIFE_GEO): uma
-# linha pode gerar sub-registros de mais de um tipo (ver
-# app/services/importacao_service.py). Cada sub-registro precisa ser
-# direcionado à sua própria tabela/nome singular na confirmação, em
-# vez de usar a entidade "rede" (que não é uma tabela de negócio).
 _TABELA_POR_TIPO_REDE = {"UNIDADE": "unidades", "SERVICO": "servicos", "EQUIPAMENTO": "equipamentos"}
 _SINGULAR_POR_TIPO_REDE = {"UNIDADE": "unidade", "SERVICO": "serviço", "EQUIPAMENTO": "equipamento"}
 
 
-# ----------------------------------------------------------------
-# Armazenamento temporário do arquivo enviado
-# ----------------------------------------------------------------
-
 def _diretorio_temporario():
-    """Pasta dedicada para os arquivos temporários da importação —
-    fora de `static`/`templates`, então nunca é servida diretamente
-    pelo Flask. Fica sob o diretório temporário do sistema."""
+    """Pasta dedicada para os arquivos temporários da importação - fora de..."""
     caminho = os.path.join(tempfile.gettempdir(), "oris_importacoes")
     os.makedirs(caminho, exist_ok=True)
     return caminho
 
 
 def _salvar_arquivo_temporario(arquivo, extensao):
-    """Salva o arquivo enviado com um nome gerado pelo servidor (nunca
-    o nome enviado pelo usuário) e devolve o token (nome do arquivo em
-    disco) usado para localizá-lo nas próximas etapas."""
+    """Salva o arquivo enviado com um nome gerado pelo servidor (nunca o nome enviado..."""
     token = f"{uuid.uuid4().hex}{extensao}"
     caminho = os.path.join(_diretorio_temporario(), token)
     arquivo.save(caminho)
@@ -91,19 +58,14 @@ def _salvar_arquivo_temporario(arquivo, extensao):
 
 
 def _caminho_do_token(token):
-    """Resolve um token para o caminho completo em disco, sempre
-    dentro da pasta temporária dedicada — o token é um nome de
-    arquivo gerado pelo servidor (uuid4 + extensão fixa), nunca um
-    caminho fornecido pelo usuário, então não há risco de path
-    traversal aqui."""
+    """Resolve um token para o caminho completo em disco, sempre dentro da pasta..."""
     if not token or "/" in token or "\\" in token or ".." in token:
         abort(400)
     return os.path.join(_diretorio_temporario(), token)
 
 
 def _remover_temporario(token):
-    """Remove o arquivo temporário, se existir — best-effort: se já
-    tiver sido removido ou o caminho não existir, não é um erro."""
+    """Remove o arquivo temporário, se existir - best-effort"""
     if not token:
         return
     caminho = _caminho_do_token(token)
@@ -123,10 +85,6 @@ def _extrair_mapeamento_do_formulario(entidade):
     campos = CAMPOS_POR_ENTIDADE[entidade]["obrigatorios"] + CAMPOS_POR_ENTIDADE[entidade]["opcionais"]
     return {campo: (request.form.get(f"mapa_{campo}") or None) for campo in campos}
 
-
-# ----------------------------------------------------------------
-# Tela principal
-# ----------------------------------------------------------------
 
 @importacao_bp.route("")
 @login_required
@@ -162,10 +120,6 @@ def template(entidade):
     )
 
 
-# ----------------------------------------------------------------
-# Etapa 1: upload
-# ----------------------------------------------------------------
-
 @importacao_bp.route("/nova")
 @roles_required(*PERFIS_QUE_IMPORTAM)
 def nova():
@@ -180,10 +134,6 @@ def nova():
         limite_tamanho_mb=LIMITE_TAMANHO_BYTES // (1024 * 1024),
     )
 
-
-# ----------------------------------------------------------------
-# Etapa 2: mapeamento de colunas
-# ----------------------------------------------------------------
 
 @importacao_bp.route("/mapear", methods=["POST"])
 @roles_required(*PERFIS_QUE_IMPORTAM)
@@ -240,10 +190,6 @@ def mapear():
         mapeamento_sugerido=mapeamento_sugerido,
     )
 
-
-# ----------------------------------------------------------------
-# Etapa 3: validação + Etapa 4: pré-visualização
-# ----------------------------------------------------------------
 
 @importacao_bp.route("/validar", methods=["POST"])
 @roles_required(*PERFIS_QUE_IMPORTAM)
@@ -315,10 +261,6 @@ def validar():
     )
 
 
-# ----------------------------------------------------------------
-# Etapa 5: confirmação (cria as solicitações PENDENTES)
-# ----------------------------------------------------------------
-
 @importacao_bp.route("/confirmar", methods=["POST"])
 @roles_required(*PERFIS_QUE_IMPORTAM)
 def confirmar():
@@ -342,8 +284,6 @@ def confirmar():
         flash(str(erro), "danger")
         return redirect(url_for("importacao.nova", entidade=entidade))
 
-    # Nunca confia na classificação vinda do formulário (poderia ter
-    # sido manipulada) — revalida tudo do zero antes de confirmar.
     resultado = validar_e_classificar(df, mapeamento, entidade)
 
     if resultado["invalidos"] > 0:
@@ -382,7 +322,6 @@ def confirmar():
                 f"edição de {singular_alvo} '{linha['dados'].get('nome')}'."
             )
             registrar_alteracao(usuario, tabela_alvo, linha["registro_existente_id"], "EDITAR", linha["dados"], descricao)
-        # "sem_alteracao": nada a fazer — não gera solicitação.
 
     registrar_auditoria(
         usuario=usuario,

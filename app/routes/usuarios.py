@@ -1,24 +1,4 @@
-"""
-Administração de Usuários (Fase 11).
-
-Exclusiva do perfil ADMINISTRADOR — todas as rotas usam
-`roles_required(PerfilUsuario.ADMINISTRADOR.value)`, nunca dependendo
-apenas de esconder o link "Usuários" do menu.
-
-REGRA DO ÚLTIMO ADMINISTRADOR (itens 6 e 7 da Fase 11): o sistema
-nunca pode ficar sem nenhum ADMINISTRADOR ativo. Isso é verificado
-sempre que uma ação poderia reduzir essa contagem a zero:
-
-- desativar um usuário que é ADMINISTRADOR ativo;
-- mudar o perfil de um ADMINISTRADOR ativo para outro perfil.
-
-A regra vale tanto para um administrador mexendo em outro quanto para
-um administrador mexendo na própria conta — é a mesma verificação
-("isso deixaria o sistema sem administrador?"), sem tratamento
-especial para autoalteração além disso.
-
-Nenhuma exclusão física é feita — apenas ativação/desativação.
-"""
+"""Administração de Usuários (Fase 11)."""
 
 from flask import Blueprint, abort, flash, redirect, render_template, request, url_for
 
@@ -51,16 +31,11 @@ def _total_administradores_ativos(excluir_id=None):
 
 
 def _e_ultimo_administrador_ativo(usuario):
-    """True se `usuario` é ADMINISTRADOR, está ativo, e não existe
-    nenhum OUTRO administrador ativo além dele."""
+    """True se `usuario` é ADMINISTRADOR, está ativo, e não existe nenhum OUTRO..."""
     if usuario.perfil != PerfilUsuario.ADMINISTRADOR or not usuario.ativo:
         return False
     return _total_administradores_ativos(excluir_id=usuario.id) == 0
 
-
-# ----------------------------------------------------------------
-# Listagem, com busca simples e filtros
-# ----------------------------------------------------------------
 
 @usuarios_bp.route("")
 @roles_required(PERFIL_ADMINISTRADOR)
@@ -92,10 +67,6 @@ def listar():
         form_acao=AcaoAlteracaoForm(),
     )
 
-
-# ----------------------------------------------------------------
-# Criar
-# ----------------------------------------------------------------
 
 @usuarios_bp.route("/novo", methods=["GET", "POST"])
 @roles_required(PERFIL_ADMINISTRADOR)
@@ -134,10 +105,6 @@ def novo():
     return render_template("usuarios/form.html", form=form, titulo="Novo Usuário")
 
 
-# ----------------------------------------------------------------
-# Editar (nome, email, perfil)
-# ----------------------------------------------------------------
-
 @usuarios_bp.route("/<int:usuario_id>/editar", methods=["GET", "POST"])
 @roles_required(PERFIL_ADMINISTRADOR)
 def editar(usuario_id):
@@ -156,9 +123,6 @@ def editar(usuario_id):
                 "usuarios/form.html", form=form, titulo=f"Editar Usuário — {usuario.nome}", usuario=usuario
             )
 
-        # Regra do último administrador: bloqueia ANTES de aplicar
-        # qualquer mudança, se a troca de perfil deixaria o sistema
-        # sem nenhum ADMINISTRADOR ativo.
         if perfil_novo != usuario.perfil and _e_ultimo_administrador_ativo(usuario):
             flash(
                 "Não é possível alterar o perfil deste usuário: ele é o único "
@@ -216,10 +180,6 @@ def editar(usuario_id):
     )
 
 
-# ----------------------------------------------------------------
-# Ativar / desativar
-# ----------------------------------------------------------------
-
 @usuarios_bp.route("/<int:usuario_id>/situacao", methods=["POST"])
 @roles_required(PERFIL_ADMINISTRADOR)
 def alterar_situacao(usuario_id):
@@ -260,10 +220,6 @@ def alterar_situacao(usuario_id):
     return redirect(url_for("usuarios.listar"))
 
 
-# ----------------------------------------------------------------
-# Redefinir senha (administrativo)
-# ----------------------------------------------------------------
-
 @usuarios_bp.route("/<int:usuario_id>/senha", methods=["POST"])
 @roles_required(PERFIL_ADMINISTRADOR)
 def redefinir_senha(usuario_id):
@@ -278,7 +234,6 @@ def redefinir_senha(usuario_id):
 
     usuario.senha_hash = gerar_hash_senha(form.nova_senha.data)
 
-    # Nunca registrar a senha em si — só o fato de que foi redefinida.
     registrar_auditoria(
         usuario=usuario_atual(),
         acao="REDEFINIR_SENHA",

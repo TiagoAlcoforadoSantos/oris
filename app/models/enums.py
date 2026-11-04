@@ -1,21 +1,10 @@
-"""
-Enumerações usadas pelos models do ORIS.
-
-Ficam centralizadas aqui para reaproveitamento entre models, formulários
-e futuras regras de negócio (RBAC, fluxo de aprovação etc.), evitando
-strings "soltas" espalhadas pelo código.
-"""
+"""Enumerações usadas pelos models do ORIS."""
 
 import enum
 
 
 class PerfilUsuario(str, enum.Enum):
-    """Perfis de acesso previstos para o ORIS.
-
-    As REGRAS de permissão de cada perfil NÃO são implementadas nesta
-    fase — apenas o campo/valor é definido, para ser usado no RBAC
-    (Fase 4) e no login (Fase 3).
-    """
+    """Perfis de acesso previstos para o ORIS."""
 
     ADMINISTRADOR = "ADMINISTRADOR"
     GESTAO_INFORMACAO = "GESTAO_INFORMACAO"
@@ -47,12 +36,7 @@ class StatusAlteracao(str, enum.Enum):
 
 
 class TipoOperacaoAlteracao(str, enum.Enum):
-    """Tipo de operação que uma Alteração pendente representa (Fase 7).
-
-    Necessário para saber COMO aplicar a alteração no momento da
-    aprovação: criar um novo registro, editar campos de um registro
-    existente, ou só trocar a situação dele.
-    """
+    """Tipo de operação que uma Alteração pendente representa (Fase 7)."""
 
     CRIAR = "CRIAR"
     EDITAR = "EDITAR"

@@ -1,11 +1,11 @@
 /*
- * ORIS — Privacidade "Premium" (UI/UX Final, Fase 13B)
+ * ORIS - Privacidade "Premium" (UI/UX Final, Fase 13B)
  * ---------------------------------------------------------------
  * Camada de estilo EXCLUSIVA da página de Privacidade, carregada só
  * nela via {% block extra_css %}. Mesma linguagem visual das demais
  * telas premium (Importação, Usuários, Login): glassmorphism sutil,
  * gradiente navy → petróleo → turquesa, profundidade discreta.
- * Nenhum conteúdo textual foi alterado — só a apresentação.
+ * Nenhum conteúdo textual foi alterado - só a apresentação.
  */
 
 .oris-privacidade-hero {

@@ -1,16 +1,16 @@
 /*
- * ORIS — Design System (Fase 13A)
+ * ORIS - Design System (Fase 13A)
  * ---------------------------------------------------------------
  * Camada de estilo construída SOBRE o Bootstrap (carregado antes
- * deste arquivo) usando os tokens definidos em tokens.css — não
+ * deste arquivo) usando os tokens definidos em tokens.css - não
  * substitui o Bootstrap nem introduz um framework novo.
  *
  * Escopo desta fase: o "chrome" compartilhado por todas as telas
- * (base.html — navegação, tipografia, botões, badges, alertas,
+ * (base.html - navegação, tipografia, botões, badges, alertas,
  * formulários, foco de teclado) e a página de referência do design
  * system (/design-system). O layout interno de cada tela de negócio
  * (tabelas, formulários específicos de Unidade/Serviço/etc.) segue
- * inalterado nesta fase — a aplicação detalhada é a Fase 13B.
+ * inalterado nesta fase - a aplicação detalhada é a Fase 13B.
  */
 
 /* ---- Base ------------------------------------------------------ */
@@ -86,7 +86,7 @@ textarea:focus-visible,
 }
 
 /* ---- Botões ---------------------------------------------------------
- * Uma linguagem visual única para todos os botões do sistema — as
+ * Uma linguagem visual única para todos os botões do sistema - as
  * classes usadas nos templates continuam sendo as do Bootstrap
  * (.btn-primary, .btn-outline-secondary etc.), só a aparência é
  * elevada aqui, uma única vez, para todo o sistema herdar.
@@ -120,7 +120,7 @@ textarea:focus-visible,
     opacity: 0.55;
 }
 
-/* PRIMARY — gradiente turquesa/cyan, a ação mais importante da tela */
+/* PRIMARY - gradiente turquesa/cyan, a ação mais importante da tela */
 .btn-primary {
     background: linear-gradient(120deg, var(--oris-teal), var(--oris-cyan));
     background-color: var(--oris-teal); /* fallback sólido */
@@ -137,7 +137,7 @@ textarea:focus-visible,
     box-shadow: var(--oris-shadow-btn-hover);
 }
 
-/* OUTLINE PRIMARY — ação secundária com destaque, estilo "ghost" */
+/* OUTLINE PRIMARY - ação secundária com destaque, estilo "ghost" */
 .btn-outline-primary {
     color: var(--oris-petroleum);
     border: 1.5px solid var(--oris-petroleum);
@@ -153,7 +153,7 @@ textarea:focus-visible,
     box-shadow: var(--oris-shadow-btn);
 }
 
-/* OUTLINE SECONDARY — ação terciária/neutra (ex.: Cancelar, Voltar) */
+/* OUTLINE SECONDARY - ação terciária/neutra (ex.: Cancelar, Voltar) */
 .btn-outline-secondary {
     color: var(--oris-text-muted);
     border: 1.5px solid var(--oris-border);
@@ -169,7 +169,7 @@ textarea:focus-visible,
     box-shadow: var(--oris-shadow-btn);
 }
 
-/* SUCCESS — verde sofisticado (não neon), ação positiva (ex.: Aprovar) */
+/* SUCCESS - verde sofisticado (não neon), ação positiva (ex.: Aprovar) */
 .btn-success {
     background: linear-gradient(120deg, var(--oris-success), #2f9e63);
     background-color: var(--oris-success);
@@ -201,7 +201,7 @@ textarea:focus-visible,
     box-shadow: var(--oris-shadow-btn);
 }
 
-/* DANGER — vermelho elegante, reservado para ações destrutivas/de rejeição */
+/* DANGER - vermelho elegante, reservado para ações destrutivas/de rejeição */
 .btn-outline-danger {
     color: var(--oris-danger);
     border: 1.5px solid var(--oris-danger);
@@ -233,7 +233,7 @@ textarea:focus-visible,
     box-shadow: 0 6px 16px rgba(217, 83, 79, 0.28);
 }
 
-/* Links de ação simples (ex.: "Visualizar", breadcrumb) — sem virar botão */
+/* Links de ação simples (ex.: "Visualizar", breadcrumb) - sem virar botão */
 a.text-decoration-none:hover {
     text-decoration: underline !important;
 }
@@ -288,7 +288,7 @@ a.text-decoration-none:hover {
 }
 
 /* ---- Badges (status semânticos) --------------------------------------
- * Sempre em formato pill, com borda sutil da própria cor — mais
+ * Sempre em formato pill, com borda sutil da própria cor - mais
  * refinado que um retângulo de cor sólida, sem perder a leitura
  * imediata de "isto é um status".
  */
@@ -345,7 +345,7 @@ a.text-decoration-none:hover {
 .alert-info    { border-left-color: var(--oris-petroleum); background-color: var(--oris-surface); color: var(--oris-blue); }
 
 /* ---- Formulários -----------------------------------------------------
- * Inputs/selects deixam de usar só o padrão do Bootstrap — ganham
+ * Inputs/selects deixam de usar só o padrão do Bootstrap - ganham
  * borda mais suave, leve elevação e um anel de foco mais elegante.
  */
 
@@ -415,7 +415,7 @@ footer a:hover {
 
 /* ---- Cartão de conteúdo genérico (Fase 13B) -----------------------------
  * Usado pelo Dashboard (Fase 13B, Stage 1) e pelas telas de CRUD como
- * Unidades (Stage 2A) — um "cartão" branco simples para agrupar
+ * Unidades (Stage 2A) - um "cartão" branco simples para agrupar
  * conteúdo relacionado (uma seção de detalhe, um formulário, uma
  * tabela). Definido aqui (não em dashboard.css) porque não é
  * específico do Dashboard.

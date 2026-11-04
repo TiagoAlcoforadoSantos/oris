@@ -1,11 +1,4 @@
-"""
-Ponto único de importação dos models do ORIS.
-
-Importar os models aqui garante que o SQLAlchemy conheça todas as
-tabelas (metadata) quando `db.create_all()` for chamado, e permite
-fazer `from app.models import Usuario, Unidade, ...` no resto do
-código.
-"""
+"""Ponto único de importação dos models do ORIS."""
 
 from app.models.enums import (
     PerfilUsuario,

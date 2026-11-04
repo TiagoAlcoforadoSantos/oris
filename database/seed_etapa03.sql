@@ -1,5 +1,4 @@
--- ==========================================================
--- ORIS — Etapa 03 — Massa de dados FICTÍCIA para demonstração
+-- ORIS - Etapa 03 - Massa de dados FICTÍCIA para demonstração
 -- Gerado por scripts/gerar_seed_etapa03.py (determinístico).
 --
 -- ATENÇÃO: limpa unidades/serviços/equipamentos/alterações antes de
@@ -7,14 +6,13 @@
 -- A tabela usuarios NÃO é apagada (usuários demo entram com INSERT IGNORE)
 -- e a trilha de auditorias é preservada.
 --
--- Usuários de demonstração (senha de todos: Oris@2026 — troque depois):
+-- Usuários de demonstração (senha de todos: Oris@2026 - troque depois):
 --   admin.demo@oris.example      ADMINISTRADOR
 --   gi.demo@oris.example         GESTAO_INFORMACAO
 --   rsb.demo@oris.example        RESPONSAVEL_SAUDE_BUCAL
 --   rsb2.demo@oris.example       RESPONSAVEL_SAUDE_BUCAL
 --   gestor.demo@oris.example     GESTOR
 -- Nomes e CNES são fictícios (CNES na faixa 91xxxxx, inexistente no CNES real).
--- ==========================================================
 
 USE oris_db;
 SET NAMES utf8mb4;
@@ -254,7 +252,7 @@ INSERT INTO equipamentos (id, unidade_id, servico_id, nome, tipo, situacao, crea
 INSERT INTO equipamentos (id, unidade_id, servico_id, nome, tipo, situacao, created_at, updated_at) VALUES (118, NULL, NULL, 'Unidade Odontológica Móvel (van)', 'Unidade móvel', 'ATIVO', '2026-09-30 04:23:00', '2026-09-30 04:23:00');
 INSERT INTO equipamentos (id, unidade_id, servico_id, nome, tipo, situacao, created_at, updated_at) VALUES (119, 8, 25, 'Ultrassom com jato de bicarbonato (importado de planilha)', 'Ultrassom odontológico', 'ATIVO', '2026-08-31 10:46:00', '2026-08-31 10:46:00');
 
--- Alterações (fluxo de aprovação) — usuários referenciados por email
+-- Alterações (fluxo de aprovação) - usuários referenciados por email
 INSERT INTO alteracoes (usuario_id, tabela, registro_id, operacao, dados_novos, descricao, status, created_at, approved_by, approved_at) VALUES ((SELECT id FROM usuarios WHERE email = 'gi.demo@oris.example'), 'unidades', 29, 'EDITAR', NULL, 'Atualização cadastral: Laboratório Regional de Prótese Dentária', 'APROVADO', '2026-07-25 07:32:00', (SELECT id FROM usuarios WHERE email = 'admin.demo@oris.example'), '2026-07-25 15:32:00');
 INSERT INTO alteracoes (usuario_id, tabela, registro_id, operacao, dados_novos, descricao, status, created_at, approved_by, approved_at) VALUES ((SELECT id FROM usuarios WHERE email = 'rsb2.demo@oris.example'), 'unidades', NULL, 'CRIAR', NULL, 'Cadastro de nova unidade', 'REJEITADO', '2026-08-17 06:08:00', (SELECT id FROM usuarios WHERE email = 'gi.demo@oris.example'), '2026-08-17 11:08:00');
 INSERT INTO alteracoes (usuario_id, tabela, registro_id, operacao, dados_novos, descricao, status, created_at, approved_by, approved_at) VALUES ((SELECT id FROM usuarios WHERE email = 'rsb.demo@oris.example'), 'unidades', 19, 'CRIAR', NULL, 'Cadastro de nova unidade', 'APROVADO', '2026-09-04 06:50:00', (SELECT id FROM usuarios WHERE email = 'gi.demo@oris.example'), '2026-09-05 02:50:00');

@@ -1,10 +1,4 @@
-"""
-DAO de Unidades de Saúde Bucal — SQL explícito (PyMySQL / DB-API).
-
-Comandos implementados: SELECT (listar, buscar por id, opções),
-INSERT, UPDATE e DELETE. Cada escrita grava também a auditoria
-correspondente dentro da mesma transação.
-"""
+"""DAO de Unidades de Saúde Bucal - SQL explícito (PyMySQL / DB-API)."""
 
 from app.bd import dao_auditoria
 from app.bd.conexao import ErroBanco, consultar, consultar_um, transacao
@@ -12,9 +6,6 @@ from app.bd.conexao import ErroBanco, consultar, consultar_um, transacao
 CAMPOS = ("nome", "cnes", "unidade_e_mista", "tipo", "endereco",
           "bairro", "cidade", "uf", "situacao")
 
-# ------------------------------------------------------------------
-# SQL — leitura
-# ------------------------------------------------------------------
 
 SQL_LISTAR = """
     SELECT u.id, u.nome, u.cnes, u.unidade_e_mista, u.tipo, u.bairro,
@@ -42,9 +33,6 @@ SQL_CONTAR_DEPENDENTES = """
            (SELECT COUNT(*) FROM equipamentos WHERE unidade_id = %s) AS equipamentos
 """
 
-# ------------------------------------------------------------------
-# SQL — escrita
-# ------------------------------------------------------------------
 
 SQL_INSERIR = """
     INSERT INTO unidades
@@ -64,10 +52,6 @@ SQL_ATUALIZAR = """
 
 SQL_EXCLUIR = "DELETE FROM unidades WHERE id = %s"
 
-
-# ------------------------------------------------------------------
-# Funções
-# ------------------------------------------------------------------
 
 def listar(situacao=None, busca=None):
     _, linhas = consultar(SQL_LISTAR, {
@@ -127,9 +111,6 @@ def excluir(unidade_id, usuario_id):
     if anterior is None:
         raise ErroBanco("Unidade não encontrada.")
 
-    # Verificação prévia (mensagem clara) — a FK no banco continua sendo
-    # a garantia final: se algo for vinculado entre a checagem e o
-    # DELETE, o MySQL recusa (erro 1451) e a transação sofre rollback.
     dep = contar_dependentes(unidade_id)
     if dep["servicos"] or dep["equipamentos"]:
         raise ErroBanco(

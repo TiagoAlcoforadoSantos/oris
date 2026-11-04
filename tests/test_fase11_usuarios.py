@@ -1,10 +1,4 @@
-"""
-Testes da FASE 11 — Administração de Usuários.
-
-Roda contra SQLite em memória (TestingConfig). Cria um usuário para
-cada perfil (incluindo dois ADMINISTRADOR, para poder testar a
-proteção do "último administrador" sem travar os próprios testes).
-"""
+"""Testes da FASE 11 - Administração de Usuários."""
 
 import pytest
 
@@ -86,10 +80,6 @@ DADOS_NOVO_USUARIO = {
 }
 
 
-# ----------------------------------------------------------------
-# 1-5. Acesso
-# ----------------------------------------------------------------
-
 def test_administrador_acessa_usuarios(client):
     _login(client, PerfilUsuario.ADMINISTRADOR)
     resp = client.get("/usuarios")
@@ -119,10 +109,6 @@ def test_usuario_nao_autenticado_nao_acessa(client):
     assert resp.status_code == 302
     assert "/login" in resp.headers["Location"]
 
-
-# ----------------------------------------------------------------
-# 6-13. Criação
-# ----------------------------------------------------------------
 
 def test_admin_abre_formulario_de_criacao(client):
     _login(client, PerfilUsuario.ADMINISTRADOR)
@@ -206,20 +192,12 @@ def test_senha_nao_aparece_em_auditoria(client, app):
         assert "$2b$" not in texto
 
 
-# ----------------------------------------------------------------
-# 14. Usuário aparece na listagem
-# ----------------------------------------------------------------
-
 def test_usuario_aparece_na_listagem(client):
     _login(client, PerfilUsuario.ADMINISTRADOR)
     client.post("/usuarios/novo", data=DADOS_NOVO_USUARIO)
     resp = client.get("/usuarios")
     assert "Novo Usuário" in resp.get_data(as_text=True)
 
-
-# ----------------------------------------------------------------
-# 15-17. Edição
-# ----------------------------------------------------------------
 
 def test_edicao_de_nome_funciona(client, app):
     _login(client, PerfilUsuario.ADMINISTRADOR)
@@ -265,10 +243,6 @@ def test_alteracao_de_perfil_funciona(client, app):
         assert atualizado.perfil == PerfilUsuario.GESTAO_INFORMACAO
 
 
-# ----------------------------------------------------------------
-# 18-21. Ativação / desativação e seus efeitos
-# ----------------------------------------------------------------
-
 def test_ativacao_funciona(client, app):
     _login(client, PerfilUsuario.ADMINISTRADOR)
     alvo = _usuario(app, PerfilUsuario.GESTOR)
@@ -308,26 +282,18 @@ def test_usuario_desativado_nao_consegue_login(client, app):
 def test_usuario_inativo_nao_acessa_areas_protegidas(client, app):
     alvo = _usuario(app, PerfilUsuario.GESTOR)
 
-    # Loga como o próprio GESTOR primeiro (sessão válida)
     client.post("/login", data={"email": alvo.email, "senha": SENHA})
     resp = client.get("/unidades")
     assert resp.status_code == 200  # ainda ativo, acesso normal
 
-    # Um ADMINISTRADOR desativa esse usuário em outra sessão
     client_admin = client.application.test_client()
     client_admin.post("/login", data={"email": EMAILS[PerfilUsuario.ADMINISTRADOR], "senha": SENHA})
     client_admin.post(f"/usuarios/{alvo.id}/situacao", data={"acao": "desativar"})
 
-    # A sessão antiga do GESTOR não deve mais funcionar em NENHUMA
-    # área protegida — nem nas que só exigem login_required.
     resp = client.get("/unidades", follow_redirects=False)
     assert resp.status_code == 302
     assert "/login" in resp.headers["Location"]
 
-
-# ----------------------------------------------------------------
-# 22. Não existe exclusão física
-# ----------------------------------------------------------------
 
 def test_nao_existe_rota_de_exclusao_fisica(client, app):
     _login(client, PerfilUsuario.ADMINISTRADOR)
@@ -343,14 +309,9 @@ def test_nao_existe_rota_de_exclusao_fisica(client, app):
         assert db.session.get(Usuario, alvo.id) is not None
 
 
-# ----------------------------------------------------------------
-# 23-24. Proteção do último administrador
-# ----------------------------------------------------------------
-
 def test_ultimo_administrador_ativo_nao_pode_ser_desativado(client, app):
     _login(client, PerfilUsuario.ADMINISTRADOR)
 
-    # Desativa o segundo administrador, deixando só um
     segundo_admin = _usuario(app, EMAIL_SEGUNDO_ADMIN)
     client.post(f"/usuarios/{segundo_admin.id}/situacao", data={"acao": "desativar"})
 
@@ -388,15 +349,10 @@ def test_pode_desativar_administrador_quando_ha_outro_ativo(client, app):
     _login(client, PerfilUsuario.ADMINISTRADOR)
     segundo_admin = _usuario(app, EMAIL_SEGUNDO_ADMIN)
 
-    # Há 2 administradores ativos — desativar um deles é permitido
     resp = client.post(f"/usuarios/{segundo_admin.id}/situacao", data={"acao": "desativar"}, follow_redirects=True)
     assert resp.status_code == 200
     assert "desativado com sucesso" in resp.get_data(as_text=True)
 
-
-# ----------------------------------------------------------------
-# 25-28. Auditoria
-# ----------------------------------------------------------------
 
 def test_auditoria_registrada_na_criacao(client, app):
     _login(client, PerfilUsuario.ADMINISTRADOR)
@@ -450,10 +406,6 @@ def test_auditoria_registrada_na_alteracao_de_perfil(client, app):
         assert "GESTOR" in registro.valor_novo
 
 
-# ----------------------------------------------------------------
-# 29. Redefinição de senha auditada sem expor senha
-# ----------------------------------------------------------------
-
 def test_redefinicao_de_senha_e_auditada_sem_expor_senha(client, app):
     _login(client, PerfilUsuario.ADMINISTRADOR)
     alvo = _usuario(app, PerfilUsuario.GESTOR)
@@ -495,10 +447,6 @@ def test_redefinicao_de_senha_com_confirmacao_diferente_e_rejeitada(client, app)
         assert atualizado.senha_hash == senha_hash_anterior
 
 
-# ----------------------------------------------------------------
-# 30. Usuário inexistente / acesso a outros ids
-# ----------------------------------------------------------------
-
 def test_usuario_inexistente_retorna_404(client):
     _login(client, PerfilUsuario.ADMINISTRADOR)
     resp = client.get("/usuarios/999999/editar")
@@ -515,11 +463,6 @@ def test_outros_perfis_nao_conseguem_editar_usuario_por_id(client, app):
     resp = client.post(f"/usuarios/{alvo.id}/situacao", data={"acao": "desativar"})
     assert resp.status_code == 403
 
-
-# ----------------------------------------------------------------
-# 31-34. Fases anteriores continuam funcionando (checagens pontuais;
-# a suíte completa é executada junto — ver relatório da fase)
-# ----------------------------------------------------------------
 
 def test_rbac_das_fases_anteriores_continua_funcionando(client):
     _login(client, PerfilUsuario.GESTOR)

@@ -1,10 +1,4 @@
-"""
-DAO de Equipamentos — SQL explícito (PyMySQL / DB-API).
-
-Equipamento não tem dependentes (nenhuma tabela aponta para ele), então
-o DELETE é direto. A regra de negócio "o serviço precisa pertencer à
-mesma unidade" é conferida com uma consulta antes da escrita.
-"""
+"""DAO de Equipamentos - SQL explícito (PyMySQL / DB-API)."""
 
 from app.bd import dao_auditoria
 from app.bd.conexao import ErroBanco, consultar, consultar_um, transacao

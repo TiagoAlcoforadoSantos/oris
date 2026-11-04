@@ -1,14 +1,4 @@
-"""
-Model Usuario.
-
-Representa os usuários do sistema ORIS. Nesta fase, o campo
-`senha_hash` já existe com o tamanho adequado para armazenar um hash
-bcrypt, mas a geração/verificação do hash será implementada somente
-na FASE 3 (login). Aqui nenhuma senha em texto puro é manipulada.
-
-O campo `perfil` já define os 4 perfis previstos, mas as REGRAS de
-permissão de cada perfil (RBAC) serão implementadas na FASE 4.
-"""
+"""Model Usuario."""
 
 from app.extensions import db
 from app.models.enums import PerfilUsuario
@@ -22,12 +12,8 @@ class Usuario(db.Model, TimestampMixin):
 
     nome = db.Column(db.String(150), nullable=False)
 
-    # Email é o identificador único do usuário para login (Fase 3).
     email = db.Column(db.String(150), nullable=False, unique=True, index=True)
 
-    # Armazena o HASH da senha (bcrypt, gerado na Fase 3).
-    # Tamanho 255 é suficiente para hashes bcrypt (60 caracteres) com
-    # margem para eventuais formatos maiores.
     senha_hash = db.Column(db.String(255), nullable=False)
 
     perfil = db.Column(
@@ -35,13 +21,9 @@ class Usuario(db.Model, TimestampMixin):
         nullable=False,
     )
 
-    # Permite desativar um usuário sem excluí-lo (mantém rastreabilidade
-    # / auditoria, alinhado aos requisitos futuros de LGPD).
     ativo = db.Column(db.Boolean, nullable=False, default=True)
 
-    # --- Relacionamentos ---
 
-    # Alterações criadas por este usuário (Fase 7 usa isso no fluxo).
     alteracoes_criadas = db.relationship(
         "Alteracao",
         back_populates="usuario_criador",
@@ -49,7 +31,6 @@ class Usuario(db.Model, TimestampMixin):
         lazy="dynamic",
     )
 
-    # Alterações aprovadas/rejeitadas por este usuário.
     alteracoes_aprovadas = db.relationship(
         "Alteracao",
         back_populates="usuario_aprovador",
@@ -57,7 +38,6 @@ class Usuario(db.Model, TimestampMixin):
         lazy="dynamic",
     )
 
-    # Registros de auditoria gerados pelas ações deste usuário.
     auditorias = db.relationship(
         "Auditoria",
         back_populates="usuario",

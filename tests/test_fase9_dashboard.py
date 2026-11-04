@@ -1,11 +1,4 @@
-"""
-Testes da FASE 9 — Dashboard.
-
-Roda contra SQLite em memória (TestingConfig). Cria um usuário para
-cada perfil e um pequeno conjunto de dados reais (unidade, serviço,
-equipamento, alterações em diferentes status) para validar que os
-indicadores batem com o que está no banco.
-"""
+"""Testes da FASE 9 - Dashboard."""
 
 import pytest
 
@@ -56,19 +49,16 @@ def app():
             )
         db.session.commit()
 
-        # 2 unidades ativas, 1 inativa
         u1 = Unidade(nome="UBS A", cnes="1111111", tipo="UBS", cidade="Recife", uf="PE", situacao=SituacaoUnidade.ATIVA)
         u2 = Unidade(nome="UBS B", cnes="2222222", tipo="UBS", cidade="Recife", uf="PE", situacao=SituacaoUnidade.ATIVA)
         u3 = Unidade(nome="UBS C", cnes="3333333", tipo="UBS", cidade="Recife", uf="PE", situacao=SituacaoUnidade.INATIVA)
         db.session.add_all([u1, u2, u3])
         db.session.commit()
 
-        # 1 serviço ativo
         servico = Servico(nome="Odontologia Geral", unidade_id=u1.id, situacao=SituacaoAtivoInativo.ATIVO)
         db.session.add(servico)
         db.session.commit()
 
-        # 1 equipamento ativo
         equipamento = Equipamento(
             nome="Cadeira Odontológica", tipo="Clínico", unidade_id=u1.id, situacao=SituacaoAtivoInativo.ATIVO
         )
@@ -95,10 +85,6 @@ def _usuario(app, perfil):
         return Usuario.query.filter_by(email=EMAILS[perfil]).first()
 
 
-# ----------------------------------------------------------------
-# 1-4. Dashboard acessível pelos 4 perfis
-# ----------------------------------------------------------------
-
 @pytest.mark.parametrize("perfil", list(EMAILS.keys()))
 def test_dashboard_acessivel_por_todos_os_perfis(client, perfil):
     _login(client, perfil)
@@ -106,19 +92,11 @@ def test_dashboard_acessivel_por_todos_os_perfis(client, perfil):
     assert resp.status_code == 200
 
 
-# ----------------------------------------------------------------
-# 5. Usuário não autenticado não acessa dashboard
-# ----------------------------------------------------------------
-
 def test_usuario_nao_autenticado_nao_acessa_dashboard(client):
     resp = client.get("/dashboard", follow_redirects=False)
     assert resp.status_code == 302
     assert "/login" in resp.headers["Location"]
 
-
-# ----------------------------------------------------------------
-# 6-9. Indicadores corretos (unidades, serviços, equipamentos)
-# ----------------------------------------------------------------
 
 def test_indicadores_de_unidades_corretos(client):
     _login(client, PerfilUsuario.ADMINISTRADOR)
@@ -160,10 +138,6 @@ def test_equipamentos_contabilizados_corretamente(app):
         assert indicadores["equipamentos_inativos"] == 0
 
 
-# ----------------------------------------------------------------
-# 10-11. Alterações pendentes/aprovações/rejeições contabilizadas
-# ----------------------------------------------------------------
-
 def test_alteracoes_pendentes_aprovadas_rejeitadas_contabilizadas(client, app):
     _login(client, PerfilUsuario.RESPONSAVEL_SAUDE_BUCAL)
 
@@ -203,10 +177,6 @@ def test_alteracoes_pendentes_aprovadas_rejeitadas_contabilizadas(client, app):
     assert "1" in html  # smoke check: dashboard renderizou sem erro
 
 
-# ----------------------------------------------------------------
-# 12. Atividade recente utiliza auditoria real
-# ----------------------------------------------------------------
-
 def test_atividade_recente_utiliza_auditoria_real(client, app):
     _login(client, PerfilUsuario.ADMINISTRADOR)  # gera auditoria de LOGIN
 
@@ -221,12 +191,8 @@ def test_atividade_recente_utiliza_auditoria_real(client, app):
 
 
 def test_atividade_recente_e_pessoal_para_responsavel_e_gestor(client, app):
-    # ADMINISTRADOR gera atividade (LOGIN)
     _login(client, PerfilUsuario.ADMINISTRADOR)
 
-    # RESPONSAVEL_SAUDE_BUCAL, ao ver o proprio dashboard, so deve ver
-    # a PROPRIA atividade — não a de outros usuários (mesma restrição
-    # de auditoria administrativa da Fase 8).
     client2 = client.application.test_client()
     _login(client2, PerfilUsuario.RESPONSAVEL_SAUDE_BUCAL)
     resp = client2.get("/dashboard")
@@ -234,10 +200,6 @@ def test_atividade_recente_e_pessoal_para_responsavel_e_gestor(client, app):
 
     assert "Mostrando apenas a sua própria atividade." in html
 
-
-# ----------------------------------------------------------------
-# 13. Nenhuma informação de senha/hash aparece no dashboard
-# ----------------------------------------------------------------
 
 def test_senha_e_hash_nunca_aparecem_no_dashboard(client, app):
     _login(client, PerfilUsuario.ADMINISTRADOR)
@@ -248,10 +210,6 @@ def test_senha_e_hash_nunca_aparecem_no_dashboard(client, app):
     assert "senha_hash" not in html
     assert "$2b$" not in html  # assinatura de hash bcrypt
 
-
-# ----------------------------------------------------------------
-# Extra: filtro por situação no resumo da rede
-# ----------------------------------------------------------------
 
 def test_filtro_por_situacao_no_resumo_da_rede(client):
     _login(client, PerfilUsuario.ADMINISTRADOR)

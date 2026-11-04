@@ -1,20 +1,4 @@
-"""
-Testes da FASE 13B — Stage 3 (UX/UI do módulo de Aprovações).
-
-Esta etapa é puramente visual — não altera rotas, models, RBAC,
-regras de aprovação/rejeição/autoaprovação ou auditoria. Os testes
-aqui confirmam que:
-
-1. A listagem e o detalhe continuam acessíveis, com o mesmo RBAC.
-2. Os indicadores agregados (total/pendentes/aprovadas/rejeitadas)
-   batem com os dados reais já carregados — nenhuma consulta nova.
-3. As seções novas (Novo registro / O que muda / Valores propostos)
-   aparecem corretamente para CRIAR, EDITAR e ALTERAR_SITUACAO, sem
-   inventar nenhum dado.
-4. Autoaprovação continua bloqueada; aprovação e rejeição continuam
-   aplicando/no aplicando a mudança exatamente como antes.
-5. A auditoria continua sendo gerada.
-"""
+"""Testes da FASE 13B - Stage 3 (UX/UI do módulo de Aprovações)."""
 
 import pytest
 
@@ -84,10 +68,6 @@ def _criar_alteracao(app, tabela, registro_id, operacao, dados, descricao, solic
         return alteracao.id
 
 
-# ----------------------------------------------------------------
-# Telas acessíveis
-# ----------------------------------------------------------------
-
 def test_lista_aprovacoes_acessivel(client):
     _login(client, PerfilUsuario.ADMINISTRADOR)
     resp = client.get("/alteracoes")
@@ -112,10 +92,6 @@ def test_alteracao_inexistente_retorna_404(client):
     assert resp.status_code == 404
 
 
-# ----------------------------------------------------------------
-# Indicadores agregados batem com dados reais (sem consulta nova)
-# ----------------------------------------------------------------
-
 def test_indicadores_batem_com_dados_reais(client, app):
     _criar_alteracao(app, "unidades", None, "CRIAR", {"nome": "A", "cnes": "1", "tipo": "UBS", "cidade": "R", "uf": "PE", "situacao": "ATIVA"}, "Criação de nova Unidade: A (CNES 1)")
     _criar_alteracao(app, "unidades", None, "CRIAR", {"nome": "B", "cnes": "2", "tipo": "UBS", "cidade": "R", "uf": "PE", "situacao": "ATIVA"}, "Criação de nova Unidade: B (CNES 2)")
@@ -132,10 +108,6 @@ def test_lista_vazia_mostra_estado_vazio(client):
     html = client.get("/alteracoes").get_data(as_text=True)
     assert "Nenhuma alteração encontrada." in html
 
-
-# ----------------------------------------------------------------
-# Seções visuais: Novo registro / O que muda / Valores propostos
-# ----------------------------------------------------------------
 
 def test_criacao_mostra_novo_registro_sem_antes(client, app):
     alt_id = _criar_alteracao(
@@ -184,8 +156,7 @@ def test_alterar_situacao_mostra_comparacao(client, app):
 
 
 def test_dados_novos_nao_expoe_ids_tecnicos(client, app):
-    """unidade_id/servico_id não devem aparecer como número bruto na
-    tela — o contexto relacional já vem pela descrição."""
+    """unidade_id/servico_id não devem aparecer como número bruto na tela - o contexto..."""
     with app.app_context():
         unidade = Unidade.query.filter_by(cnes="9990001").first()
         unidade_id = unidade.id
@@ -200,10 +171,6 @@ def test_dados_novos_nao_expoe_ids_tecnicos(client, app):
     assert "Unidade_id" not in html
     assert "unidade_id" not in html.lower().replace("unidade_id do", "")  # sanity
 
-
-# ----------------------------------------------------------------
-# RBAC preservado (nada mudou)
-# ----------------------------------------------------------------
 
 @pytest.mark.parametrize("perfil", list(EMAILS.keys()))
 def test_todos_os_perfis_visualizam_lista_e_detalhe(client, app, perfil):
@@ -229,8 +196,7 @@ def test_gestor_recebe_403_ao_tentar_aprovar_ou_rejeitar(client, app):
 
 
 def test_responsavel_nao_ve_botoes_de_decisao_mesmo_sendo_outro_solicitante(client, app):
-    """RESPONSAVEL_SAUDE_BUCAL nunca aprova, mesmo que não seja o
-    solicitante desta alteração específica."""
+    """RESPONSAVEL_SAUDE_BUCAL nunca aprova, mesmo que não seja o solicitante desta..."""
     alt_id = _criar_alteracao(app, "unidades", None, "CRIAR", {"nome": "X", "cnes": "9", "tipo": "UBS", "cidade": "R", "uf": "PE", "situacao": "ATIVA"}, "Criação de nova Unidade: X (CNES 9)")
     _login(client, PerfilUsuario.RESPONSAVEL_SAUDE_BUCAL)
     html = client.get(f"/alteracoes/{alt_id}").get_data(as_text=True)
@@ -257,10 +223,6 @@ def test_solicitante_nao_ve_botoes_para_a_propria_alteracao(client, app):
     assert "Aprovar alteração" not in html
     assert "não pode decidir" in html or "foi você quem a solicitou" in html
 
-
-# ----------------------------------------------------------------
-# Autoaprovação, aprovação, rejeição e auditoria (nada mudou)
-# ----------------------------------------------------------------
 
 def test_autoaprovacao_continua_bloqueada(client, app):
     alt_id = _criar_alteracao(
@@ -306,8 +268,7 @@ def test_rejeicao_nao_aplica_a_mudanca(client, app):
 
 
 def test_badge_rejeitado_usa_cor_danger(client, app):
-    """Achado corrigido nesta etapa: REJEITADO usava bg-secondary,
-    deveria usar bg-danger (item 9 do enunciado)."""
+    """Achado corrigido nesta etapa"""
     alt_id = _criar_alteracao(
         app, "unidades", None, "CRIAR",
         {"nome": "UBS X", "cnes": "4445556", "tipo": "UBS", "endereco": None, "bairro": None, "cidade": "Recife", "uf": "PE", "situacao": "ATIVA"},

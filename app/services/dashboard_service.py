@@ -1,11 +1,4 @@
-"""
-Serviço central de dados do dashboard (Fase 9).
-
-Reúne, em um único lugar, as consultas usadas pelo dashboard —
-todas feitas com SQLAlchemy simples, direto no banco (nada de dados
-fictícios). Não implementa nenhuma regra de negócio nova: só agrega
-contagens e listagens que já existiam desde as Fases 2, 5, 6, 7 e 8.
-"""
+"""Serviço central de dados do dashboard (Fase 9)."""
 
 from app.models import (
     Alteracao,
@@ -23,8 +16,7 @@ QUANTIDADE_ATIVIDADES_RECENTES_EXIBIDAS = 15
 
 
 def obter_indicadores():
-    """Contagens gerais de Unidades, Serviços, Equipamentos e
-    Alterações, calculadas diretamente do banco."""
+    """Contagens gerais de Unidades, Serviços, Equipamentos e Alterações, calculadas..."""
     return {
         "unidades_total": Unidade.query.count(),
         "unidades_ativas": Unidade.query.filter_by(situacao=SituacaoUnidade.ATIVA).count(),
@@ -43,8 +35,7 @@ def obter_indicadores():
 
 
 def obter_resumo_unidades(situacao_filtro=None):
-    """Lista de unidades (nome, CNES, cidade, UF, situação) para a
-    seção "Resumo da rede", com filtro opcional por situação."""
+    """Lista de unidades (nome, CNES, cidade, UF, situação) para a     seção "Resumo da..."""
     query = Unidade.query
     if situacao_filtro in {item.value for item in SituacaoUnidade}:
         query = query.filter_by(situacao=SituacaoUnidade(situacao_filtro))
@@ -52,9 +43,7 @@ def obter_resumo_unidades(situacao_filtro=None):
 
 
 def obter_alteracoes_pendentes():
-    """Alterações com status PENDENTE, mais recentes primeiro, para a
-    seção "Aprovações" do dashboard — reaproveita o model existente,
-    sem criar nenhum mecanismo novo de aprovação."""
+    """Alterações com status PENDENTE, mais recentes primeiro, para a     seção "Aprovações"..."""
     return (
         Alteracao.query.filter_by(status=StatusAlteracao.PENDENTE)
         .order_by(Alteracao.created_at.desc())
@@ -64,18 +53,7 @@ def obter_alteracoes_pendentes():
 
 
 def obter_atividade_recente(usuario_id=None):
-    """Registros de auditoria mais recentes, para a seção "Atividade
-    recente" — reaproveita a estrutura da Fase 8. Os templates que
-    exibem esses registros nunca mostram senha/hash, porque o model
-    Auditoria (Fase 8) nunca armazena esses campos em primeiro lugar.
-
-    Se `usuario_id` for informado, retorna só a atividade DAQUELE
-    usuário — usado para RESPONSAVEL_SAUDE_BUCAL e GESTOR no
-    dashboard, que (desde a Fase 8) não têm acesso à auditoria
-    administrativa completa; ADMINISTRADOR e GESTAO_INFORMACAO
-    continuam vendo a atividade de todo o sistema, como em
-    `/auditoria`.
-    """
+    """Registros de auditoria mais recentes, para a seção "Atividade     recente" —..."""
     query = Auditoria.query
     if usuario_id is not None:
         query = query.filter_by(usuario_id=usuario_id)

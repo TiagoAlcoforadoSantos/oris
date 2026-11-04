@@ -1,26 +1,4 @@
-"""
-CRUD de Unidades de Saúde Bucal (Fase 5), com fluxo de aprovação
-integrado a partir da Fase 7.
-
-Regras de acesso (reaproveitando roles_required da Fase 4):
-
-- Consultar (listar/visualizar): qualquer usuário autenticado, dos 4
-  perfis — inclusive GESTOR, que é só leitura.
-- Solicitar (criar / editar / alterar situação): ADMINISTRADOR,
-  GESTAO_INFORMACAO e RESPONSAVEL_SAUDE_BUCAL. GESTOR nunca altera
-  dados.
-
-A PARTIR DA FASE 7: criar, editar ou alterar a situação de uma
-Unidade não grava mais direto no banco — registra uma Alteracao
-PENDENTE (app.services.alteracoes_service.registrar_alteracao) e só
-é de fato aplicado quando um ADMINISTRADOR ou GESTAO_INFORMACAO
-(que não seja quem solicitou) aprova em /alteracoes. Isso é
-justamente o que muda em relação às Fases 5/6 — ver o relatório da
-Fase 7 para a explicação completa.
-
-Nenhuma exclusão física é feita — apenas alteração de situação
-(ATIVA/INATIVA/MANUTENCAO), preservando o histórico.
-"""
+"""CRUD de Unidades de Saúde Bucal (Fase 5), com fluxo de aprovação integrado a partir da..."""
 
 from flask import Blueprint, abort, flash, redirect, render_template, url_for
 
@@ -32,7 +10,6 @@ from app.utils.decorators import login_required, roles_required, usuario_atual
 
 unidades_bp = Blueprint("unidades", __name__, url_prefix="/unidades")
 
-# Perfis autorizados a solicitar criação/edição/alteração de situação.
 PERFIS_QUE_ALTERAM_UNIDADES = (
     PerfilUsuario.ADMINISTRADOR.value,
     PerfilUsuario.GESTAO_INFORMACAO.value,
@@ -41,8 +18,7 @@ PERFIS_QUE_ALTERAM_UNIDADES = (
 
 
 def _buscar_unidade_ou_404(unidade_id):
-    """Busca uma unidade pelo id ou aborta com 404 (tratado por uma
-    página amigável — ver errorhandler em app/__init__.py)."""
+    """Busca uma unidade pelo id ou aborta com 404 (tratado por uma página amigável - ver..."""
     unidade = db.session.get(Unidade, unidade_id)
     if unidade is None:
         abort(404)
@@ -50,17 +26,10 @@ def _buscar_unidade_ou_404(unidade_id):
 
 
 def _usuario_pode_alterar():
-    """Indica, só para a interface (esconder/mostrar botões), se o
-    usuário atual pertence a um perfil que pode solicitar alteração
-    de unidades. A proteção de verdade é sempre feita pelos
-    decorators nas rotas de escrita abaixo."""
+    """Indica, só para a interface (esconder/mostrar botões), se o usuário atual pertence..."""
     usuario = usuario_atual()
     return usuario is not None and usuario.perfil.value in PERFIS_QUE_ALTERAM_UNIDADES
 
-
-# ----------------------------------------------------------------
-# Consulta — qualquer usuário autenticado (inclusive GESTOR)
-# ----------------------------------------------------------------
 
 @unidades_bp.route("")
 @login_required
@@ -84,12 +53,6 @@ def visualizar(unidade_id):
         form_situacao=AlterarSituacaoForm(situacao=unidade.situacao.value),
     )
 
-
-# ----------------------------------------------------------------
-# Solicitação de escrita — ADMINISTRADOR, GESTAO_INFORMACAO,
-# RESPONSAVEL_SAUDE_BUCAL. Nada é aplicado direto: uma Alteracao
-# PENDENTE é criada e aguarda aprovação em /alteracoes.
-# ----------------------------------------------------------------
 
 @unidades_bp.route("/nova", methods=["GET", "POST"])
 @roles_required(*PERFIS_QUE_ALTERAM_UNIDADES)
@@ -184,7 +147,6 @@ def editar(unidade_id):
         return redirect(url_for("alteracoes.visualizar", alteracao_id=alteracao.id))
 
     if not form.is_submitted():
-        # Pré-carrega os valores atuais no formulário (GET).
         form.nome.data = unidade.nome
         form.cnes.data = unidade.cnes
         form.tipo.data = unidade.tipo

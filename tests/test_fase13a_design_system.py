@@ -1,18 +1,4 @@
-"""
-Testes da FASE 13A — Design System e identidade visual.
-
-Esta fase é puramente visual (CSS/tipografia/tokens) — não altera
-nenhuma regra de negócio, model, autenticação, RBAC, aprovação,
-auditoria, importação ou segurança. Os testes aqui confirmam que:
-
-1. A página de referência do design system existe e é acessível.
-2. Os arquivos estáticos do design system (tokens e componentes) são
-   servidos corretamente.
-3. O layout base carrega os tokens/fontes.
-4. Nada das fases anteriores quebrou por causa da mudança visual
-   (verificação pontual; a suíte completa das Fases 1-12 é executada
-   junto — ver relatório da fase).
-"""
+"""Testes da FASE 13A - Design System e identidade visual."""
 
 import pytest
 
@@ -57,10 +43,6 @@ def _login(client):
     return client.post("/login", data={"email": "admin@oris.com.br", "senha": SENHA}, follow_redirects=True)
 
 
-# ----------------------------------------------------------------
-# Página de referência do design system
-# ----------------------------------------------------------------
-
 def test_pagina_design_system_acessivel_sem_login(client):
     resp = client.get("/design-system")
     assert resp.status_code == 200
@@ -73,10 +55,6 @@ def test_pagina_design_system_mostra_paleta_e_tipografia(client):
     assert "Space Grotesk" in html
     assert "IBM Plex Sans" in html
 
-
-# ----------------------------------------------------------------
-# Arquivos estáticos do design system
-# ----------------------------------------------------------------
 
 def test_tokens_css_e_servido(client):
     resp = client.get("/static/css/tokens.css")
@@ -94,10 +72,6 @@ def test_design_system_css_e_servido(client):
     assert "var(--oris-navy)" in conteudo
 
 
-# ----------------------------------------------------------------
-# Layout base carrega os tokens/fontes
-# ----------------------------------------------------------------
-
 def test_layout_base_referencia_tokens_e_fontes(client):
     resp = client.get("/login")
     html = resp.get_data(as_text=True)
@@ -112,14 +86,9 @@ def test_headers_de_seguranca_continuam_presentes_incluindo_fontes(client):
     assert csp is not None
     assert "fonts.googleapis.com" in csp
     assert "fonts.gstatic.com" in csp
-    # Os demais headers de segurança da Fase 12 continuam intactos.
     assert resp.headers.get("X-Frame-Options") == "DENY"
     assert resp.headers.get("X-Content-Type-Options") == "nosniff"
 
-
-# ----------------------------------------------------------------
-# Nada das fases anteriores quebrou (verificação pontual)
-# ----------------------------------------------------------------
 
 def test_fluxo_de_login_continua_funcionando(client):
     resp = _login(client)

@@ -1,9 +1,4 @@
-"""
-Instâncias de extensões compartilhadas pela aplicação.
-
-Ficam em um módulo separado para evitar import circular entre
-app/__init__.py e os módulos de models/routes.
-"""
+"""Instâncias de extensões compartilhadas pela aplicação."""
 
 from flask_sqlalchemy import SQLAlchemy
 

@@ -1,20 +1,4 @@
-"""
-Catálogo das consultas da Etapa 03 — SQL explícito.
-
-Cada consulta responde a uma pergunta real de governança da Rede de
-Saúde Bucal e foi escrita para exercitar um recurso diferente de SQL
-(JOIN múltiplo, agregação condicional, HAVING, subconsulta
-correlacionada, NOT EXISTS, CTE, funções de janela, auto-relacionamento,
-operador null-safe). O texto SQL abaixo é exatamente o que é enviado
-ao MySQL pelo driver — os parâmetros `%(nome)s` são preenchidos pelo
-driver de forma segura (≈ `?` do PreparedStatement no JDBC).
-
-O arquivo database/consultas_etapa03.sql é GERADO a partir deste
-catálogo (scripts/gerar_sql_consultas.py), para que o SQL entregue e o
-SQL executado pela aplicação nunca divirjam.
-
-Compatível com MySQL 8.0+ e MariaDB 10.3+ (CTE e window functions).
-"""
+"""Catálogo das consultas da Etapa 03 - SQL explícito."""
 
 from app.bd.conexao import consultar
 
@@ -22,7 +6,6 @@ OPCOES_SITUACAO_UNIDADE = [("", "Todas"), ("ATIVA", "Ativa"),
                            ("INATIVA", "Inativa"), ("MANUTENCAO", "Manutenção")]
 
 CONSULTAS = [
-    # ------------------------------------------------------------------
     {
         "id": "c1",
         "titulo": "Capacidade instalada por unidade",
@@ -64,7 +47,6 @@ SELECT u.id,
         "grafico": {"tipo": "bar", "rotulo": "unidade",
                     "series": ["servicos_ativos", "equip_ativos", "equip_inativos"]},
     },
-    # ------------------------------------------------------------------
     {
         "id": "c2",
         "titulo": "Cobertura da rede por bairro",
@@ -105,7 +87,6 @@ HAVING COUNT(*) >= %(minimo)s
 """,
         "grafico": {"tipo": "bar", "rotulo": "bairro", "series": ["unidades", "ativas"]},
     },
-    # ------------------------------------------------------------------
     {
         "id": "c3",
         "titulo": "Unidades ativas sem nenhum equipamento operante",
@@ -143,7 +124,6 @@ SELECT u.id,
 """,
         "grafico": None,
     },
-    # ------------------------------------------------------------------
     {
         "id": "c4",
         "titulo": "Ranking de bairros por equipamentos (curva de Pareto)",
@@ -184,7 +164,6 @@ SELECT RANK() OVER (ORDER BY qtd DESC)                         AS posicao,
         "grafico": {"tipo": "pareto", "rotulo": "bairro",
                     "series": ["equip_ativos"], "linha": "pct_acumulado"},
     },
-    # ------------------------------------------------------------------
     {
         "id": "c5",
         "titulo": "Desempenho do fluxo de aprovação por solicitante",
@@ -229,7 +208,6 @@ SELECT sol.nome                                                  AS solicitante,
         "grafico": {"tipo": "stacked", "rotulo": "solicitante",
                     "series": ["aprovadas", "rejeitadas", "pendentes"]},
     },
-    # ------------------------------------------------------------------
     {
         "id": "c6",
         "titulo": "CNES compartilhado por mais de uma unidade",
@@ -261,7 +239,6 @@ HAVING COUNT(*) > 1
 """,
         "grafico": None,
     },
-    # ------------------------------------------------------------------
     {
         "id": "c7",
         "titulo": "Equipamentos vinculados a serviço de outra unidade",
@@ -302,9 +279,7 @@ CONSULTAS_POR_ID = {c["id"]: c for c in CONSULTAS}
 
 
 def ler_parametros(consulta, origem):
-    """Lê e valida os parâmetros da consulta a partir de um dict
-    (ex.: request.args). Nada do usuário entra no texto do SQL — só
-    como parâmetro do driver."""
+    """Lê e valida os parâmetros da consulta a partir de um dict (ex."""
     valores = {}
     for p in consulta["parametros"]:
         bruto = origem.get(p["nome"], p["padrao"])

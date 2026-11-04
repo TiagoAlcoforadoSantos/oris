@@ -1,15 +1,15 @@
 /*
- * ORIS — Importação "Premium" (redesign visual, pós-13B)
+ * ORIS - Importação "Premium" (redesign visual, pós-13B)
  * ---------------------------------------------------------------
  * Camada de estilo EXCLUSIVA das 5 telas de Importação
  * (index/nova/mapeamento/validacao_erros/previa), carregada só
- * nelas via {% block extra_css %} — não afeta nenhuma outra tela
+ * nelas via {% block extra_css %} - não afeta nenhuma outra tela
  * do sistema. Construída inteiramente sobre os tokens já existentes
  * em tokens.css (nenhuma cor nova foi inventada) e sobre os
  * componentes do Design System (.oris-panel, .oris-stat-strip etc.),
  * que continuam funcionando normalmente nas demais telas.
  *
- * Direção: Health-Tech / Gov-Tech premium — glassmorphism sutil,
+ * Direção: Health-Tech / Gov-Tech premium - glassmorphism sutil,
  * gradiente navy → petróleo → turquesa, profundidade e microinterações
  * discretas. Sem neon, sem glow exagerado, sem efeitos 3D.
  *
@@ -31,7 +31,7 @@
     box-shadow: var(--oris-shadow-md);
 }
 
-/* Camada de "vidro" bem sutil por cima do gradiente — glassmorphism
+/* Camada de "vidro" bem sutil por cima do gradiente - glassmorphism
    discreto, não um efeito chamativo. */
 .oris-import-hero::before {
     content: "";

@@ -1,18 +1,4 @@
-"""
-Testes da ETAPA 03 — módulo Banco de Dados (SQL explícito).
-
-Duas camadas:
-
-1. Testes que NÃO precisam de MySQL (rodam sempre, com SQLite da suíte):
-   catálogo de consultas, validação de parâmetros e controle de acesso
-   (login e RBAC são verificados antes de qualquer acesso ao banco).
-
-2. Testes de integração contra MySQL/MariaDB REAL — rodam só quando a
-   variável ORIS_TEST_MYSQL=1 estiver definida e o banco configurado no
-   .env estiver populado com database/seed_etapa03.sql:
-
-       ORIS_TEST_MYSQL=1 pytest tests/test_etapa03_bd.py
-"""
+"""Testes da ETAPA 03 - módulo Banco de Dados (SQL explícito)."""
 
 import os
 import re
@@ -28,10 +14,6 @@ from config import DevelopmentConfig, TestingConfig
 
 SENHA = "SenhaForte123!"
 
-
-# ----------------------------------------------------------------------
-# 1) Sem MySQL
-# ----------------------------------------------------------------------
 
 def test_catalogo_tem_pelo_menos_4_consultas_e_uma_com_join():
     assert len(consultas.CONSULTAS) >= 4
@@ -51,7 +33,6 @@ def test_parametros_do_sql_batem_com_os_declarados():
         usados = set(re.findall(r"%\((\w+)\)s", c["sql"]))
         declarados = {p["nome"] for p in c["parametros"]}
         assert usados == declarados, c["id"]
-        # Com parâmetros nomeados, um '%' solto quebraria a formatação do driver
         sem_params = re.sub(r"%\(\w+\)s", "", c["sql"])
         assert "%" not in sem_params, c["id"]
 
@@ -95,10 +76,6 @@ def test_gestor_nao_pode_inserir_alterar_ou_excluir(app_sqlite):
         assert c.get(f"/bd/{entidade}/1/editar").status_code == 403
         assert c.post(f"/bd/{entidade}/1/excluir").status_code == 403
 
-
-# ----------------------------------------------------------------------
-# 2) Integração com MySQL real
-# ----------------------------------------------------------------------
 
 mysql = pytest.mark.skipif(os.getenv("ORIS_TEST_MYSQL") != "1",
                            reason="defina ORIS_TEST_MYSQL=1 para testar contra o MySQL")
@@ -158,7 +135,6 @@ def test_ciclo_insert_update_delete_com_integridade(cliente_admin):
         assert dao_unidades.buscar(uid)["situacao"] == "MANUTENCAO"
         sid = dao_servicos.listar(unidade_id=uid)[0]["id"]
 
-    # Exclusão bloqueada pela integridade referencial
     r = c.post(f"/bd/unidades/{uid}/excluir", follow_redirects=True)
     assert "integridade referencial" in r.get_data(as_text=True)
 

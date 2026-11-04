@@ -1,22 +1,4 @@
-"""
-Dashboard do ORIS (Fase 9).
-
-Visão geral da Rede de Saúde Bucal, com dados reais vindos do banco
-— nenhum dado fictício. Acessível pelos 4 perfis (por isso usa
-`login_required`, equivalente a `roles_required` com todos os
-perfis).
-
-A seção "Atividade recente" respeita a restrição de auditoria já
-estabelecida na Fase 8: ADMINISTRADOR e GESTAO_INFORMACAO veem a
-atividade de todo o sistema (mesmos dados de `/auditoria`);
-RESPONSAVEL_SAUDE_BUCAL e GESTOR veem só a própria atividade, já que
-esses dois perfis não têm acesso à auditoria administrativa completa.
-
-A seção "Aprovações" reaproveita a listagem de Alterações pendentes
-já existente (Fase 7) — nenhum mecanismo novo de aprovação é criado
-aqui. O link para agir sobre uma alteração (aprovar/rejeitar) só
-aparece para quem já tinha essa permissão desde a Fase 7.
-"""
+"""Dashboard do ORIS (Fase 9)."""
 
 from flask import Blueprint, render_template, request
 

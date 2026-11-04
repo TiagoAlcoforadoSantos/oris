@@ -1,24 +1,4 @@
-"""
-CRUD de Serviços de Saúde Bucal (Fase 6), com fluxo de aprovação
-integrado a partir da Fase 7.
-
-Segue exatamente o mesmo padrão estabelecido para Unidades:
-
-- Consultar (listar/visualizar): qualquer usuário autenticado.
-- Solicitar (criar / editar / alterar situação): ADMINISTRADOR,
-  GESTAO_INFORMACAO e RESPONSAVEL_SAUDE_BUCAL. GESTOR nunca altera
-  dados.
-
-A PARTIR DA FASE 7: nenhuma dessas operações grava direto no banco —
-cada uma registra uma Alteracao PENDENTE (via
-app.services.alteracoes_service.registrar_alteracao) e só é aplicada
-quando aprovada em /alteracoes.
-
-Todo Serviço pertence obrigatoriamente a uma Unidade existente — a
-lista de unidades do formulário vem sempre do banco no momento da
-requisição, e a existência da unidade é conferida de novo no
-backend antes de registrar a solicitação (defesa em profundidade).
-"""
+"""CRUD de Serviços de Saúde Bucal (Fase 6), com fluxo de aprovação integrado a partir da..."""
 
 from flask import Blueprint, abort, flash, redirect, render_template, request, url_for
 
@@ -56,16 +36,11 @@ def _preencher_choices_unidade(form):
     ]
 
 
-# ----------------------------------------------------------------
-# Consulta — qualquer usuário autenticado
-# ----------------------------------------------------------------
-
 @servicos_bp.route("")
 @login_required
 def listar():
     query = Servico.query
 
-    # Filtros simples via querystring (?unidade_id=..&situacao=..)
     unidade_id_filtro = request.args.get("unidade_id", type=int)
     situacao_filtro = request.args.get("situacao")
 
@@ -99,12 +74,6 @@ def visualizar(servico_id):
         form_situacao=AlterarSituacaoAtivoInativoForm(situacao=servico.situacao.value),
     )
 
-
-# ----------------------------------------------------------------
-# Solicitação de escrita — ADMINISTRADOR, GESTAO_INFORMACAO,
-# RESPONSAVEL_SAUDE_BUCAL. Cria Alteracao PENDENTE em vez de gravar
-# direto no banco.
-# ----------------------------------------------------------------
 
 @servicos_bp.route("/novo", methods=["GET", "POST"])
 @roles_required(*PERFIS_QUE_ALTERAM)

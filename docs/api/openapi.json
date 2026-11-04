@@ -1,0 +1,605 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "ORIS — API da Rede de Saúde Bucal",
+    "version": "1.0.0",
+    "description": "API REST somente leitura do ORIS (CESAR School × Secretaria de Saúde do Recife). Autenticação pela sessão web: faça login em /login no mesmo navegador e use o botão 'Try it out'. Nenhum dado pessoal ou clínico é exposto."
+  },
+  "servers": [
+    {
+      "url": "http://127.0.0.1:5000/api/v1",
+      "description": "Execução local"
+    }
+  ],
+  "components": {
+    "securitySchemes": {
+      "sessao": {
+        "type": "apiKey",
+        "in": "cookie",
+        "name": "session"
+      }
+    },
+    "schemas": {
+      "Erro": {
+        "type": "object",
+        "properties": {
+          "erro": {
+            "type": "object",
+            "properties": {
+              "status": {
+                "type": "integer",
+                "example": 401
+              },
+              "mensagem": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      },
+      "Paginacao": {
+        "type": "object",
+        "properties": {
+          "pagina": {
+            "type": "integer",
+            "example": 1
+          },
+          "limite": {
+            "type": "integer",
+            "example": 50
+          },
+          "total": {
+            "type": "integer",
+            "example": 32
+          },
+          "paginas": {
+            "type": "integer",
+            "example": 1
+          }
+        }
+      },
+      "Unidade": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "example": 21
+          },
+          "nome": {
+            "type": "string",
+            "example": "CEO Centro"
+          },
+          "cnes": {
+            "type": "string",
+            "example": "9100021"
+          },
+          "unidade_e_mista": {
+            "type": "boolean"
+          },
+          "tipo": {
+            "type": "string"
+          },
+          "bairro": {
+            "type": "string",
+            "nullable": true
+          },
+          "cidade": {
+            "type": "string"
+          },
+          "uf": {
+            "type": "string",
+            "example": "PE"
+          },
+          "situacao": {
+            "type": "string",
+            "enum": [
+              "ATIVA",
+              "INATIVA",
+              "MANUTENCAO"
+            ]
+          },
+          "atualizado_em": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2026-10-31T12:00:00Z"
+          }
+        }
+      },
+      "UnidadeDetalhe": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/Unidade"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "endereco": {
+                "type": "string",
+                "nullable": true
+              },
+              "criado_em": {
+                "type": "string",
+                "format": "date-time",
+                "example": "2026-10-31T12:00:00Z"
+              },
+              "servicos": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/Servico"
+                }
+              },
+              "equipamentos": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/Equipamento"
+                }
+              }
+            }
+          }
+        ]
+      },
+      "Servico": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer"
+          },
+          "nome": {
+            "type": "string",
+            "example": "Endodontia"
+          },
+          "unidade_id": {
+            "type": "integer",
+            "nullable": true
+          },
+          "situacao": {
+            "type": "string",
+            "enum": [
+              "ATIVO",
+              "INATIVO"
+            ]
+          },
+          "atualizado_em": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2026-10-31T12:00:00Z"
+          }
+        }
+      },
+      "Equipamento": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer"
+          },
+          "nome": {
+            "type": "string"
+          },
+          "tipo": {
+            "type": "string",
+            "example": "Autoclave"
+          },
+          "unidade_id": {
+            "type": "integer",
+            "nullable": true
+          },
+          "servico_id": {
+            "type": "integer",
+            "nullable": true
+          },
+          "situacao": {
+            "type": "string",
+            "enum": [
+              "ATIVO",
+              "INATIVO"
+            ]
+          },
+          "atualizado_em": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2026-10-31T12:00:00Z"
+          }
+        }
+      },
+      "Indicadores": {
+        "type": "object",
+        "properties": {
+          "dados": {
+            "type": "object"
+          }
+        }
+      }
+    }
+  },
+  "security": [
+    {
+      "sessao": []
+    }
+  ],
+  "paths": {
+    "/unidades": {
+      "get": {
+        "tags": [
+          "Unidades"
+        ],
+        "summary": "Lista unidades de saúde bucal",
+        "parameters": [
+          {
+            "name": "situacao",
+            "in": "query",
+            "required": false,
+            "description": "Filtra pela situação.",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "ATIVA",
+                "INATIVA",
+                "MANUTENCAO"
+              ]
+            }
+          },
+          {
+            "name": "bairro",
+            "in": "query",
+            "required": false,
+            "description": "Filtra pelo bairro (igualdade).",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "cnes",
+            "in": "query",
+            "required": false,
+            "description": "Filtra pelo CNES (pode retornar mais de um registro).",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "pagina",
+            "in": "query",
+            "required": false,
+            "description": "Número da página (a partir de 1).",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "limite",
+            "in": "query",
+            "required": false,
+            "description": "Itens por página (1–200, padrão 50).",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Lista paginada",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "dados": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Unidade"
+                      }
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/Paginacao"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Parâmetro inválido",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Não autenticado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/unidades/{unidade_id}": {
+      "get": {
+        "tags": [
+          "Unidades"
+        ],
+        "summary": "Detalhe de uma unidade, com serviços e equipamentos",
+        "parameters": [
+          {
+            "name": "unidade_id",
+            "in": "path",
+            "required": true,
+            "description": "ID interno da unidade.",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Unidade",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "dados": {
+                      "$ref": "#/components/schemas/UnidadeDetalhe"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Não encontrada",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Não autenticado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/servicos": {
+      "get": {
+        "tags": [
+          "Serviços"
+        ],
+        "summary": "Lista serviços",
+        "parameters": [
+          {
+            "name": "situacao",
+            "in": "query",
+            "required": false,
+            "description": "Filtra pela situação.",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "ATIVO",
+                "INATIVO"
+              ]
+            }
+          },
+          {
+            "name": "unidade_id",
+            "in": "query",
+            "required": false,
+            "description": "Filtra pela unidade.",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "pagina",
+            "in": "query",
+            "required": false,
+            "description": "Número da página (a partir de 1).",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "limite",
+            "in": "query",
+            "required": false,
+            "description": "Itens por página (1–200, padrão 50).",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Lista paginada",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "dados": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Servico"
+                      }
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/Paginacao"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Parâmetro inválido",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Não autenticado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/equipamentos": {
+      "get": {
+        "tags": [
+          "Equipamentos"
+        ],
+        "summary": "Lista equipamentos",
+        "parameters": [
+          {
+            "name": "situacao",
+            "in": "query",
+            "required": false,
+            "description": "Filtra pela situação.",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "ATIVO",
+                "INATIVO"
+              ]
+            }
+          },
+          {
+            "name": "unidade_id",
+            "in": "query",
+            "required": false,
+            "description": "Filtra pela unidade.",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "tipo",
+            "in": "query",
+            "required": false,
+            "description": "Filtra pelo tipo de equipamento.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "pagina",
+            "in": "query",
+            "required": false,
+            "description": "Número da página (a partir de 1).",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "limite",
+            "in": "query",
+            "required": false,
+            "description": "Itens por página (1–200, padrão 50).",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Lista paginada",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "dados": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Equipamento"
+                      }
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/Paginacao"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Parâmetro inválido",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Não autenticado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/indicadores": {
+      "get": {
+        "tags": [
+          "Indicadores"
+        ],
+        "summary": "Totais da rede e do fluxo de aprovação",
+        "responses": {
+          "200": {
+            "description": "Indicadores",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Indicadores"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Não autenticado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

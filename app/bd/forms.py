@@ -1,7 +1,4 @@
-"""
-Formulários do módulo BD (Etapa 03). Reaproveitam as mesmas regras de
-validação do restante do ORIS (ex.: regex do CNES).
-"""
+"""Formulários do módulo BD (Etapa 03)."""
 
 from flask_wtf import FlaskForm
 from wtforms import BooleanField, SelectField, StringField, SubmitField
@@ -81,5 +78,5 @@ class EquipamentoBDForm(FlaskForm):
 
 
 class ExcluirForm(FlaskForm):
-    """Só carrega o token CSRF — DELETE sempre via POST."""
+    """Só carrega o token CSRF - DELETE sempre via POST."""
     submit = SubmitField("Excluir")

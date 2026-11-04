@@ -1,10 +1,4 @@
-"""
-Testes da FASE 12 — segurança, LGPD e proteção de dados.
-
-Roda contra SQLite em memória (TestingConfig). Cobre os 25 cenários
-pedidos no enunciado, reaproveitando o padrão de fixtures das fases
-anteriores.
-"""
+"""Testes da FASE 12 - segurança, LGPD e proteção de dados."""
 
 import io
 
@@ -37,8 +31,7 @@ EMAILS = {
 
 
 class TestingConfigComCSRF(TestingConfig):
-    """Só para os testes de CSRF desta fase, que precisam que a
-    proteção esteja de fato ativa para verificar o bloqueio."""
+    """Só para os testes de CSRF desta fase, que precisam que a proteção esteja de fato..."""
 
     WTF_CSRF_ENABLED = True
 
@@ -106,10 +99,6 @@ def _usuario(app, perfil_ou_email):
         return Usuario.query.filter_by(email=email).first()
 
 
-# ----------------------------------------------------------------
-# 1-4. Autenticação básica
-# ----------------------------------------------------------------
-
 def test_login_com_senha_correta(client):
     resp = _login(client, PerfilUsuario.ADMINISTRADOR)
     assert "Bem-vindo ao ORIS" in resp.get_data(as_text=True)
@@ -146,10 +135,6 @@ def test_sessao_de_usuario_desativado_bloqueada(client, app):
     assert "/login" in resp.headers["Location"]
 
 
-# ----------------------------------------------------------------
-# 5-8. RBAC
-# ----------------------------------------------------------------
-
 def test_rota_protegida_sem_login(client):
     resp = client.get("/dashboard", follow_redirects=False)
     assert resp.status_code == 302
@@ -174,14 +159,8 @@ def test_administracao_de_usuarios_acessada_por_perfil_sem_permissao_retorna_403
     assert resp.status_code == 403
 
 
-# ----------------------------------------------------------------
-# 9. CSRF
-# ----------------------------------------------------------------
-
 def test_post_sem_csrf_e_bloqueado():
-    """Usa uma config com CSRF de fato ativo para comprovar o
-    bloqueio (TestingConfig normal desativa CSRF para não atrapalhar
-    os demais testes, que não são sobre CSRF em si)."""
+    """Usa uma config com CSRF de fato ativo para comprovar o bloqueio (TestingConfig..."""
     app = create_app(TestingConfigComCSRF)
     with app.app_context():
         db.create_all()
@@ -194,8 +173,6 @@ def test_post_sem_csrf_e_bloqueado():
         db.session.commit()
 
     client = app.test_client()
-    # Login sem token CSRF -> o próprio CSRFProtect deve bloquear a
-    # requisição antes de qualquer lógica de negócio rodar.
     resp = client.post("/login", data={"email": "admin@oris.com.br", "senha": SENHA})
     assert resp.status_code == 400
 
@@ -203,10 +180,6 @@ def test_post_sem_csrf_e_bloqueado():
         db.session.remove()
         db.drop_all()
 
-
-# ----------------------------------------------------------------
-# 10. XSS
-# ----------------------------------------------------------------
 
 def test_tentativa_de_xss_e_escapada(client, app):
     payload = "<script>alert(1)</script>"
@@ -228,15 +201,9 @@ def test_tentativa_de_xss_e_escapada(client, app):
 
     resp = client.get("/unidades")
     html = resp.get_data(as_text=True)
-    # O script NUNCA deve aparecer executável — o Jinja autoescape
-    # deve transformar "<" em "&lt;" etc.
     assert "<script>alert(1)</script>" not in html
     assert "&lt;script&gt;" in html
 
-
-# ----------------------------------------------------------------
-# 11. SQL Injection
-# ----------------------------------------------------------------
 
 def test_tentativa_de_sql_injection_nao_e_executada(client, app):
     payload = "' OR '1'='1"
@@ -244,18 +211,12 @@ def test_tentativa_de_sql_injection_nao_e_executada(client, app):
     assert "Email ou senha inválidos." in resp.get_data(as_text=True) or resp.status_code == 200
 
     with app.app_context():
-        # A tabela de usuários continua intacta (nenhuma linha foi
-        # apagada/alterada por uma injeção bem-sucedida).
         assert Usuario.query.count() == 4
 
     _login(client, PerfilUsuario.ADMINISTRADOR)
     resp = client.get(f"/unidades?busca={payload}")
     assert resp.status_code == 200
 
-
-# ----------------------------------------------------------------
-# 12. ID inexistente
-# ----------------------------------------------------------------
 
 @pytest.mark.parametrize(
     "rota",
@@ -274,10 +235,6 @@ def test_usuario_e_auditoria_inexistentes_retornam_404(client, app):
     resp = client.get("/auditoria/999999")
     assert resp.status_code == 404
 
-
-# ----------------------------------------------------------------
-# 13-14. Upload
-# ----------------------------------------------------------------
 
 def test_upload_invalido_e_rejeitado(client):
     _login(client, PerfilUsuario.ADMINISTRADOR)
@@ -306,10 +263,6 @@ def test_upload_excessivamente_grande_e_rejeitado(client):
     assert "excede o limite" in resp.get_data(as_text=True)
 
 
-# ----------------------------------------------------------------
-# 15. Arquivo temporário não permanece
-# ----------------------------------------------------------------
-
 def test_arquivo_temporario_nao_permanece_apos_fluxo_concluido(client):
     import os
     import re
@@ -336,10 +289,6 @@ def test_arquivo_temporario_nao_permanece_apos_fluxo_concluido(client):
 
     assert not os.path.exists(caminho)
 
-
-# ----------------------------------------------------------------
-# 16-18. Secrets/credenciais nunca aparecem
-# ----------------------------------------------------------------
 
 def test_senha_nao_aparece_em_auditoria(client, app):
     _login(client, PerfilUsuario.ADMINISTRADOR)
@@ -369,10 +318,6 @@ def test_secret_key_nao_aparece_em_resposta(client, app):
     assert app.config["SECRET_KEY"] not in resp.get_data(as_text=True)
 
 
-# ----------------------------------------------------------------
-# 19-20. Auditoria e rollback
-# ----------------------------------------------------------------
-
 def test_alteracao_aprovada_gera_auditoria(client, app):
     _login(client, PerfilUsuario.RESPONSAVEL_SAUDE_BUCAL)
     client.post(
@@ -390,13 +335,7 @@ def test_alteracao_aprovada_gera_auditoria(client, app):
 
 
 def test_rollback_nao_gera_auditoria_falsa(client, app):
-    """CONTRATO ATUALIZADO (Stage "modelo de dados"): como em
-    test_fase7_alteracoes.py::test_rollback_ao_aprovar_alteracao_com_conflito_de_dados,
-    este teste usava CNES duplicado para forçar o conflito — isso
-    deixou de ser um conflito (CNES não é mais único). Substituído por
-    uma Alteracao CRIAR com `dados_novos` faltando o campo obrigatório
-    `nome` (violação de NOT NULL), que ainda é um erro real de banco e
-    continua exercitando o mesmo caminho de rollback."""
+    """CONTRATO ATUALIZADO (Stage "modelo de dados")"""
     _login(client, PerfilUsuario.RESPONSAVEL_SAUDE_BUCAL)
 
     dados_a = {"nome": "UBS Rollback A", "cnes": "1230044", "tipo": "UBS", "cidade": "Recife", "uf": "PE", "situacao": "ATIVA"}
@@ -422,15 +361,9 @@ def test_rollback_nao_gera_auditoria_falsa(client, app):
         ok, _ = aprovar_alteracao(alteracao_invalida, aprovador)
         assert ok is False
 
-        # Nenhuma auditoria nova de CRIAR/APROVAR_ALTERACAO para a
-        # segunda unidade — o rollback não deixou rastro falso.
         total_auditorias_depois = Auditoria.query.count()
         assert total_auditorias_depois == total_auditorias_antes
 
-
-# ----------------------------------------------------------------
-# 21. Último administrador protegido
-# ----------------------------------------------------------------
 
 def test_ultimo_administrador_protegido(client, app):
     _login(client, PerfilUsuario.ADMINISTRADOR)
@@ -444,10 +377,6 @@ def test_ultimo_administrador_protegido(client, app):
         assert atualizado.ativo is True
 
 
-# ----------------------------------------------------------------
-# 22. RBAC não contornável pela URL
-# ----------------------------------------------------------------
-
 def test_usuario_nao_autorizado_nao_contorna_rbac_pela_url(client, app):
     _login(client, PerfilUsuario.RESPONSAVEL_SAUDE_BUCAL)
 
@@ -455,15 +384,9 @@ def test_usuario_nao_autorizado_nao_contorna_rbac_pela_url(client, app):
         resp = client.get(rota)
         assert resp.status_code == 403
 
-    # RESPONSAVEL_SAUDE_BUCAL pode solicitar, mas não pode aprovar —
-    # mesmo sabendo (ou adivinhando) o ID de uma Alteracao.
     resp = client.post("/alteracoes/1/aprovar")
     assert resp.status_code in (403, 404)
 
-
-# ----------------------------------------------------------------
-# 23. Importação não ignora aprovação
-# ----------------------------------------------------------------
 
 def test_importacao_nao_ignora_aprovacao(client, app):
     _login(client, PerfilUsuario.ADMINISTRADOR)
@@ -484,15 +407,9 @@ def test_importacao_nao_ignora_aprovacao(client, app):
     client.post("/importacao/confirmar", data={"entidade": "unidades", "token": token, "extensao": ".csv", **mapa})
 
     with app.app_context():
-        # A unidade NÃO existe até ser aprovada — a importação não
-        # tem nenhum atalho para inserir/atualizar diretamente.
         assert Unidade.query.filter_by(cnes="1230055").first() is None
         assert Alteracao.query.filter_by(tabela="unidades", operacao="CRIAR", status="PENDENTE").count() >= 1
 
-
-# ----------------------------------------------------------------
-# 24. Headers de segurança
-# ----------------------------------------------------------------
 
 def test_headers_de_seguranca_presentes(client):
     resp = client.get("/login")
@@ -502,10 +419,6 @@ def test_headers_de_seguranca_presentes(client):
     assert resp.headers.get("Content-Security-Policy") is not None
 
 
-# ----------------------------------------------------------------
-# 25. Cookies seguros (verificado via configuração de produção)
-# ----------------------------------------------------------------
-
 def test_cookies_seguros_em_configuracao_de_producao():
     from config import ProductionConfig
 
@@ -513,10 +426,6 @@ def test_cookies_seguros_em_configuracao_de_producao():
     assert ProductionConfig.SESSION_COOKIE_HTTPONLY is True
     assert ProductionConfig.SESSION_COOKIE_SAMESITE == "Lax"
 
-
-# ----------------------------------------------------------------
-# Extra: rate limiting de login
-# ----------------------------------------------------------------
 
 def test_rate_limiting_bloqueia_apos_muitas_tentativas():
     app = create_app(TestingConfigComRateLimit)
@@ -541,26 +450,16 @@ def test_rate_limiting_bloqueia_apos_muitas_tentativas():
         db.session.remove()
         db.drop_all()
 
-    # Limpa o estado do limitador para não afetar outros testes que
-    # rodem depois neste mesmo processo.
     from app.utils.rate_limit import limpar_tentativas
 
     limpar_tentativas("127.0.0.1", "admin@oris.com.br")
 
-
-# ----------------------------------------------------------------
-# Extra: página de privacidade
-# ----------------------------------------------------------------
 
 def test_pagina_de_privacidade_acessivel_sem_login(client):
     resp = client.get("/privacidade")
     assert resp.status_code == 200
     assert "Finalidade" in resp.get_data(as_text=True)
 
-
-# ----------------------------------------------------------------
-# Extra: página de erro 500 não expõe detalhes internos
-# ----------------------------------------------------------------
 
 def test_pagina_de_erro_interno_nao_expoe_detalhes(app):
     with app.test_request_context():

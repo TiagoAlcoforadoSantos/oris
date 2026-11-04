@@ -1,17 +1,9 @@
-"""
-Formulários da aplicação ORIS.
-
-Usar Flask-WTF garante proteção CSRF automática nos formulários,
-sem precisar implementar nada manualmente.
-"""
+"""Formulários da aplicação ORIS."""
 
 from flask_wtf import FlaskForm
 from wtforms import PasswordField, SelectField, StringField, SubmitField
 from wtforms.validators import DataRequired, Email, Length, Regexp, ValidationError
 
-# Regex do CNES, compartilhada com o importador de planilhas (Fase 10)
-# em app/services/importacao_service.py — mantida em um único lugar
-# para nunca divergir da validação usada no cadastro manual.
 CNES_REGEX = r"^\d{7,15}$"
 
 
@@ -31,13 +23,7 @@ class LoginForm(FlaskForm):
 
 
 class UnidadeForm(FlaskForm):
-    """Formulário de cadastro/edição de Unidade de Saúde Bucal.
-
-    As validações aqui são as de formato/obrigatoriedade. A
-    unicidade do CNES é verificada à parte, na rota
-    (app/routes/unidades.py), para permitir uma mensagem amigável
-    específica em vez de deixar o erro do banco estourar.
-    """
+    """Formulário de cadastro/edição de Unidade de Saúde Bucal."""
 
     nome = StringField(
         "Nome",
@@ -90,8 +76,7 @@ class UnidadeForm(FlaskForm):
 
 
 class AlterarSituacaoForm(FlaskForm):
-    """Formulário simples, usado só para alterar a situação de uma
-    unidade já existente (sem editar os demais campos)."""
+    """Formulário simples, usado só para alterar a situação de uma unidade já existente..."""
 
     situacao = SelectField(
         "Nova situação",
@@ -106,23 +91,14 @@ class AlterarSituacaoForm(FlaskForm):
 
 
 def _coerce_opcional_int(valor):
-    """Converte o valor de um SelectField para int, tratando string
-    vazia (opção "Nenhum") como None. Usado no campo `servico_id` de
-    Equipamento, que é opcional."""
+    """Converte o valor de um SelectField para int, tratando string vazia (opção..."""
     if valor in (None, "", "None"):
         return None
     return int(valor)
 
 
 class ServicoForm(FlaskForm):
-    """Formulário de cadastro/edição de Serviço de Saúde Bucal.
-
-    A lista de unidades disponíveis (`unidade_id.choices`) é
-    preenchida na rota (app/routes/servicos.py), com as unidades
-    existentes no momento da requisição — isso faz o próprio
-    WTForms rejeitar automaticamente uma unidade inexistente (ela
-    simplesmente não está entre as opções válidas).
-    """
+    """Formulário de cadastro/edição de Serviço de Saúde Bucal."""
 
     nome = StringField(
         "Nome",
@@ -146,17 +122,7 @@ class ServicoForm(FlaskForm):
 
 
 class EquipamentoForm(FlaskForm):
-    """Formulário de cadastro/edição de Equipamento.
-
-    `unidade_id.choices` e `servico_id.choices` são preenchidos na
-    rota (app/routes/equipamentos.py) com os dados existentes no
-    momento da requisição. `servico_id` é opcional — a opção
-    "Nenhum" equivale a None.
-
-    A regra de que o serviço selecionado precisa pertencer à unidade
-    selecionada depende dos dois campos ao mesmo tempo, então é
-    validada na rota, e não aqui no formulário.
-    """
+    """Formulário de cadastro/edição de Equipamento."""
 
     nome = StringField(
         "Nome",
@@ -192,8 +158,7 @@ class EquipamentoForm(FlaskForm):
 
 
 class AlterarSituacaoAtivoInativoForm(FlaskForm):
-    """Formulário simples para alterar a situação (ATIVO/INATIVO) de
-    um Serviço ou Equipamento já existente."""
+    """Formulário simples para alterar a situação (ATIVO/INATIVO) de um Serviço ou..."""
 
     situacao = SelectField(
         "Nova situação",
@@ -204,25 +169,13 @@ class AlterarSituacaoAtivoInativoForm(FlaskForm):
 
 
 class AcaoAlteracaoForm(FlaskForm):
-    """Formulário mínimo, usado só para dar proteção CSRF aos botões
-    de aprovar/rejeitar uma Alteração (Fase 7) — não tem campos de
-    dados, só o token CSRF embutido pelo FlaskForm."""
+    """Formulário mínimo, usado só para dar proteção CSRF aos botões de aprovar/rejeitar..."""
 
     submit = SubmitField("Confirmar")
 
 
 class CriarUsuarioForm(FlaskForm):
-    """Formulário de criação de usuário (Fase 11 — Administração de
-    Usuários). A unicidade do email é verificada à parte, na rota,
-    para dar uma mensagem amigável específica.
-
-    Regra mínima de senha: o projeto não tinha, até esta fase, uma
-    regra de tamanho mínimo para senha (o LoginForm só exige que o
-    campo não esteja vazio). Para o cadastro administrativo de um
-    novo usuário, adotamos um mínimo de 8 caracteres — a mesma ideia
-    de "regra mínima de segurança" pedida pela Fase 11, aplicada pela
-    primeira vez aqui e documentada no README.
-    """
+    """Formulário de criação de usuário (Fase 11 - Administração de Usuários)."""
 
     nome = StringField(
         "Nome",
@@ -268,11 +221,7 @@ class CriarUsuarioForm(FlaskForm):
 
 
 class EditarUsuarioForm(FlaskForm):
-    """Formulário de edição de usuário — só nome, email e perfil. A
-    situação (ativo/inativo) tem sua própria rota/botão dedicado
-    (`/usuarios/<id>/situacao`), seguindo o mesmo padrão já usado em
-    Unidade/Serviço/Equipamento. A senha também não é editada aqui —
-    ver `RedefinirSenhaForm`."""
+    """Formulário de edição de usuário - só nome, email e perfil."""
 
     nome = StringField(
         "Nome",
@@ -303,9 +252,7 @@ class EditarUsuarioForm(FlaskForm):
 
 
 class RedefinirSenhaForm(FlaskForm):
-    """Formulário mínimo para o ADMINISTRADOR definir uma nova senha
-    para outro usuário (Fase 11, item 8). A senha nunca é exibida de
-    volta — este formulário só recebe a nova senha e a confirmação."""
+    """Formulário mínimo para o ADMINISTRADOR definir uma nova senha para outro usuário..."""
 
     nova_senha = PasswordField(
         "Nova senha",

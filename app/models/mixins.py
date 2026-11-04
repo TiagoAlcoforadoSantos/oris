@@ -1,9 +1,4 @@
-"""
-Mixin de timestamps reutilizado pelos models.
-
-Mantém created_at/updated_at padronizados em uma única definição,
-evitando repetição de código em cada model.
-"""
+"""Mixin de timestamps reutilizado pelos models."""
 
 from app.extensions import db
 from app.utils.datetime_utils import utcnow

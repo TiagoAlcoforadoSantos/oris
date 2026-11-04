@@ -1,30 +1,30 @@
 /*
- * ORIS — Design Tokens (Fase 13A)
+ * ORIS - Design Tokens (Fase 13A)
  * ---------------------------------------------------------------
  * Fonte única de verdade da identidade visual do ORIS: cores,
  * tipografia, raios, sombras e dimensões de layout, todos expostos
  * como variáveis CSS (custom properties).
  *
  * Direção visual: Health-Tech + Gov-Tech + plataforma de governança
- * — tecnologia, saúde, confiança e institucionalidade, sem parecer
+ * - tecnologia, saúde, confiança e institucionalidade, sem parecer
  * hospital genérico, sistema de governo datado, SaaS de fintech ou
  * interface "futurista"/gamer.
  *
  * Esta fase (13A) define o sistema; a aplicação detalhada em cada
  * tela do ORIS é feita na Fase 13B. Aqui já se aplica ao "chrome"
  * compartilhado (base.html: navegação, tipografia, botões, badges,
- * alertas, formulários) porque isso é inevitavelmente global — o
+ * alertas, formulários) porque isso é inevitavelmente global - o
  * conteúdo específico de cada tela de negócio permanece com a
  * mesma estrutura Bootstrap até a Fase 13B.
  */
 
 :root {
     /* ---- Paleta principal ------------------------------------ */
-    --oris-navy: #0B2A4A;       /* Azul institucional — estrutura a interface */
+    --oris-navy: #0B2A4A;       /* Azul institucional - estrutura a interface */
     --oris-blue: #123B63;       /* Azul profundo */
     --oris-petroleum: #155E75;  /* Azul petróleo */
-    --oris-teal: #18B7B0;       /* Turquesa ORIS — cor de destaque/marca */
-    --oris-cyan: #39C6D3;       /* Ciano — realces e estados de hover */
+    --oris-teal: #18B7B0;       /* Turquesa ORIS - cor de destaque/marca */
+    --oris-cyan: #39C6D3;       /* Ciano - realces e estados de hover */
 
     --oris-bg: #F7FAFA;         /* Fundo da aplicação */
     --oris-surface: #DDF4F5;    /* Superfícies de destaque suave (azul claro) */
@@ -46,7 +46,7 @@
      * - Space Grotesk para títulos/headlines: geométrica, técnica,
      *   com um caráter contemporâneo sem ser "futurista" ou gamer.
      * - IBM Plex Sans para texto de interface/corpo: extremamente
-     *   legível, de caráter institucional/técnico — a mesma família
+     *   legível, de caráter institucional/técnico - a mesma família
      *   usada por sistemas corporativos e governamentais sérios.
      */
     --oris-font-display: "Space Grotesk", "Segoe UI", sans-serif;

@@ -1,4 +1,4 @@
-# ORIS — Plataforma de Governança da Rede de Saúde Bucal
+# ORIS - Plataforma de Governança da Rede de Saúde Bucal
 
 Projeto acadêmico desenvolvido no CESAR School, para a Secretaria de
 Saúde do Recife.
@@ -40,7 +40,7 @@ clínico ou de paciente é tratado pelo sistema.
 ### Unidades, Serviços e Equipamentos
 
 CRUD completo das três entidades centrais do sistema. Nenhuma
-exclusão física é feita em nenhuma delas — apenas alteração de
+exclusão física é feita em nenhuma delas - apenas alteração de
 situação (`ATIVA`/`INATIVA`/`MANUTENCAO` para Unidades,
 `ATIVO`/`INATIVO` para Serviços e Equipamentos), preservando o
 histórico.
@@ -52,7 +52,7 @@ histórico.
 | `/servicos`, `/servicos/<id>`, `/equipamentos`, `/equipamentos/<id>` | GET | Qualquer usuário autenticado (inclusive GESTOR) |
 | `/servicos/novo`, `/servicos/<id>/editar`, `/servicos/<id>/situacao`, `/equipamentos/novo`, `/equipamentos/<id>/editar`, `/equipamentos/<id>/situacao` | GET/POST | ADMINISTRADOR, GESTAO_INFORMACAO, RESPONSAVEL_SAUDE_BUCAL |
 
-GESTOR nunca altera dados — só consulta, em qualquer entidade. A
+GESTOR nunca altera dados - só consulta, em qualquer entidade. A
 interface esconde os botões de quem não tem permissão por
 usabilidade, mas a proteção de verdade está sempre no backend, via
 `roles_required`.
@@ -61,12 +61,12 @@ usabilidade, mas a proteção de verdade está sempre no backend, via
 obrigatórios para Unidade (CNES numérico, de 7 a 15 dígitos); um
 Equipamento associado a um Serviço precisa ter o Serviço pertencendo
 à mesma Unidade selecionada; registro inexistente retorna a página
-"404 — Não encontrado".
+"404 - Não encontrado".
 
 ### Dashboard
 
 `/dashboard` reúne uma visão geral da rede, com dados calculados
-direto do banco (`app/services/dashboard_service.py`) — total,
+direto do banco (`app/services/dashboard_service.py`) - total,
 ativas, inativas e em manutenção de Unidades; totais de Serviços e
 Equipamentos; alterações pendentes/aprovadas/rejeitadas; listagem da
 rede com filtro por situação; e um resumo da atividade recente
@@ -77,7 +77,7 @@ perfis.
 
 Módulo exclusivo do `ADMINISTRADOR` (`/usuarios`) para criar, editar,
 ativar/desativar e redefinir a senha de usuários. Nenhuma exclusão
-física de usuário existe — apenas ativação/desativação. O sistema
+física de usuário existe - apenas ativação/desativação. O sistema
 nunca permite que o último `ADMINISTRADOR` ativo seja desativado ou
 tenha o perfil alterado, para que a aplicação nunca fique sem
 nenhum administrador. Toda ação gera um registro de auditoria
@@ -88,7 +88,7 @@ próprio (`CRIAR_USUARIO`, `EDITAR_USUARIO`, `ATIVAR_USUARIO`,
 
 `/privacidade` é uma página pública (sem exigir login) que documenta
 a finalidade do sistema, as categorias de dados tratados, quem tem
-acesso e a política de retenção — ver a seção "Segurança e LGPD"
+acesso e a política de retenção - ver a seção "Segurança e LGPD"
 abaixo.
 
 ## Arquitetura
@@ -97,14 +97,14 @@ abaixo.
   SQL manual ou concatenada em todo o projeto.
 - **Controle de acesso:** decorators `login_required`/
   `roles_required` (`app/utils/decorators.py`), sempre verificados no
-  backend — a interface só esconde botões/links por conveniência,
+  backend - a interface só esconde botões/links por conveniência,
   nunca é a única proteção.
 - **Camada de serviços:** regras de negócio que cruzam mais de uma
   entidade (aprovação de alterações, auditoria, dashboard,
   importação) ficam em `app/services/`, não nas rotas.
 - **Fluxo de aprovação como padrão central:** criar, editar ou alterar
   a situação de uma Unidade, Serviço ou Equipamento nunca grava
-  direto no banco — sempre passa por uma `Alteracao` pendente (ver
+  direto no banco - sempre passa por uma `Alteracao` pendente (ver
   "Fluxo de aprovação" abaixo). O mesmo vale para a importação de
   planilhas.
 
@@ -117,16 +117,16 @@ abaixo.
 | `servicos`    | Serviços de Saúde Bucal (podem existir sem Unidade associada)            |
 | `equipamentos`| Equipamentos (podem existir sem Unidade e/ou sem Serviço associados)     |
 | `alteracoes`  | Fluxo de aprovação (solicitante, aprovador, operação, dados novos)       |
-| `auditorias`  | Trilha de auditoria — quem fez o quê e quando, somente leitura           |
+| `auditorias`  | Trilha de auditoria - quem fez o quê e quando, somente leitura           |
 
-O CNES **não é um identificador único** no modelo atual — reflete o
+O CNES **não é um identificador único** no modelo atual - reflete o
 modelo real da rede, em que uma mesma unidade mista pode aparecer sob
 o mesmo CNES em mais de um registro; o campo `unidade_e_mista`
 sinaliza esse caso. O CNES `9999999` é usado como convenção para
 registros sem CNES real.
 
 Nenhum dado de paciente, prontuário ou informação clínica é
-armazenado — fora do escopo do MVP do ORIS.
+armazenado - fora do escopo do MVP do ORIS.
 
 ## Tecnologias utilizadas
 
@@ -141,14 +141,14 @@ armazenado — fora do escopo do MVP do ORIS.
 
 ## Segurança e LGPD
 
-O relatório técnico completo — achados, severidade, o que foi
+O relatório técnico completo - achados, severidade, o que foi
 corrigido e as limitações que dependem do ambiente de produção —
 está em [`docs/SEGURANCA.md`](docs/SEGURANCA.md). Resumo dos
 controles implementados:
 
-- Nenhuma credencial sensível fica hardcoded — tudo vem do `.env`
+- Nenhuma credencial sensível fica hardcoded - tudo vem do `.env`
   (fora do controle de versão).
-- Senhas nunca são armazenadas em texto puro — apenas hash bcrypt com
+- Senhas nunca são armazenadas em texto puro - apenas hash bcrypt com
   salt aleatório, também na redefinição administrativa.
 - Sessão guarda apenas `usuario_id` e `autenticado`; cookies
   `HttpOnly`, `SameSite=Lax` (e `Secure` em produção);
@@ -161,7 +161,7 @@ controles implementados:
 - Rate limiting leve de login (em memória, por processo): bloqueia
   temporariamente após 5 tentativas malsucedidas para o mesmo (IP,
   email) em 5 minutos.
-- Página de erro 500 dedicada — nenhum erro inesperado expõe stack
+- Página de erro 500 dedicada - nenhum erro inesperado expõe stack
   trace, SQL ou caminhos internos.
 - RBAC sempre verificado no backend; um usuário desativado perde
   acesso imediato a qualquer área protegida, mesmo com sessão antiga.
@@ -173,10 +173,10 @@ controles implementados:
 - Página pública `/privacidade` documentando finalidade, dados
   tratados, controles e retenção.
 
-**LGPD — finalidade, minimização e retenção:** os únicos dados
+**LGPD - finalidade, minimização e retenção:** os únicos dados
 pessoais tratados hoje são os dos próprios usuários do sistema (nome,
 email, perfil, situação) e os registros de auditoria da atividade
-deles — não são coletados CPF, telefone ou endereço residencial sem
+deles - não são coletados CPF, telefone ou endereço residencial sem
 necessidade funcional direta. Usuários desativados e registros de
 auditoria não são excluídos pela aplicação, preservando histórico.
 Prazos específicos de retenção e descarte, assim como a base legal de
@@ -189,25 +189,25 @@ não é distribuído entre múltiplos processos; a
 Content-Security-Policy ainda permite pequenos handlers inline em
 alguns filtros de listagem. Detalhes em `docs/SEGURANCA.md`.
 
-> Este projeto passou por uma revisão de segurança feita por quem o
-> desenvolveu, com apoio de uma IA, sobre o próprio código-fonte — não
+> Este projeto passou por uma revisão de segurança feita pela própria
+> equipe sobre o código-fonte - não
 > substitui um pentest profissional nem uma auditoria de terceiros.
 
 ## Perfis de acesso
 
 O sistema tem 4 perfis:
 
-1. **ADMINISTRADOR** — acesso total, gestão de usuários, acessa todas
+1. **ADMINISTRADOR** - acesso total, gestão de usuários, acessa todas
    as áreas administrativas.
-2. **GESTAO_INFORMACAO** — consulta dados, cria/edita e valida/aprova
+2. **GESTAO_INFORMACAO** - consulta dados, cria/edita e valida/aprova
    alterações, consulta auditoria.
-3. **RESPONSAVEL_SAUDE_BUCAL** — consulta dados, cadastra/edita
+3. **RESPONSAVEL_SAUDE_BUCAL** - consulta dados, cadastra/edita
    unidades, serviços e equipamentos.
-4. **GESTOR** — somente leitura, em todas as áreas.
+4. **GESTOR** - somente leitura, em todas as áreas.
 
 Toda rota restrita usa `roles_required(*perfis)`, que verifica sessão
 autenticada, se o usuário continua ativo, e se o perfil está entre os
-permitidos — devolvendo 403 ("Acesso negado") quando não está. A
+permitidos - devolvendo 403 ("Acesso negado") quando não está. A
 página inicial só mostra, no menu, os links das áreas que o perfil
 autenticado pode acessar, mas isso é só conveniência de interface; o
 bloqueio de verdade está sempre no backend.
@@ -217,7 +217,7 @@ bloqueio de verdade está sempre no backend.
 Criar, editar ou alterar a situação de uma Unidade, Serviço ou
 Equipamento (manualmente ou via importação) nunca grava direto no
 banco: cada ação registra uma `Alteracao` com status `PENDENTE`, que
-só é aplicada quando aprovada por um usuário autorizado — nunca por
+só é aplicada quando aprovada por um usuário autorizado - nunca por
 quem fez a solicitação.
 
 ```
@@ -227,7 +227,7 @@ Solicitante (ADMIN / GESTAO_INFORMACAO / RESPONSAVEL_SAUDE_BUCAL)
    Realiza uma ação (criar/editar/alterar situação)
         │
         ▼
-  Alteracao registrada — status PENDENTE
+  Alteracao registrada - status PENDENTE
         │
         ▼
   ADMINISTRADOR ou GESTAO_INFORMACAO (nunca o solicitante)
@@ -248,19 +248,19 @@ Solicitante (ADMIN / GESTAO_INFORMACAO / RESPONSAVEL_SAUDE_BUCAL)
 A aprovação e a aplicação da mudança acontecem na mesma transação: se
 a aplicação falhar (por exemplo, duas solicitações pendentes de
 criação em conflito), nada é salvo e a alteração continua
-`PENDENTE`, pronta para ser corrigida ou rejeitada — nenhuma
+`PENDENTE`, pronta para ser corrigida ou rejeitada - nenhuma
 auditoria falsa é gerada nesse caso. A listagem aceita filtro por
 `?status=` e por `?tabela=`.
 
 ## Auditoria
 
 A tabela `Auditoria` registra toda ação relevante do sistema, sempre
-na mesma transação da operação que descreve — se a operação sofrer
+na mesma transação da operação que descreve - se a operação sofrer
 rollback, a auditoria correspondente cai junto.
 
 **Ações registradas:** `LOGIN`, `LOGOUT`, `SOLICITAR_ALTERACAO`,
-`APROVAR_ALTERACAO`, `REJEITAR_ALTERACAO`, e — só quando a alteração
-é efetivamente aprovada — `CRIAR`, `EDITAR` ou `ALTERAR_SITUACAO`.
+`APROVAR_ALTERACAO`, `REJEITAR_ALTERACAO`, e - só quando a alteração
+é efetivamente aprovada - `CRIAR`, `EDITAR` ou `ALTERAR_SITUACAO`.
 Solicitar uma mudança nunca gera, por si só, uma auditoria de
 `CRIAR`/`EDITAR`/`ALTERAR_SITUACAO` enquanto está `PENDENTE`; essa só
 é criada no momento em que a alteração é aprovada e aplicada. Uma
@@ -269,7 +269,7 @@ alteração rejeitada nunca gera esse tipo de registro.
 `valor_anterior` e `valor_novo` guardam, em JSON, só os campos que
 realmente mudaram (nunca senha ou hash). A consulta (`/auditoria`,
 `/auditoria/<id>`) é restrita a `ADMINISTRADOR` e `GESTAO_INFORMACAO`.
-A auditoria é somente leitura — não existe nenhuma rota de edição ou
+A auditoria é somente leitura - não existe nenhuma rota de edição ou
 exclusão, nem para `ADMINISTRADOR`; a única forma de um registro
 existir é pelo serviço central `app/services/auditoria_service.py`,
 chamado internamente pelo próprio sistema.
@@ -278,7 +278,7 @@ chamado internamente pelo próprio sistema.
 
 Importa Unidades, Serviços e Equipamentos a partir de planilhas
 **.xlsx** ou **.csv**, sem nunca escrever direto nas tabelas de
-negócio — cada linha nova ou alterada vira uma solicitação de
+negócio - cada linha nova ou alterada vira uma solicitação de
 alteração comum, passando pelo mesmo fluxo de aprovação descrito
 acima.
 
@@ -293,13 +293,13 @@ aplicação → auditoria.
 | `/importacao/mapear`, `/importacao/validar`, `/importacao/confirmar` | POST | ADMINISTRADOR, GESTAO_INFORMACAO, RESPONSAVEL_SAUDE_BUCAL |
 
 **Mapeamento de colunas:** a planilha não precisa ter os mesmos nomes
-de coluna do ORIS — o sistema sugere automaticamente por sinônimos
+de coluna do ORIS - o sistema sugere automaticamente por sinônimos
 (ex.: "Código CNES", "Município", "Estado"), sempre com conferência e
 correção manual antes de validar.
 
 **Validação:** todas as linhas são validadas de uma vez; se houver
 qualquer linha inválida, a planilha inteira é rejeitada (sem
-importação parcial) — o resumo mostra total/válidos/com erros, com
+importação parcial) - o resumo mostra total/válidos/com erros, com
 linha, campo, valor recebido e motivo para cada erro.
 
 **Segurança do upload:** extensão validada contra lista fechada
@@ -308,7 +308,7 @@ planilha, nome de arquivo gerado pelo servidor, armazenamento em
 pasta temporária dedicada (fora de `static`/`templates`), remoção do
 arquivo assim que deixa de ser necessário.
 
-Quem importa não pode aprovar a própria importação — a mesma
+Quem importa não pode aprovar a própria importação - a mesma
 segregação de funções do fluxo de aprovação se aplica integralmente.
 A confirmação do lote gera um registro extra de auditoria
 `IMPORTAR_PLANILHA`, com um resumo de linhas novas/alteradas/sem
@@ -403,7 +403,26 @@ ORIS/
 └── README.md
 ```
 
-## Etapa 03 — Interface funcional com dashboard (Banco de Dados)
+## API REST (v1) e documentação Swagger
+
+API JSON **somente leitura** para integrações (painéis da Secretaria, futura
+integração com o CNES). Usa a mesma sessão do login web; sem sessão, responde
+`401` em JSON. Não expõe dados pessoais (usuários, e-mails ou auditoria).
+
+| Método | Rota                              | Descrição                                   |
+|--------|-----------------------------------|---------------------------------------------|
+| GET    | `/api/v1/unidades`                | Lista paginada (`situacao`, `bairro`, `cnes`, `pagina`, `limite`) |
+| GET    | `/api/v1/unidades/{id}`           | Detalhe com serviços e equipamentos         |
+| GET    | `/api/v1/servicos`                | Lista paginada (`situacao`, `unidade_id`)   |
+| GET    | `/api/v1/equipamentos`            | Lista paginada (`situacao`, `unidade_id`, `tipo`) |
+| GET    | `/api/v1/indicadores`             | Totais da rede e do fluxo de aprovação      |
+| GET    | `/api/v1/openapi.json`            | Especificação OpenAPI 3.0                   |
+| GET    | `/api/docs`                       | Swagger UI interativo                       |
+
+A especificação também está versionada em `docs/api/openapi.json` e pode ser
+importada direto no Postman (*Import → OpenAPI*).
+
+## Etapa 03 - Interface funcional com dashboard (Banco de Dados)
 
 Módulo **Banco de Dados** (menu lateral → *Banco de Dados* e *Estatística*),
 criado para a disciplina de Banco de Dados. Todo acesso ao banco neste
@@ -412,12 +431,12 @@ módulo usa **SQL explícito**, sem ORM.
 ### Integração linguagem ↔ SGBD (equivalente ao JDBC)
 
 O backend em Python usa o driver **PyMySQL**, que implementa a especificação
-**DB-API 2.0 (PEP 249)** — o equivalente Python do JDBC. A camada fica em
+**DB-API 2.0 (PEP 249)** - o equivalente Python do JDBC. A camada fica em
 `app/bd/`:
 
 | JDBC (Java)                               | ORIS (Python / PyMySQL)                       |
 |-------------------------------------------|-----------------------------------------------|
-| `DriverManager.getConnection(...)`        | `pymysql.connect(...)` — `app/bd/conexao.py`  |
+| `DriverManager.getConnection(...)`        | `pymysql.connect(...)` - `app/bd/conexao.py`  |
 | `PreparedStatement` com `?`               | `cursor.execute(sql, params)` com `%s`        |
 | `executeQuery()` / `ResultSet`            | `cursor.fetchall()` (linhas como dicionário)  |
 | `executeUpdate()` / `getGeneratedKeys()`  | `cursor.execute(...)` / `cursor.lastrowid`    |
@@ -431,9 +450,9 @@ e cada tela mostra o SQL que está executando.
 
 | Tela                 | SELECT | INSERT | UPDATE | DELETE |
 |----------------------|:------:|:------:|:------:|:------:|
-| `/bd/unidades`       | ✔︎ (filtro + busca) | ✔︎ | ✔︎ | ✔︎ (bloqueado se houver vínculos) |
-| `/bd/servicos`       | ✔︎ (LEFT JOIN) | ✔︎ | ✔︎ | ✔︎ (bloqueado se houver equipamentos) |
-| `/bd/equipamentos`   | ✔︎ (LEFT JOIN ×2) | ✔︎ | ✔︎ | ✔︎ |
+| `/bd/unidades`       | sim (filtro + busca) | sim | sim | sim (bloqueado se houver vínculos) |
+| `/bd/servicos`       | sim (LEFT JOIN) | sim | sim | sim (bloqueado se houver equipamentos) |
+| `/bd/equipamentos`   | sim (LEFT JOIN ×2) | sim | sim | sim |
 
 - Inserção/alteração/exclusão: perfis `ADMINISTRADOR` e `GESTAO_INFORMACAO`
   (verificado no backend). Os demais perfis visualizam e executam consultas.
@@ -459,7 +478,7 @@ mostra resultado, gráfico (quando faz sentido) e o SQL executado.
 
 O arquivo **`database/consultas_etapa03.sql`** contém todas elas (e os
 comandos de INSERT/UPDATE/DELETE), gerado a partir do próprio código por
-`python scripts/gerar_sql_consultas.py` — assim o SQL entregue é o mesmo
+`python scripts/gerar_sql_consultas.py` - assim o SQL entregue é o mesmo
 que a aplicação executa.
 
 ### Painel estatístico (`/bd/estatistica`)
@@ -467,7 +486,7 @@ que a aplicação executa.
 Gráficos (Chart.js) calculados direto do MySQL: unidades por situação e por
 tipo, equipamentos por tipo, distribuição de frequências de equipamentos por
 unidade e fluxo de aprovação por mês, além de estatística descritiva (média,
-mediana, moda, desvio padrão, variância, CV, quartis e IQR — média, desvio e
+mediana, moda, desvio padrão, variância, CV, quartis e IQR - média, desvio e
 variância via `AVG`/`STDDEV_SAMP`/`VAR_SAMP` no próprio SQL).
 
 **Gráficos da disciplina de Estatística:** coloque as imagens (`.png`, `.jpg`,
@@ -482,7 +501,7 @@ mysql -u oris_user -p oris_db < database/seed_etapa03.sql
 
 Cria 32 unidades, 60 serviços, 119 equipamentos e 48 alterações **fictícias**
 (nomes e CNES inventados), incluindo casos que as consultas C3, C6 e C7
-precisam detectar, e 5 usuários de demonstração — um de cada perfil
+precisam detectar, e 5 usuários de demonstração - um de cada perfil
 (`admin.demo@oris.example`, `gi.demo@oris.example`, `rsb.demo@oris.example`,
 `rsb2.demo@oris.example`, `gestor.demo@oris.example`), todos com a senha
 `Oris@2026`. **Atenção:** o seed apaga unidades/serviços/equipamentos/alterações
@@ -512,7 +531,7 @@ python -m venv venv
 # Linux/Mac
 source venv/bin/activate
 # Windows (por padrão, o PowerShell bloqueia scripts de "autores
-# desconhecidos" — se necessário, ajuste a política de execução antes)
+# desconhecidos" - se necessário, ajuste a política de execução antes)
 venv\Scripts\activate
 
 pip install -r requirements.txt
@@ -532,10 +551,10 @@ FLUSH PRIVILEGES;
 Depois, crie as tabelas de uma das duas formas:
 
 ```bash
-# Opção A — via schema.sql (manual)
+# Opção A - via schema.sql (manual)
 mysql -u root < database/schema.sql
 
-# Opção B — via SQLAlchemy (recomendado em desenvolvimento)
+# Opção B - via SQLAlchemy (recomendado em desenvolvimento)
 python -c "from app import create_app; from app.extensions import db; app = create_app(); app.app_context().push(); db.create_all()"
 ```
 
@@ -593,7 +612,7 @@ confirmar) e perfil (`ADMINISTRADOR`, `GESTAO_INFORMACAO`,
 `RESPONSAVEL_SAUDE_BUCAL` ou `GESTOR`).
 
 > Evite domínios reservados para teste como `.local` ou `.test`
-> no email — a validação de formato os rejeita. Prefira
+> no email - a validação de formato os rejeita. Prefira
 > algo como `usuario@oris.com.br`.
 
 Crie um usuário de cada perfil para demonstrar a matriz de acesso.

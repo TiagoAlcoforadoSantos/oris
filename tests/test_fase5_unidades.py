@@ -1,22 +1,4 @@
-"""
-Testes da FASE 5 — CRUD de Unidades.
-
-Roda contra SQLite em memória (TestingConfig), reaproveitando o
-padrão de fixtures das fases anteriores. Cria um usuário para cada
-perfil e uma unidade de exemplo.
-
-ATUALIZADO NA FASE 7: criar/editar/alterar situação de uma Unidade
-não grava mais direto no banco — registra uma Alteracao PENDENTE que
-só é aplicada quando aprovada (ver tests/test_fase7_alteracoes.py
-para a cobertura completa do fluxo de aprovação). Os testes desta
-fase que antes verificavam a escrita imediata (#4, #5, #6 e o cenário
-de edição usado em #12) foram ajustados para refletir esse novo
-comportamento — continuam confirmando exatamente a mesma regra de
-autorização (quem pode ou não solicitar a operação), só que a
-verificação final passa a ser "uma Alteracao PENDENTE foi criada"
-(e, quando faz sentido, "e a aprovação realmente aplica a mudança")
-em vez de "o registro foi alterado na hora".
-"""
+"""Testes da FASE 5 - CRUD de Unidades."""
 
 import pytest
 
@@ -109,19 +91,11 @@ DADOS_UNIDADE_NOVA = {
 }
 
 
-# ----------------------------------------------------------------
-# 1. Usuário não autenticado não acessa /unidades
-# ----------------------------------------------------------------
-
 def test_usuario_nao_autenticado_nao_acessa_unidades(client):
     resp = client.get("/unidades", follow_redirects=False)
     assert resp.status_code == 302
     assert "/login" in resp.headers["Location"]
 
-
-# ----------------------------------------------------------------
-# 2. Usuário autorizado consegue listar unidades
-# ----------------------------------------------------------------
 
 def test_usuario_autenticado_lista_unidades(client):
     _login(client, PerfilUsuario.GESTOR)
@@ -129,10 +103,6 @@ def test_usuario_autenticado_lista_unidades(client):
     assert resp.status_code == 200
     assert "UBS Bairro Novo" in resp.get_data(as_text=True)
 
-
-# ----------------------------------------------------------------
-# 3. Usuário autorizado consegue visualizar unidade
-# ----------------------------------------------------------------
 
 def test_usuario_autenticado_visualiza_unidade(client, app):
     _login(client, PerfilUsuario.GESTOR)
@@ -144,12 +114,6 @@ def test_usuario_autenticado_visualiza_unidade(client, app):
     assert "1234567" in resp.get_data(as_text=True)
 
 
-# ----------------------------------------------------------------
-# 4. Usuário autorizado consegue SOLICITAR a criação de uma unidade
-#    (Fase 7: fica PENDENTE; só é criada de fato quando aprovada —
-#    ver test_fase7_alteracoes.py para o fluxo de aprovação completo)
-# ----------------------------------------------------------------
-
 def test_administrador_solicita_criacao_de_unidade(client, app):
     _login(client, PerfilUsuario.ADMINISTRADOR)
 
@@ -158,7 +122,6 @@ def test_administrador_solicita_criacao_de_unidade(client, app):
     assert "aguardando aprovação" in resp.get_data(as_text=True)
 
     with app.app_context():
-        # A unidade ainda NÃO existe — só a solicitação (Alteracao PENDENTE)
         assert Unidade.query.filter_by(cnes="7654321").first() is None
 
         alteracao = Alteracao.query.filter_by(tabela="unidades", operacao="CRIAR").first()
@@ -190,10 +153,6 @@ def test_aprovar_solicitacao_de_criacao_efetiva_a_unidade(client, app):
         assert criada.uf == "PE"
 
 
-# ----------------------------------------------------------------
-# 5. Usuário autorizado consegue SOLICITAR a edição de uma unidade
-# ----------------------------------------------------------------
-
 def test_administrador_solicita_edicao_de_unidade(client, app):
     _login(client, PerfilUsuario.ADMINISTRADOR)
     unidade_id = _unidade_exemplo_id(app)
@@ -213,7 +172,6 @@ def test_administrador_solicita_edicao_de_unidade(client, app):
     assert "aguardando aprovação" in resp.get_data(as_text=True)
 
     with app.app_context():
-        # O nome ainda NÃO mudou — a edição está pendente de aprovação
         unidade = db.session.get(Unidade, unidade_id)
         assert unidade.nome == "UBS Bairro Novo"
 
@@ -247,10 +205,6 @@ def test_aprovar_solicitacao_de_edicao_aplica_a_mudanca(client, app):
         editada = db.session.get(Unidade, unidade_id)
         assert editada.nome == "UBS Bairro Novo (Reformada)"
 
-
-# ----------------------------------------------------------------
-# 6. Usuário autorizado consegue SOLICITAR alteração de situação
-# ----------------------------------------------------------------
 
 def test_administrador_solicita_alteracao_de_situacao(client, app):
     _login(client, PerfilUsuario.ADMINISTRADOR)
@@ -288,10 +242,6 @@ def test_aprovar_alteracao_de_situacao_aplica_a_mudanca(client, app):
         assert unidade.situacao == SituacaoUnidade.MANUTENCAO
 
 
-# ----------------------------------------------------------------
-# 7. GESTOR consegue consultar unidades
-# ----------------------------------------------------------------
-
 def test_gestor_consulta_unidades(client, app):
     _login(client, PerfilUsuario.GESTOR)
     unidade_id = _unidade_exemplo_id(app)
@@ -303,10 +253,6 @@ def test_gestor_consulta_unidades(client, app):
     assert resp_detalhe.status_code == 200
 
 
-# ----------------------------------------------------------------
-# 8. GESTOR não consegue criar unidade
-# ----------------------------------------------------------------
-
 def test_gestor_nao_cria_unidade(client):
     _login(client, PerfilUsuario.GESTOR)
     resp = client.get("/unidades/nova")
@@ -315,10 +261,6 @@ def test_gestor_nao_cria_unidade(client):
     resp = client.post("/unidades/nova", data=DADOS_UNIDADE_NOVA)
     assert resp.status_code == 403
 
-
-# ----------------------------------------------------------------
-# 9. GESTOR não consegue editar unidade
-# ----------------------------------------------------------------
 
 def test_gestor_nao_edita_unidade(client, app):
     _login(client, PerfilUsuario.GESTOR)
@@ -331,22 +273,12 @@ def test_gestor_nao_edita_unidade(client, app):
     assert resp.status_code == 403
 
 
-# ----------------------------------------------------------------
-# 10. Usuário sem permissão recebe 403 ao tentar operação protegida
-#     (mesmo teste do GESTOR acima cobre isso; aqui garantimos a
-#     página de acesso negado é exibida)
-# ----------------------------------------------------------------
-
 def test_pagina_acesso_negado_ao_tentar_criar_unidade(client):
     _login(client, PerfilUsuario.GESTOR)
     resp = client.get("/unidades/nova")
     assert resp.status_code == 403
     assert "Acesso negado" in resp.get_data(as_text=True)
 
-
-# ----------------------------------------------------------------
-# 11. Cadastro sem campos obrigatórios falha
-# ----------------------------------------------------------------
 
 def test_cadastro_sem_nome_falha(client, app):
     _login(client, PerfilUsuario.ADMINISTRADOR)
@@ -374,10 +306,6 @@ def test_cadastro_sem_cnes_falha(client):
     assert "Informe o código CNES." in resp.get_data(as_text=True)
 
 
-# ----------------------------------------------------------------
-# 12. CNES duplicado é rejeitado
-# ----------------------------------------------------------------
-
 def test_cnes_duplicado_e_rejeitado_no_cadastro(client, app):
     _login(client, PerfilUsuario.ADMINISTRADOR)
 
@@ -389,8 +317,6 @@ def test_cnes_duplicado_e_rejeitado_no_cadastro(client, app):
     assert "Já existe uma unidade cadastrada com o CNES" in resp.get_data(as_text=True)
 
     with app.app_context():
-        # Continua existindo só uma unidade com esse CNES, e nenhuma
-        # solicitação chegou a ser registrada.
         assert Unidade.query.filter_by(cnes="1234567").count() == 1
         assert Alteracao.query.filter_by(tabela="unidades", operacao="CRIAR").first() is None
 
@@ -398,10 +324,6 @@ def test_cnes_duplicado_e_rejeitado_no_cadastro(client, app):
 def test_cnes_duplicado_e_rejeitado_na_edicao(client, app):
     _login(client, PerfilUsuario.ADMINISTRADOR)
 
-    # Cria uma segunda unidade diretamente no banco (o cadastro via
-    # rota agora passa pelo fluxo de aprovação — ver testes acima —
-    # então, para testar a edição, criamos a unidade já existente
-    # diretamente, como o setup do teste faz com a unidade de exemplo).
     with app.app_context():
         segunda_unidade = Unidade(
             nome="UBS Vila Feliz",
@@ -426,10 +348,6 @@ def test_cnes_duplicado_e_rejeitado_na_edicao(client, app):
         assert Alteracao.query.filter_by(tabela="unidades", operacao="EDITAR").first() is None
 
 
-# ----------------------------------------------------------------
-# 13. Unidade inexistente retorna 404 / tratamento amigável
-# ----------------------------------------------------------------
-
 def test_unidade_inexistente_retorna_404(client):
     _login(client, PerfilUsuario.ADMINISTRADOR)
 
@@ -444,10 +362,6 @@ def test_editar_unidade_inexistente_retorna_404(client):
     resp = client.get("/unidades/99999/editar")
     assert resp.status_code == 404
 
-
-# ----------------------------------------------------------------
-# 14. Situação inválida é rejeitada
-# ----------------------------------------------------------------
 
 def test_situacao_invalida_e_rejeitada_no_cadastro(client, app):
     _login(client, PerfilUsuario.ADMINISTRADOR)

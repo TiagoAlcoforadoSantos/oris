@@ -1,8 +1,8 @@
 /*
- * ORIS — Dashboard (Fase 13B, Etapa 1)
+ * ORIS - Dashboard (Fase 13B, Etapa 1)
  * ---------------------------------------------------------------
  * Estilo da tela de Dashboard: hero, KPI cards, resumo da rede e
- * atividade recente. Nenhum dado é definido aqui — só apresentação
+ * atividade recente. Nenhum dado é definido aqui - só apresentação
  * dos valores que app/services/dashboard_service.py já calcula.
  */
 
@@ -128,7 +128,7 @@
     color: var(--oris-teal);
 }
 
-/* Card de destaque (governança/ação pendente) — Fase 13B item 13. */
+/* Card de destaque (governança/ação pendente) - Fase 13B item 13. */
 .oris-kpi-card--highlight {
     background-color: var(--oris-petroleum); /* fallback para navegadores/motores sem suporte a gradiente moderno */
     background: linear-gradient(135deg, var(--oris-teal), var(--oris-petroleum));

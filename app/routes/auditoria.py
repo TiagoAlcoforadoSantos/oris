@@ -1,16 +1,4 @@
-"""
-Consulta de auditoria (Fase 8).
-
-Somente leitura — a auditoria é um registro de rastreabilidade e não
-existe (propositalmente) nenhuma rota de edição ou exclusão, nem
-mesmo para ADMINISTRADOR. A única forma de um registro de auditoria
-existir é através de app.services.auditoria_service.registrar_auditoria,
-chamado internamente pelas próprias operações do sistema.
-
-Acesso restrito a ADMINISTRADOR e GESTAO_INFORMACAO — os mesmos dois
-perfis que já podiam aprovar/rejeitar alterações (Fase 7) e que, na
-matriz de RBAC (Fase 4), são os únicos com "Consultar auditoria: SIM".
-"""
+"""Consulta de auditoria (Fase 8)."""
 
 from flask import Blueprint, abort, render_template, request
 
@@ -54,7 +42,6 @@ def listar():
     if data_filtro:
         query = query.filter(db.func.date(Auditoria.data_hora) == data_filtro)
 
-    # Mais recentes primeiro.
     registros = query.order_by(Auditoria.data_hora.desc()).all()
 
     acoes_disponiveis = [

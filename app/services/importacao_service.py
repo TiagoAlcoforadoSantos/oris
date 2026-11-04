@@ -1,75 +1,4 @@
-"""
-Serviço central do importador de planilhas (Fase 10; adaptado na Stage
-"importador x modelo de dados redesenhado" ao modelo introduzido pela
-migration 0001 — CNES não único, vínculos opcionais).
-
-Concentra aqui toda a lógica de leitura, mapeamento de colunas e
-validação das planilhas de Unidades/Serviços/Equipamentos — as
-rotas (app/routes/importacao.py) só orquestram o fluxo (upload,
-telas, chamadas ao serviço de alterações).
-
-DECISÃO DE DESIGN — reconciliação (novo/existente/alterado) para as
-entidades "unidades"/"servicos"/"equipamentos" (mantida desta fase):
-Unidades são identificadas por CNES. Serviços e Equipamentos não têm
-um código único próprio, então são identificados pela combinação
-(nome, unidade). Isso é só uma chave de igualdade simples, usada
-para decidir se uma linha da planilha é um registro novo ou uma
-atualização de um já existente.
-
-DECISÃO DE DESIGN — "CNES já cadastrado" como erro vs. atualização
-(entidades "unidades"/"servicos"/"equipamentos"): um CNES que já
-existe NO BANCO é uma ATUALIZAÇÃO; um CNES DUPLICADO DENTRO DA MESMA
-PLANILHA é tratado como erro, porque não há como saber com qual das
-duas linhas ficar. Essa decisão está documentada aqui e no README.
-
-DECISÃO DE DESIGN — entidade "rede" (formato unificado, ex.:
-REDE_SAUDE_RECIFE_GEO): a documentação real do cliente mostra que uma
-linha da planilha NÃO representa necessariamente uma única Unidade —
-o CNES pode se repetir entre registros distintos (ex.: unidade mista),
-uma linha pode descrever só um Serviço ou só um Equipamento, e uma
-mesma linha pode descrever mais de um conceito ao mesmo tempo
-(UNIDADE="S" e um TIPO SERVIÇO preenchido, por exemplo). Por isso,
-para esta entidade:
-
-- A linha é CLASSIFICADA (não mapeada 1-para-1 para uma única
-  entidade-alvo): cada linha pode gerar 0 (inválida), 1 ou vários
-  "sub-registros" — um por conceito identificado (UNIDADE quando
-  UNIDADE="S"; EQUIPAMENTO quando EQUIPAMENTO DE SAÚDE="S"; SERVIÇO
-  quando há um TIPO SERVIÇO preenchido).
-- CNES NÃO é usado como identidade de reconciliação — é só uma
-  referência externa preservada no registro. Como a planilha não
-  fornece nenhum identificador confiável equivalente ao `id` interno
-  do ORIS, esta importação NÃO tenta casar uma linha com um registro
-  já existente no banco (isso seria "merge agressivo" com uma chave
-  arbitrária, o que a Stage proíbe explicitamente): todo sub-registro
-  válido vira uma solicitação de CRIAÇÃO. Deduplicação/mesclagem fica
-  para revisão humana no fluxo de aprovação (Fase 7), que já é o
-  mecanismo central de governança do ORIS.
-- Vínculo com Unidade (para Serviço/Equipamento) só é aplicado quando
-  "seguro": existe exatamente UMA Unidade já cadastrada no banco com
-  aquele CNES. Zero ou múltiplas correspondências não é erro — o
-  registro é criado sem vínculo (zero) ou com um aviso não-bloqueante
-  (múltiplas, ambíguo). Quando a própria linha também cria uma
-  Unidade nova (UNIDADE="S" na mesma linha), o vínculo não pode ser
-  aplicado automaticamente porque essa Unidade ainda não tem `id`
-  antes da aprovação — um aviso não-bloqueante documenta a relação
-  para vínculo manual após a aprovação.
-- Da mesma forma, um Equipamento é vinculado a um Serviço já existente
-  (por nome) só quando há exatamente uma correspondência; quando
-  Serviço e Equipamento são criados na mesma linha (ambos novos), a
-  relação é sinalizada em um aviso, não persistida automaticamente.
-- Os campos "NOME CURTO" e "DS" da planilha real não têm coluna
-  correspondente no modelo de dados atual (`app/models/unidade.py`) —
-  são capturados na leitura/prévia por completude, mas não fazem
-  parte do payload persistido (documentado aqui para não serem
-  confundidos com perda de dado silenciosa).
-
-Nenhum registro é escrito no banco por este serviço — ele só lê o
-arquivo e retorna a classificação de cada linha. A escrita de fato
-acontece via app.services.alteracoes_service.registrar_alteracao,
-chamado pela rota de confirmação, respeitando o fluxo de aprovação
-da Fase 7.
-"""
+"""Serviço central do importador de planilhas (Fase 10; adaptado na Stage "importador x..."""
 
 import re
 import unicodedata
@@ -89,14 +18,8 @@ _CNES_REGEX_COMPILADO = re.compile(CNES_REGEX)
 
 
 class ArquivoInvalidoError(Exception):
-    """Erro amigável de leitura do arquivo (formato, vazio, corrompido,
-    sem cabeçalho, sem dados, ou excesso de linhas) — sempre com uma
-    mensagem adequada para ser exibida diretamente ao usuário."""
+    """Erro amigável de leitura do arquivo (formato, vazio, corrompido, sem cabeçalho,..."""
 
-
-# ----------------------------------------------------------------
-# Campos por entidade e sinônimos para o mapeamento automático
-# ----------------------------------------------------------------
 
 CAMPOS_POR_ENTIDADE = {
     "unidades": {
@@ -104,23 +27,13 @@ CAMPOS_POR_ENTIDADE = {
         "opcionais": ["tipo", "endereco", "bairro"],
     },
     "servicos": {
-        # "unidade_cnes" é opcional (Stage "modelo de dados" — ver
-        # docs/migrations/0001...): um Serviço pode existir sem
-        # nenhuma Unidade associada, quando a própria planilha não
-        # permite determinar o vínculo.
         "obrigatorios": ["nome", "situacao"],
         "opcionais": ["unidade_cnes"],
     },
     "equipamentos": {
-        # "unidade_cnes" é opcional, mesma razão de "servicos" acima.
         "obrigatorios": ["nome", "tipo", "situacao"],
         "opcionais": ["servico_nome", "unidade_cnes"],
     },
-    # Formato unificado da planilha real do cliente (ex.:
-    # REDE_SAUDE_RECIFE_GEO) — ver decisão de design no topo do
-    # módulo. Uma linha pode gerar Unidade, Serviço e/ou Equipamento
-    # simultaneamente, por isso os campos aqui cobrem os três
-    # conceitos de uma vez, em vez de uma entidade-alvo única.
     "rede": {
         "obrigatorios": ["nome", "cnes", "unidade_flag", "equipamento_flag"],
         "opcionais": [
@@ -180,9 +93,7 @@ _SINONIMOS = {
 
 
 def _normalizar_texto(valor):
-    """Normaliza um texto para comparação: remove acentos, espaços nas
-    pontas e coloca em minúsculas. Usado tanto para casar nomes de
-    colunas quanto para comparar valores textuais (situação, nomes)."""
+    """Normaliza um texto para comparação"""
     if valor is None:
         return ""
     texto = str(valor).strip()
@@ -190,15 +101,8 @@ def _normalizar_texto(valor):
     return texto_sem_acento.strip().lower()
 
 
-# ----------------------------------------------------------------
-# Leitura do arquivo
-# ----------------------------------------------------------------
-
 def ler_planilha(caminho, extensao):
-    """Lê o arquivo (.csv ou .xlsx) e devolve um DataFrame do pandas,
-    com todas as células como texto (evita o pandas "inventar" tipos
-    numéricos para campos como CNES). Lança ArquivoInvalidoError com
-    uma mensagem amigável para qualquer problema de leitura."""
+    """Lê o arquivo (.csv ou .xlsx) e devolve um DataFrame do pandas, com todas as..."""
     try:
         if extensao == ".csv":
             df = pd.read_csv(caminho, dtype=str, keep_default_na=False, sep=None, engine="python")
@@ -214,10 +118,6 @@ def ler_planilha(caminho, extensao):
     if df.shape[1] == 0:
         raise ArquivoInvalidoError("A planilha está vazia.")
 
-    # Quando não há um cabeçalho de verdade, o pandas nomeia as
-    # colunas como "Unnamed: 0", "Unnamed: 1"... — se TODAS as
-    # colunas caírem nesse padrão, tratamos como planilha sem
-    # cabeçalho, em vez de tentar mapear nomes sem sentido.
     if all(re.match(r"^Unnamed: \d+$", str(coluna)) for coluna in df.columns):
         raise ArquivoInvalidoError("A planilha não possui uma linha de cabeçalho.")
 
@@ -233,16 +133,8 @@ def ler_planilha(caminho, extensao):
     return df
 
 
-# ----------------------------------------------------------------
-# Mapeamento de colunas
-# ----------------------------------------------------------------
-
 def detectar_mapeamento_automatico(colunas_planilha, entidade):
-    """Sugere, para cada campo alvo da entidade, qual coluna da
-    planilha corresponde a ele — por comparação exata de nome
-    normalizado com os sinônimos conhecidos. Nunca adivinha por
-    semelhança aproximada; se não achar uma correspondência exata,
-    deixa em branco para o usuário escolher manualmente."""
+    """Sugere, para cada campo alvo da entidade, qual coluna da planilha corresponde a..."""
     campos = CAMPOS_POR_ENTIDADE[entidade]["obrigatorios"] + CAMPOS_POR_ENTIDADE[entidade]["opcionais"]
     colunas_normalizadas = {_normalizar_texto(coluna): coluna for coluna in colunas_planilha}
 
@@ -258,11 +150,7 @@ def detectar_mapeamento_automatico(colunas_planilha, entidade):
 
 
 def aplicar_mapeamento(df, mapeamento):
-    """Constrói a lista de linhas (uma por registro da planilha),
-    cada uma com os campos-alvo já renomeados conforme o mapeamento
-    escolhido. `numero_linha` conta a partir de 2 (linha 1 é o
-    cabeçalho), para bater com o que o usuário vê ao abrir a
-    planilha."""
+    """Constrói a lista de linhas (uma por registro da planilha), cada uma com os..."""
     linhas = []
     for posicao, linha_original in df.iterrows():
         dados = {}
@@ -275,19 +163,11 @@ def aplicar_mapeamento(df, mapeamento):
     return linhas
 
 
-# ----------------------------------------------------------------
-# Validação e classificação (novo / alterado / sem_alteracao)
-# ----------------------------------------------------------------
-
 def _erro(lista_erros, linha, campo, valor, motivo):
     lista_erros.append({"linha": linha, "campo": RÓTULOS_CAMPOS.get(campo, campo), "valor": valor, "motivo": motivo})
 
 
 def _validar_linha_unidade(numero_linha, dados, lista_erros):
-    # NOTA (Stage "modelo de dados" — regra A): CNES não é mais tratado
-    # como identificador único. O mesmo CNES pode aparecer em mais de
-    # uma linha da planilha (ex.: unidade mista) sem que isso seja um
-    # erro — só o formato do valor é validado aqui.
     erros_linha = []
 
     nome = dados.get("nome", "").strip()
@@ -364,11 +244,6 @@ def _validar_linha_servico(numero_linha, dados, chaves_vistas, lista_erros):
         _erro(lista_erros, numero_linha, "nome", nome, "Nome é obrigatório.")
         erros_linha.append("nome")
 
-    # Vínculo com Unidade é OPCIONAL (regra D — Serviço não exige
-    # Unidade obrigatoriamente): se o CNES da unidade não foi
-    # informado/mapeado, o serviço simplesmente fica sem vínculo — não
-    # é erro. Se foi informado mas não corresponde a nenhuma unidade
-    # cadastrada, isso sim é um erro (referência quebrada).
     unidade_cnes = dados.get("unidade_cnes", "").strip()
     unidade = None
     if unidade_cnes:
@@ -433,8 +308,6 @@ def _validar_linha_equipamento(numero_linha, dados, chaves_vistas, lista_erros):
         _erro(lista_erros, numero_linha, "tipo", tipo, "Tipo é obrigatório.")
         erros_linha.append("tipo")
 
-    # Vínculo com Unidade é OPCIONAL (regra E — Equipamento não exige
-    # Unidade obrigatoriamente); mesma lógica de "servicos" acima.
     unidade_cnes = dados.get("unidade_cnes", "").strip()
     unidade = None
     if unidade_cnes:
@@ -506,27 +379,16 @@ def _classificar_equipamento(dados_normalizados):
     return "sem_alteracao", existente
 
 
-# ----------------------------------------------------------------
-# Entidade "rede" — formato unificado (linha classificada em
-# UNIDADE / EQUIPAMENTO / SERVIÇO, ver decisão de design no topo do
-# módulo).
-# ----------------------------------------------------------------
-
 _TIPOS_REGISTRO_REDE = ("UNIDADE", "SERVICO", "EQUIPAMENTO")
 
 
 def _texto_e_verdadeiro(valor):
-    """'S'/'Sim'/'Yes'/'1'/'true' (sem acento, case-insensitive) ->
-    True. Qualquer outra coisa (incluindo vazio) -> False. Usado para
-    os indicadores S/N da planilha (UNIDADE, EQUIPAMENTO DE SAÚDE,
-    UNIDADE É MISTA?)."""
+    """'S'/'Sim'/'Yes'/'1'/'true' (sem acento, case-insensitive) -> True."""
     return _normalizar_texto(valor) in {"s", "sim", "yes", "y", "1", "true"}
 
 
 def _texto_e_falso_explicito(valor):
-    """'N'/'Nao'/'No'/'0'/'false' -> True. Complementar a
-    `_texto_e_verdadeiro`, usado só para o campo ATIVO, onde vazio
-    não deve significar "inativo" (ver `_ativo_para_situacao_*`)."""
+    """'N'/'Nao'/'No'/'0'/'false' -> True."""
     return _normalizar_texto(valor) in {"n", "nao", "no", "0", "false"}
 
 
@@ -539,24 +401,7 @@ def _ativo_para_situacao_simples(valor):
 
 
 def _validar_linha_rede(numero_linha, dados, lista_erros):
-    """Classifica uma linha do formato unificado em 0..3 sub-registros
-    (UNIDADE/SERVICO/EQUIPAMENTO). Retorna `None` se a linha for
-    inválida (erros já foram anexados a `lista_erros`), ou uma lista
-    (possivelmente vazia só nesse caso de erro) de dicts
-    `{"tipo": ..., "dados": {...}}` prontos para virar uma Alteracao
-    CRIAR — o vínculo entre eles (Unidade<->Serviço/Equipamento,
-    Serviço<->Equipamento) é resolvido depois, em
-    `_resolver_vinculos_rede`, porque pode depender de registros
-    criados por OUTRAS linhas da mesma planilha.
-
-    REGRA (rules 3 vs. 9 do enunciado): quando a linha também é um
-    Equipamento (EQUIPAMENTO DE SAÚDE="S"), o TIPO SERVIÇO preenchido é
-    tratado como referência a um Serviço já existente (regra 9 —
-    "serviço pode estar relacionado a equipamento"), não como um
-    Serviço novo — senão toda linha de equipamento recriaria um
-    Serviço duplicado a cada importação. Uma linha SEM o indicador de
-    Equipamento, com TIPO SERVIÇO preenchido, continua gerando um
-    sub-registro de Serviço normalmente (regra 3)."""
+    """Classifica uma linha do formato unificado em 0..3 sub-registros ..."""
     e_unidade = _texto_e_verdadeiro(dados.get("unidade_flag", ""))
     e_equipamento = _texto_e_verdadeiro(dados.get("equipamento_flag", ""))
     tipo_servico = dados.get("tipo_servico", "").strip()
@@ -638,11 +483,7 @@ def _aviso(lista_avisos, linha, mensagem):
 
 
 def _resolver_vinculo_unidade_existente(cnes, numero_linha, lista_avisos, contexto):
-    """Vínculo com Unidade só é aplicado quando 'seguro': exatamente
-    uma Unidade já cadastrada no banco com aquele CNES. Zero
-    correspondências não é erro (o registro fica sem vínculo);
-    múltiplas correspondências é ambíguo (CNES deixou de ser único) —
-    gera um aviso não-bloqueante em vez de escolher arbitrariamente."""
+    """Vínculo com Unidade só é aplicado quando 'seguro'"""
     candidatas = Unidade.query.filter_by(cnes=cnes).all()
     if len(candidatas) == 1:
         return candidatas[0].id
@@ -657,12 +498,7 @@ def _resolver_vinculo_unidade_existente(cnes, numero_linha, lista_avisos, contex
 
 
 def _resolver_vinculos_rede(dados, registros, lista_avisos, numero_linha):
-    """Resolve, quando seguro, os vínculos entre os sub-registros
-    produzidos por `_validar_linha_rede` (Unidade<->Serviço/
-    Equipamento e Serviço<->Equipamento). Nunca cria vínculo só
-    porque o CNES é igual (regra F) — só quando há exatamente uma
-    correspondência já existente no banco. Modifica `registros` in
-    place."""
+    """Resolve, quando seguro, os vínculos entre os sub-registros produzidos por..."""
     e_unidade = any(registro["tipo"] == "UNIDADE" for registro in registros)
     e_servico = any(registro["tipo"] == "SERVICO" for registro in registros)
     e_equipamento = any(registro["tipo"] == "EQUIPAMENTO" for registro in registros)
@@ -685,10 +521,6 @@ def _resolver_vinculos_rede(dados, registros, lista_avisos, numero_linha):
                     registro["dados"]["unidade_id"] = unidade_id
 
     if e_equipamento:
-        # TIPO SERVIÇO em uma linha de Equipamento é tratado como
-        # referência a um Serviço já existente (regra 9), não como um
-        # Serviço novo — ver docstring de `_validar_linha_rede`. Só
-        # vincula quando há exatamente uma correspondência (regra F).
         tipo_servico = dados.get("tipo_servico", "").strip()
         if tipo_servico:
             candidatos = Servico.query.filter(Servico.nome.ilike(tipo_servico)).all()
@@ -713,22 +545,7 @@ _TIPO_REGISTRO_POR_ENTIDADE_SIMPLES = {
 
 
 def validar_e_classificar(df, mapeamento, entidade):
-    """Valida e classifica todas as linhas do DataFrame conforme a
-    entidade. Retorna um dict com o resumo (totais), a lista de erros
-    (linha/campo/valor/motivo), a lista de avisos não-bloqueantes
-    (relevante para a entidade "rede" — vínculos ambíguos ou adiados)
-    e a lista de linhas processadas — cada uma com seu tipo de
-    registro (UNIDADE/SERVICO/EQUIPAMENTO), classificação
-    (novo/alterado/sem_alteracao/invalido) e os dados já normalizados,
-    prontos para virar uma Alteracao quando a importação for
-    confirmada.
-
-    Para "unidades"/"servicos"/"equipamentos", cada linha da planilha
-    gera no máximo um item em "linhas" (o modelo 1 linha = 1
-    registro-alvo é mantido). Para "rede", uma linha pode gerar 0
-    (inválida), 1 ou vários itens — um por conceito identificado (ver
-    decisão de design no topo do módulo) — por isso "total" conta
-    sub-registros, não linhas da planilha."""
+    """Valida e classifica todas as linhas do DataFrame conforme a entidade."""
     linhas_mapeadas = aplicar_mapeamento(df, mapeamento)
 
     erros = []

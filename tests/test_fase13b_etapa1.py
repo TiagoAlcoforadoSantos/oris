@@ -1,19 +1,4 @@
-"""
-Testes da FASE 13B — Etapa 1 (estrutura global + Dashboard).
-
-Esta etapa é puramente visual/estrutural — não altera nenhuma regra
-de negócio, model, autenticação, RBAC, aprovação, auditoria,
-importação ou os dados que o dashboard_service calcula. Os testes
-aqui confirmam que:
-
-1. A nova estrutura (sidebar/header) renderiza e respeita o RBAC já
-   existente (mesmos itens visíveis por perfil que antes).
-2. O Dashboard mostra os mesmos números reais do dashboard_service —
-   nenhum dado fictício foi introduzido.
-3. Os arquivos CSS novos são servidos corretamente.
-4. Nada das fases anteriores quebrou (verificação pontual; a suíte
-   completa das Fases 1-13A é executada junto — ver relatório).
-"""
+"""Testes da FASE 13B - Etapa 1 (estrutura global + Dashboard)."""
 
 import pytest
 
@@ -78,10 +63,6 @@ def _login(client, perfil):
     return client.post("/login", data={"email": EMAILS[perfil], "senha": SENHA}, follow_redirects=True)
 
 
-# ----------------------------------------------------------------
-# Estrutura global (sidebar/header) e RBAC do menu
-# ----------------------------------------------------------------
-
 def test_sidebar_e_header_renderizam_para_usuario_autenticado(client):
     _login(client, PerfilUsuario.ADMINISTRADOR)
     resp = client.get("/dashboard")
@@ -128,10 +109,6 @@ def test_todos_os_perfis_veem_itens_comuns_do_menu(client):
             assert item in html, f"{item} ausente para {perfil.value}"
 
 
-# ----------------------------------------------------------------
-# Header: identidade do usuário e logout
-# ----------------------------------------------------------------
-
 def test_header_mostra_nome_perfil_e_logout(client):
     _login(client, PerfilUsuario.GESTOR)
     html = client.get("/dashboard").get_data(as_text=True)
@@ -139,10 +116,6 @@ def test_header_mostra_nome_perfil_e_logout(client):
     assert "GESTOR" in html
     assert 'href="/logout"' in html
 
-
-# ----------------------------------------------------------------
-# Dashboard: dados reais, sem números fictícios
-# ----------------------------------------------------------------
 
 def test_dashboard_usa_indicadores_reais_do_service(client, app):
     _login(client, PerfilUsuario.ADMINISTRADOR)
@@ -170,10 +143,6 @@ def test_dashboard_mostra_resumo_da_rede(client):
     assert "1350001" in html
 
 
-# ----------------------------------------------------------------
-# Arquivos estáticos novos
-# ----------------------------------------------------------------
-
 def test_layout_css_e_servido(client):
     resp = client.get("/static/css/layout.css")
     assert resp.status_code == 200
@@ -192,10 +161,6 @@ def test_bootstrap_icons_referenciado_no_layout(client):
     assert "bootstrap-icons" in html
 
 
-# ----------------------------------------------------------------
-# CSP continua íntegra (Fase 12) — só ampliada para os novos domínios
-# ----------------------------------------------------------------
-
 def test_csp_permite_bootstrap_icons_sem_enfraquecer_seguranca(client):
     resp = client.get("/login")
     csp = resp.headers.get("Content-Security-Policy")
@@ -203,10 +168,6 @@ def test_csp_permite_bootstrap_icons_sem_enfraquecer_seguranca(client):
     assert "unsafe-eval" not in csp
     assert "cdn.jsdelivr.net" in csp
 
-
-# ----------------------------------------------------------------
-# Nada das fases anteriores quebrou (verificação pontual)
-# ----------------------------------------------------------------
 
 def test_login_continua_funcionando(client):
     resp = _login(client, PerfilUsuario.ADMINISTRADOR)

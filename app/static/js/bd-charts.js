@@ -1,4 +1,4 @@
-/* ORIS — helpers de gráficos (Chart.js) do módulo Banco de Dados. */
+/* ORIS - helpers de gráficos (Chart.js) do módulo Banco de Dados. */
 (function () {
     const PALETA = ["#18B7B0", "#155E75", "#E9A23B", "#39C6D3", "#0B2A4A", "#8FA3AD", "#39A96B", "#D9534F"];
     const SEMANTICA = { ATIVA: "#39A96B", ATIVO: "#39A96B", INATIVA: "#8FA3AD", INATIVO: "#8FA3AD",

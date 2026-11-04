@@ -1,26 +1,4 @@
-"""
-CRUD de Equipamentos (Fase 6), com fluxo de aprovação integrado a
-partir da Fase 7.
-
-Mesmo padrão de Unidades (Fase 5) e Serviços (Fase 6):
-
-- Consultar (listar/visualizar): qualquer usuário autenticado.
-- Solicitar (criar / editar / alterar situação): ADMINISTRADOR,
-  GESTAO_INFORMACAO e RESPONSAVEL_SAUDE_BUCAL. GESTOR nunca altera
-  dados.
-
-A PARTIR DA FASE 7: nenhuma dessas operações grava direto no banco —
-cada uma registra uma Alteracao PENDENTE (via
-app.services.alteracoes_service.registrar_alteracao) e só é aplicada
-quando aprovada em /alteracoes.
-
-Todo Equipamento pertence obrigatoriamente a uma Unidade. O vínculo
-com um Serviço é opcional — mas, se informado, o Serviço precisa
-existir E pertencer à MESMA Unidade selecionada para o equipamento;
-caso contrário, a inconsistência é bloqueada com uma mensagem
-amigável (nunca uma exceção crua), antes mesmo de a solicitação ser
-registrada.
-"""
+"""CRUD de Equipamentos (Fase 6), com fluxo de aprovação integrado a partir da Fase 7."""
 
 from flask import Blueprint, abort, flash, redirect, render_template, request, url_for
 
@@ -63,10 +41,7 @@ def _preencher_choices(form):
 
 
 def _validar_servico_pertence_a_unidade(servico_id, unidade_id):
-    """Retorna (servico, mensagem_de_erro). `servico` é None e a
-    mensagem é preenchida se houver qualquer inconsistência; do
-    contrário, `servico` é o objeto (ou None, se nenhum foi
-    selecionado) e a mensagem é None."""
+    """Retorna (servico, mensagem_de_erro)."""
     if servico_id is None:
         return None, None
 
@@ -82,10 +57,6 @@ def _validar_servico_pertence_a_unidade(servico_id, unidade_id):
 
     return servico, None
 
-
-# ----------------------------------------------------------------
-# Consulta — qualquer usuário autenticado
-# ----------------------------------------------------------------
 
 @equipamentos_bp.route("")
 @login_required
@@ -132,12 +103,6 @@ def visualizar(equipamento_id):
         form_situacao=AlterarSituacaoAtivoInativoForm(situacao=equipamento.situacao.value),
     )
 
-
-# ----------------------------------------------------------------
-# Solicitação de escrita — ADMINISTRADOR, GESTAO_INFORMACAO,
-# RESPONSAVEL_SAUDE_BUCAL. Cria Alteracao PENDENTE em vez de gravar
-# direto no banco.
-# ----------------------------------------------------------------
 
 @equipamentos_bp.route("/novo", methods=["GET", "POST"])
 @roles_required(*PERFIS_QUE_ALTERAM)

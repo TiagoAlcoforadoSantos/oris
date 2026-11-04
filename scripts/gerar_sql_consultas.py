@@ -1,13 +1,4 @@
-"""
-Gera database/consultas_etapa03.sql a partir do catálogo usado pela
-aplicação (app/bd/consultas.py) e dos DAOs (app/bd/dao_*.py).
-
-Assim o SQL entregue é EXATAMENTE o SQL executado pelo sistema. Os
-parâmetros `%(nome)s` / `%s` são trocados por valores de exemplo para
-que o arquivo possa ser executado direto no MySQL Workbench / cliente.
-
-    python scripts/gerar_sql_consultas.py
-"""
+"""Gera database/consultas_etapa03.sql a partir do catálogo usado pela aplicação..."""
 
 import re
 import sys

@@ -1,37 +1,4 @@
-"""
-Serviço central do fluxo de aprovação de alterações (Fase 7), agora
-integrado à auditoria (Fase 8).
-
-Centraliza aqui, em um único lugar, a lógica de:
-
-- registrar uma alteração pendente (chamado pelas rotas de
-  Unidade/Serviço/Equipamento, em vez de escreverem direto no banco)
-  — e também audita a SOLICITAÇÃO (ação SOLICITAR_ALTERACAO);
-- aplicar uma alteração pendente (criar o registro, editar campos, ou
-  só mudar a situação — depende de `operacao`), calculando o
-  antes/depois relevante para a auditoria;
-- aprovar/rejeitar uma alteração, com todas as regras de segurança
-  (perfil autorizado, alteração PENDENTE, solicitante nunca decide
-  sobre a própria alteração) — e também audita a DECISÃO
-  (APROVAR_ALTERACAO/REJEITAR_ALTERACAO) e, quando aprovada, a
-  mudança efetivamente aplicada (CRIAR/EDITAR/ALTERAR_SITUACAO).
-
-IMPORTANTE (Fase 8, distinção exigida): uma solicitação PENDENTE
-nunca gera um registro de auditoria como se já tivesse sido aplicada
-— a ação CRIAR/EDITAR/ALTERAR_SITUACAO só é auditada quando a
-alteração é de fato aprovada e aplicada. Enquanto pendente, a única
-auditoria existente é SOLICITAR_ALTERACAO.
-
-Todas as auditorias desta fase são adicionadas à mesma sessão/
-transação da operação que descrevem (via
-app.services.auditoria_service.registrar_auditoria, que só faz
-`add`, nunca `commit`) — se a operação falhar e sofrer rollback, a
-auditoria correspondente cai junto.
-
-Assim, `app/routes/unidades.py`, `servicos.py`, `equipamentos.py` e
-`alteracoes.py` reaproveitam as mesmas funções em vez de duplicar a
-lógica de workflow (e de auditoria) em cada rota.
-"""
+"""Serviço central do fluxo de aprovação de alterações (Fase 7), agora integrado à..."""
 
 import json
 
@@ -42,8 +9,6 @@ from app.models.alteracao import Alteracao
 from app.services.auditoria_service import registrar_auditoria
 from app.utils.datetime_utils import utcnow
 
-# Mapeia o nome da tabela (usado em Alteracao.tabela) para o model
-# SQLAlchemy correspondente.
 TABELA_MODELOS = {
     "unidades": Unidade,
     "servicos": Servico,
@@ -52,15 +17,7 @@ TABELA_MODELOS = {
 
 
 def registrar_alteracao(usuario, tabela, registro_id, operacao, dados_novos, descricao):
-    """Cria e salva uma Alteracao com status PENDENTE, e audita a
-    solicitação (ação SOLICITAR_ALTERACAO) na mesma transação.
-
-    Não aplica nada no registro de negócio — só registra a
-    solicitação, para ser aplicada (ou não) no momento da aprovação.
-
-    `dados_novos` é um dict com os valores necessários para aplicar a
-    operação depois; é serializado para JSON aqui.
-    """
+    """Cria e salva uma Alteracao com status PENDENTE, e audita a solicitação (ação..."""
     alteracao = Alteracao(
         usuario_id=usuario.id,
         tabela=tabela,
@@ -86,20 +43,7 @@ def registrar_alteracao(usuario, tabela, registro_id, operacao, dados_novos, des
 
 
 def _aplicar_alteracao(alteracao):
-    """Aplica de fato a alteração no registro de negócio
-    correspondente, dentro da transação corrente (sem commit — quem
-    chama decide quando commitar/reverter).
-
-    Retorna (True, registro_afetado, valor_anterior, valor_novo) em
-    caso de sucesso, ou (False, mensagem_de_erro, None, None) em caso
-    de falha "esperada" (ex.: registro não existe mais). `valor_
-    anterior`/`valor_novo` são dicts com só os campos relevantes,
-    prontos para a auditoria — nunca incluem senha/senha_hash, pois
-    nenhuma operação de Unidade/Serviço/Equipamento lida com esse
-    campo. Erros inesperados do banco (ex.: violação de unicidade)
-    não são tratados aqui — sobem para quem chamou decidir o rollback
-    (ver aprovar_alteracao).
-    """
+    """Aplica de fato a alteração no registro de negócio correspondente, dentro da..."""
     modelo = TABELA_MODELOS.get(alteracao.tabela)
     if modelo is None:
         return False, f"Tabela '{alteracao.tabela}' desconhecida.", None, None
@@ -111,10 +55,8 @@ def _aplicar_alteracao(alteracao):
         db.session.add(novo_registro)
         db.session.flush()  # obtém o id gerado e detecta erros de constraint cedo
         alteracao.registro_id = novo_registro.id
-        # Para criação não existe "antes" — o "depois" é o registro novo.
         return True, novo_registro, None, dados
 
-    # EDITAR ou ALTERAR_SITUACAO: o registro já precisa existir.
     registro = db.session.get(modelo, alteracao.registro_id)
     if registro is None:
         return False, "O registro afetado por esta alteração não existe mais.", None, None
@@ -123,12 +65,8 @@ def _aplicar_alteracao(alteracao):
     valor_novo = {}
     for campo, valor in dados.items():
         valor_atual_bruto = getattr(registro, campo)
-        # Normaliza Enums (ex.: situacao) para o valor "puro" (ex.:
-        # "ATIVA") antes de comparar — comparar a representação padrão
-        # de um Enum ("SituacaoUnidade.ATIVA") sempre daria "mudou".
         valor_atual = valor_atual_bruto.value if hasattr(valor_atual_bruto, "value") else valor_atual_bruto
 
-        # Só registra na auditoria os campos que realmente mudaram.
         if str(valor_atual) != str(valor):
             valor_anterior[campo] = valor_atual
             valor_novo[campo] = valor
@@ -139,14 +77,7 @@ def _aplicar_alteracao(alteracao):
 
 
 def aprovar_alteracao(alteracao, aprovador):
-    """Aprova uma alteração PENDENTE: aplica a mudança e marca como
-    APROVADO, tudo em uma única transação — se a aplicação falhar
-    (ex.: conflito de dados), nada é salvo e o status permanece
-    PENDENTE. Audita tanto a mudança efetivada (CRIAR/EDITAR/
-    ALTERAR_SITUACAO) quanto a decisão (APROVAR_ALTERACAO).
-
-    Retorna (True, mensagem) ou (False, mensagem).
-    """
+    """Aprova uma alteração PENDENTE"""
     if alteracao.status != StatusAlteracao.PENDENTE:
         return False, "Esta alteração já foi processada e não pode ser aprovada novamente."
 
@@ -167,9 +98,6 @@ def aprovar_alteracao(alteracao, aprovador):
     alteracao.approved_by = aprovador.id
     alteracao.approved_at = utcnow()
 
-    # Audita a mudança de fato efetivada no registro de negócio —
-    # atribuída ao solicitante original, que é quem "fez" a alteração
-    # em si (o aprovador apenas autorizou; isso é auditado à parte).
     solicitante = alteracao.usuario_criador
     registrar_auditoria(
         usuario=solicitante,
@@ -181,7 +109,6 @@ def aprovar_alteracao(alteracao, aprovador):
         valor_novo=valor_novo,
     )
 
-    # Audita a decisão de aprovação em si, atribuída ao aprovador.
     registrar_auditoria(
         usuario=aprovador,
         acao="APROVAR_ALTERACAO",
@@ -195,13 +122,7 @@ def aprovar_alteracao(alteracao, aprovador):
 
 
 def rejeitar_alteracao(alteracao, aprovador):
-    """Rejeita uma alteração PENDENTE: nada é aplicado (a mudança
-    nunca chegou a ser escrita no registro de negócio), só o status
-    da própria Alteracao muda. Audita a decisão (REJEITAR_ALTERACAO).
-
-    Mesma regra de segregação de funções da aprovação: o solicitante
-    não pode decidir sobre a própria alteração.
-    """
+    """Rejeita uma alteração PENDENTE"""
     if alteracao.status != StatusAlteracao.PENDENTE:
         return False, "Esta alteração já foi processada e não pode ser rejeitada novamente."
 

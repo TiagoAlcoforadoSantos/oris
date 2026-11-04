@@ -1,10 +1,4 @@
-"""
-DAO da trilha de auditoria — SQL explícito.
-
-Recebe o MESMO cursor da operação de negócio, para que o INSERT em
-`auditorias` faça parte da mesma transação (commit/rollback juntos).
-Horários em UTC, igual ao restante do ORIS (app/utils/datetime_utils).
-"""
+"""DAO da trilha de auditoria - SQL explícito."""
 
 import json
 

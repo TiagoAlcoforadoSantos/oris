@@ -1,11 +1,4 @@
-"""
-Gera database/seed_etapa03.sql — massa de dados FICTÍCIA para demonstrar
-a Etapa 03 (consultas, gráficos e estatística).
-
-Determinístico (seed fixa): rodar de novo gera exatamente o mesmo SQL.
-
-    python scripts/gerar_seed_etapa03.py
-"""
+"""Gera database/seed_etapa03.sql - massa de dados FICTÍCIA para demonstrar a Etapa 03..."""
 
 import random
 from datetime import datetime, timedelta
@@ -25,7 +18,6 @@ USUARIOS = [
     ("Gestor Demonstração", "gestor.demo@oris.example", "GESTOR"),
 ]
 
-# (nome, tipo, bairro, situacao) — nomes fictícios inspirados em bairros do Recife
 UNIDADES = [
     ("USF Alto do Mandu", "Unidade de Saúde da Família", "Casa Amarela", "ATIVA"),
     ("USF Vila Arraes", "Unidade de Saúde da Família", "Várzea", "ATIVA"),
@@ -61,9 +53,6 @@ UNIDADES = [
     ("USF Brasilit", "Unidade de Saúde da Família", "Várzea", "INATIVA"),
 ]
 
-# Pares com CNES compartilhado (unidades mistas):
-# (Policlínica Gouveia de Barros + CEO Centro) → marcadas corretamente
-# (Policlínica Arnaldo Marques + CEO Ibura)    → uma SEM a marcação (consulta C6 detecta)
 CNES_COMPARTILHADO = {
     "Policlínica Gouveia de Barros": ("9100021", 1),
     "CEO Centro": ("9100021", 1),
@@ -71,7 +60,6 @@ CNES_COMPARTILHADO = {
     "CEO Ibura": ("9100025", 0),
 }
 
-# Unidades ATIVAS deliberadamente sem equipamento ativo (consulta C3)
 SEM_EQUIPAMENTO = {"USF Coque", "USF Bongi", "USF Vietnã", "UBS Boa Viagem"}
 
 SERVICOS_BASICOS = ["Atenção Básica em Saúde Bucal"]
@@ -144,7 +132,6 @@ def main():
           f"VALUES ({q(nome)}, {q(email)}, {q(HASH_DEMO)}, {q(perfil)}, TRUE, {q(criado)}, {q(criado)});")
     w("")
 
-    # ---------------- Unidades ----------------
     w("-- Unidades")
     unidades = []
     for i, (nome, tipo, bairro, situacao) in enumerate(UNIDADES, start=1):
@@ -159,7 +146,6 @@ def main():
           f"{q(situacao)}, {q(criado)}, {q(atualizado)});")
     w("")
 
-    # ---------------- Serviços ----------------
     w("-- Serviços")
     servicos = []
     sid = 0
@@ -186,11 +172,9 @@ def main():
         for nome in nomes:
             situacao = "INATIVO" if u["situacao"] == "INATIVA" or random.random() < .08 else "ATIVO"
             add_servico(nome, u["id"], situacao)
-    # Serviço sem unidade (permitido desde a migration 0001)
     add_servico("Escovação supervisionada — ação itinerante em escolas", None)
     w("")
 
-    # ---------------- Equipamentos ----------------
     w("-- Equipamentos")
     eid = 0
     serv_por_unidade = {}
@@ -223,16 +207,13 @@ def main():
                 situacao = "INATIVO" if random.random() < .15 else "ATIVO"
             servico_id = random.choice(serv_por_unidade.get(u["id"], [None]) + [None])
             add_equip(f"{descricao} #{n + 1}", tipo, u["id"], servico_id, situacao)
-    # Equipamento sem unidade: consultório odontológico móvel
     add_equip("Unidade Odontológica Móvel (van)", "Unidade móvel", None, None, "ATIVO")
-    # Inconsistência herdada de planilha: equipamento da USF Pina ligado a serviço do CEO Centro
     ceo_centro = next(u["id"] for u in unidades if u["nome"] == "CEO Centro")
     usf_pina = next(u["id"] for u in unidades if u["nome"] == "USF Pina")
     add_equip("Ultrassom com jato de bicarbonato (importado de planilha)", "Ultrassom odontológico",
               usf_pina, serv_por_unidade[ceo_centro][0], "ATIVO")
     w("")
 
-    # ---------------- Alterações (fluxo de aprovação) ----------------
     w("-- Alterações (fluxo de aprovação) — usuários referenciados por email")
     solicitantes = ["rsb.demo@oris.example", "rsb2.demo@oris.example", "gi.demo@oris.example",
                     "admin.demo@oris.example"]

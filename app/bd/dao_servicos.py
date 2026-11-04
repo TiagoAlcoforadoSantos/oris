@@ -1,9 +1,4 @@
-"""
-DAO de Serviços — SQL explícito (PyMySQL / DB-API).
-
-A listagem usa LEFT JOIN com `unidades` porque um serviço pode existir
-sem unidade (ex.: ponto de vacinação em shopping).
-"""
+"""DAO de Serviços - SQL explícito (PyMySQL / DB-API)."""
 
 from app.bd import dao_auditoria
 from app.bd.conexao import ErroBanco, consultar, consultar_um, transacao

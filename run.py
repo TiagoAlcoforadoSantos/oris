@@ -1,9 +1,4 @@
-"""
-Ponto de entrada da aplicação ORIS.
-
-Uso:
-    python run.py
-"""
+"""Ponto de entrada da aplicação ORIS."""
 
 from app import create_app
 

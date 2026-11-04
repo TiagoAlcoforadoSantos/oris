@@ -1,13 +1,13 @@
 /*
- * ORIS — Estrutura Global (Fase 13B, Etapa 1)
+ * ORIS - Estrutura Global (Fase 13B, Etapa 1)
  * ---------------------------------------------------------------
  * Sidebar + Header + Conteúdo, construído sobre os tokens da
- * Fase 13A. Puramente visual/estrutural — nenhuma lógica de negócio
+ * Fase 13A. Puramente visual/estrutural - nenhuma lógica de negócio
  * aqui, só apresentação.
  *
  * O menu mobile usa a técnica do "checkbox hack" (um <input
  * type="checkbox"> oculto + <label for="..."> como botão) para abrir
- * e fechar a sidebar sem nenhum JavaScript — mantém a CSP restrita
+ * e fechar a sidebar sem nenhum JavaScript - mantém a CSP restrita
  * (sem scripts adicionais) e a página seguindo o modelo tradicional
  * de navegação do Flask.
  */
@@ -19,7 +19,7 @@
     min-height: 100vh;
 }
 
-/* Checkbox de controle do menu mobile — nunca visível. */
+/* Checkbox de controle do menu mobile - nunca visível. */
 .oris-sidebar-toggle {
     display: none;
 }
@@ -342,7 +342,7 @@
 
 @media (max-width: 991.98px) {
     .oris-sidebar {
-        /* fixed: fora do fluxo flex — antes, a sidebar escondida (sticky)
+        /* fixed: fora do fluxo flex - antes, a sidebar escondida (sticky)
            continuava ocupando a largura e espremia o conteúdo no celular */
         position: fixed;
         left: 0;

@@ -1,10 +1,4 @@
-"""
-Testes da FASE 7 — fluxo de alterações + aprovação.
-
-Roda contra SQLite em memória (TestingConfig). Cria um usuário de
-cada perfil e uma unidade de exemplo, para exercitar o fluxo de
-ponta a ponta: solicitar → PENDENTE → aprovar/rejeitar.
-"""
+"""Testes da FASE 7 - fluxo de alterações + aprovação."""
 
 import pytest
 
@@ -119,10 +113,6 @@ def _equipamento_id(app):
         return Equipamento.query.filter_by(nome="Cadeira Odontológica").first().id
 
 
-# ----------------------------------------------------------------
-# 1-3. Criar alteração: fica PENDENTE e registra o solicitante
-# ----------------------------------------------------------------
-
 def test_usuario_autorizado_cria_alteracao(client, app):
     _login(client, PerfilUsuario.RESPONSAVEL_SAUDE_BUCAL)
     resp = client.post("/unidades/nova", data=DADOS_UNIDADE_NOVA, follow_redirects=True)
@@ -131,16 +121,10 @@ def test_usuario_autorizado_cria_alteracao(client, app):
     with app.app_context():
         alteracao = Alteracao.query.filter_by(tabela="unidades", operacao="CRIAR").first()
         assert alteracao is not None
-        # 2. fica PENDENTE
         assert alteracao.status == StatusAlteracao.PENDENTE
-        # 3. registra o usuário solicitante
         responsavel = _usuario(app, PerfilUsuario.RESPONSAVEL_SAUDE_BUCAL)
         assert alteracao.usuario_id == responsavel.id
 
-
-# ----------------------------------------------------------------
-# 4-5. GESTAO_INFORMACAO e ADMINISTRADOR conseguem visualizar
-# ----------------------------------------------------------------
 
 def test_gestao_informacao_visualiza_alteracoes(client, app):
     _login(client, PerfilUsuario.RESPONSAVEL_SAUDE_BUCAL)
@@ -165,10 +149,6 @@ def test_administrador_visualiza_alteracoes(client, app):
     assert resp.status_code == 200
 
 
-# ----------------------------------------------------------------
-# 6-7. GESTOR e RESPONSAVEL_SAUDE_BUCAL não conseguem aprovar
-# ----------------------------------------------------------------
-
 def test_gestor_nao_consegue_aprovar(client, app):
     _login(client, PerfilUsuario.RESPONSAVEL_SAUDE_BUCAL)
     client.post("/unidades/nova", data=DADOS_UNIDADE_NOVA)
@@ -191,10 +171,6 @@ def test_responsavel_saude_bucal_nao_consegue_aprovar(client, app):
     assert resp.status_code == 403
 
 
-# ----------------------------------------------------------------
-# 8. Solicitante não consegue aprovar a própria alteração
-# ----------------------------------------------------------------
-
 def test_solicitante_nao_aprova_a_propria_alteracao_via_service(client, app):
     _login(client, PerfilUsuario.ADMINISTRADOR)
     client.post("/unidades/nova", data=DADOS_UNIDADE_NOVA)
@@ -209,14 +185,12 @@ def test_solicitante_nao_aprova_a_propria_alteracao_via_service(client, app):
 
 
 def test_solicitante_nao_aprova_a_propria_alteracao_via_rota(client, app):
-    # ADMINISTRADOR pode aprovar em geral, mas não a própria alteração
     _login(client, PerfilUsuario.ADMINISTRADOR)
     client.post("/unidades/nova", data=DADOS_UNIDADE_NOVA)
 
     with app.app_context():
         alteracao_id = Alteracao.query.filter_by(tabela="unidades", operacao="CRIAR").first().id
 
-    # Mesma sessão (o próprio administrador que criou) tenta aprovar
     resp = client.post(f"/alteracoes/{alteracao_id}/aprovar")
     assert resp.status_code == 403
 
@@ -224,10 +198,6 @@ def test_solicitante_nao_aprova_a_propria_alteracao_via_rota(client, app):
         alteracao = db.session.get(Alteracao, alteracao_id)
         assert alteracao.status == StatusAlteracao.PENDENTE
 
-
-# ----------------------------------------------------------------
-# 9-12. Outro usuário autorizado aprova; status/approved_by/approved_at
-# ----------------------------------------------------------------
 
 def test_outro_usuario_autorizado_aprova_e_registra_dados(client, app):
     _login(client, PerfilUsuario.RESPONSAVEL_SAUDE_BUCAL)
@@ -240,17 +210,10 @@ def test_outro_usuario_autorizado_aprova_e_registra_dados(client, app):
         ok, mensagem = aprovar_alteracao(alteracao, aprovador)
 
         assert ok is True
-        # 10. status -> APROVADO
         assert alteracao.status == StatusAlteracao.APROVADO
-        # 11. approved_by registrado
         assert alteracao.approved_by == aprovador.id
-        # 12. approved_at registrado
         assert alteracao.approved_at is not None
 
-
-# ----------------------------------------------------------------
-# 13-14. Rejeição altera status e registra responsável/data
-# ----------------------------------------------------------------
 
 def test_rejeicao_altera_status_e_registra_responsavel_e_data(client, app):
     _login(client, PerfilUsuario.RESPONSAVEL_SAUDE_BUCAL)
@@ -267,13 +230,8 @@ def test_rejeicao_altera_status_e_registra_responsavel_e_data(client, app):
         assert alteracao.approved_by == aprovador.id
         assert alteracao.approved_at is not None
 
-        # A unidade nunca chegou a ser criada
         assert Unidade.query.filter_by(cnes="7654321").first() is None
 
-
-# ----------------------------------------------------------------
-# 15-16. Alteração já decidida não pode ser decidida de novo
-# ----------------------------------------------------------------
 
 def test_alteracao_ja_aprovada_nao_pode_ser_aprovada_novamente(client, app):
     _login(client, PerfilUsuario.RESPONSAVEL_SAUDE_BUCAL)
@@ -305,10 +263,6 @@ def test_alteracao_ja_rejeitada_nao_pode_ser_rejeitada_novamente(client, app):
         assert "já foi processada" in mensagem
 
 
-# ----------------------------------------------------------------
-# 17. Alteração inexistente retorna 404
-# ----------------------------------------------------------------
-
 def test_alteracao_inexistente_retorna_404(client):
     _login(client, PerfilUsuario.ADMINISTRADOR)
     resp = client.get("/alteracoes/999999")
@@ -321,20 +275,11 @@ def test_aprovar_alteracao_inexistente_retorna_404(client):
     assert resp.status_code == 404
 
 
-# ----------------------------------------------------------------
-# 18. Usuário não autenticado não acessa alterações
-# ----------------------------------------------------------------
-
 def test_usuario_nao_autenticado_nao_acessa_alteracoes(client):
     resp = client.get("/alteracoes", follow_redirects=False)
     assert resp.status_code == 302
     assert "/login" in resp.headers["Location"]
 
-
-# ----------------------------------------------------------------
-# 19. Usuário sem permissão recebe 403 (RESPONSAVEL/GESTOR ao
-#     tentar aprovar/rejeitar — RBAC de rota)
-# ----------------------------------------------------------------
 
 def test_gestor_recebe_403_ao_tentar_rejeitar(client, app):
     _login(client, PerfilUsuario.RESPONSAVEL_SAUDE_BUCAL)
@@ -346,10 +291,6 @@ def test_gestor_recebe_403_ao_tentar_rejeitar(client, app):
     resp = client.post(f"/alteracoes/{alteracao_id}/rejeitar")
     assert resp.status_code == 403
 
-
-# ----------------------------------------------------------------
-# 20-22. Alteração de Unidade, Serviço e Equipamento
-# ----------------------------------------------------------------
 
 def test_alteracao_relacionada_a_unidade(client, app):
     _login(client, PerfilUsuario.RESPONSAVEL_SAUDE_BUCAL)
@@ -402,26 +343,8 @@ def test_alteracao_relacionada_a_equipamento(client, app):
         assert equipamento.situacao.value == "INATIVO"
 
 
-# ----------------------------------------------------------------
-# 23. Rollback em caso de erro (conflito de CNES detectado só no
-#     momento de aplicar duas criações pendentes com o mesmo CNES)
-# ----------------------------------------------------------------
-
 def test_rollback_ao_aprovar_alteracao_com_conflito_de_dados(client, app):
-    """CONTRATO ATUALIZADO (Stage "modelo de dados"): este teste usava
-    duas solicitações de CRIAR Unidade com o MESMO CNES para forçar um
-    conflito de banco na aprovação da segunda — isso deixou de ser um
-    conflito, porque o CNES não é mais único (unidade mista é um
-    cenário válido; ver test_fase2_models.py). O teste continua
-    existindo para cobrir o mesmo comportamento (rollback seguro
-    quando `_aplicar_alteracao` esbarra num erro inesperado do banco
-    ao aprovar), só que agora com um conflito genuíno e independente
-    de CNES: uma segunda Alteracao CRIAR cujos `dados_novos` omitem o
-    campo obrigatório `nome` (violação de NOT NULL), montada
-    diretamente via `registrar_alteracao` (a validação de
-    obrigatoriedade do formulário não entra em jogo aqui de propósito
-    — o objetivo é testar a defesa que existe na camada de aplicação
-    da alteração, não a validação do formulário)."""
+    """CONTRATO ATUALIZADO (Stage "modelo de dados")"""
     _login(client, PerfilUsuario.RESPONSAVEL_SAUDE_BUCAL)
 
     dados_a = dict(DADOS_UNIDADE_NOVA)
@@ -449,18 +372,9 @@ def test_rollback_ao_aprovar_alteracao_com_conflito_de_dados(client, app):
         assert ok_b is False
         assert "conflito" in mensagem_b.lower()
 
-        # A segunda alteração continua PENDENTE — nada foi aplicado
-        # parcialmente, e nenhuma unidade sem nome foi criada.
         assert alteracao_invalida.status == StatusAlteracao.PENDENTE
         assert Unidade.query.filter_by(cnes="9990001").count() == 0
 
-
-# ----------------------------------------------------------------
-# 24. Suíte completa das Fases 1-6 continua passando — ver execução
-#     conjunta de `pytest tests/` no relatório da Fase 7. Este teste
-#     aqui só garante que o próprio model está consistente após a
-#     extensão da Fase 7.
-# ----------------------------------------------------------------
 
 def test_modelo_alteracao_tem_os_novos_campos_da_fase7():
     from app.models import Alteracao as AlteracaoModel
@@ -469,7 +383,6 @@ def test_modelo_alteracao_tem_os_novos_campos_da_fase7():
     colunas = {coluna.name for coluna in AlteracaoModel.__table__.columns}
     assert "operacao" in colunas
     assert "dados_novos" in colunas
-    # registro_id precisa ser opcional (CRIAR ainda não tem registro)
     assert AlteracaoModel.__table__.columns["registro_id"].nullable is True
 
     assert {item.value for item in TipoOperacaoAlteracao} == {"CRIAR", "EDITAR", "ALTERAR_SITUACAO"}

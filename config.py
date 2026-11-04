@@ -1,28 +1,18 @@
-"""
-Configurações da aplicação ORIS.
-
-As configurações sensíveis (senhas, chaves) NUNCA devem ficar
-diretamente no código. Elas são lidas do arquivo .env através
-da biblioteca python-dotenv.
-"""
+"""Configurações da aplicação ORIS."""
 
 import os
 from datetime import timedelta
 
 from dotenv import load_dotenv
 
-# Carrega as variáveis definidas no arquivo .env para o ambiente
 load_dotenv()
 
 
 class Config:
     """Configuração base, compartilhada por todos os ambientes."""
 
-    # Chave usada pelo Flask para assinar cookies de sessão.
-    # Nunca deixar um valor fixo em produção — sempre vir do .env.
     SECRET_KEY = os.getenv("SECRET_KEY", "dev-key-insegura-trocar-no-env")
 
-    # --- Banco de dados (MySQL via SQLAlchemy) ---
     DB_HOST = os.getenv("DB_HOST", "localhost")
     DB_PORT = os.getenv("DB_PORT", "3306")
     DB_NAME = os.getenv("DB_NAME", "oris_db")
@@ -35,24 +25,14 @@ class Config:
     )
     SQLALCHEMY_TRACK_MODIFICATIONS = False
 
-    # --- Sessão ---
     SESSION_LIFETIME_MINUTES = int(os.getenv("SESSION_LIFETIME_MINUTES", "60"))
     PERMANENT_SESSION_LIFETIME = timedelta(minutes=SESSION_LIFETIME_MINUTES)
 
-    # Cookies de sessão mais seguros
     SESSION_COOKIE_HTTPONLY = True
     SESSION_COOKIE_SAMESITE = "Lax"
 
-    # Proteção CSRF (Flask-WTF)
     WTF_CSRF_ENABLED = True
 
-    # Rate limiting leve de login (Fase 12) — ligado por padrão;
-    # desligado só em TestingConfig, pelo mesmo motivo que
-    # WTF_CSRF_ENABLED também é: testes automatizados fazem muitas
-    # tentativas de login (certas de propósito, para exercitar
-    # validação) usando os mesmos emails repetidamente, e o contador
-    # é global ao processo — sem desligar, um teste acabaria
-    # bloqueando o login para os testes seguintes.
     RATE_LIMIT_LOGIN_ENABLED = True
 
 
@@ -71,8 +51,6 @@ class TestingConfig(Config):
     DEBUG = True
     WTF_CSRF_ENABLED = False
     RATE_LIMIT_LOGIN_ENABLED = False
-    # Banco de dados em memória (SQLite) apenas para testes automatizados,
-    # evitando depender de um MySQL real durante a suíte de testes.
     SQLALCHEMY_DATABASE_URI = "sqlite:///:memory:"
 
 

@@ -1,13 +1,4 @@
-"""
-Rotas de Alterações — fluxo de aprovação (Fase 7).
-
-- Consultar (listar/visualizar): qualquer usuário autenticado, para
-  acompanhar o status das solicitações (inclusive as próprias).
-- Aprovar/Rejeitar: somente ADMINISTRADOR e GESTAO_INFORMACAO
-  (app.utils.decorators.roles_required), com a regra extra — sempre
-  verificada no backend — de que o solicitante nunca pode aprovar ou
-  rejeitar a própria alteração (ver app/services/alteracoes_service.py).
-"""
+"""Rotas de Alterações - fluxo de aprovação (Fase 7)."""
 
 from flask import Blueprint, abort, flash, redirect, render_template, request, url_for
 
@@ -93,10 +84,6 @@ def aprovar(alteracao_id):
 
     aprovador = usuario_atual()
 
-    # A segregação de funções é regra de negócio (não uma questão de
-    # perfil), mas tratamos a tentativa de auto-aprovação como acesso
-    # negado (403) — consistente com o resto da aplicação, que nunca
-    # confia apenas na interface para bloquear ações indevidas.
     if alteracao.usuario_id == aprovador.id:
         abort(403)
 

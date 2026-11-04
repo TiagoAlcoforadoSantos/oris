@@ -1,23 +1,4 @@
-"""
-Testes da FASE 13B — Stage 4 (UX/UI da tela de Auditoria).
-
-Esta etapa é puramente visual — não altera rotas, models, RBAC ou a
-lógica que gera os registros de auditoria. Os testes aqui confirmam
-que:
-
-1. A listagem e o detalhe continuam acessíveis apenas para
-   ADMINISTRADOR e GESTAO_INFORMACAO — os demais perfis continuam
-   recebendo 403 (RBAC inalterado).
-2. Auditoria continua sendo somente leitura — nenhuma rota de
-   edição/exclusão foi criada.
-3. Os filtros existentes (usuário, ação, entidade, data) continuam
-   funcionando exatamente como antes.
-4. A tela diferencia "nenhum registro" de "nenhum resultado para o
-   filtro".
-5. Antes/Depois são exibidos corretamente quando existem, sem
-   inventar nenhum dado (reaproveitando os filtros já criados na
-   Stage 3 para Alteracao.dados_novos).
-"""
+"""Testes da FASE 13B - Stage 4 (UX/UI da tela de Auditoria)."""
 
 import pytest
 
@@ -88,10 +69,6 @@ def _ultimo_registro_id(app):
         return Auditoria.query.order_by(Auditoria.id.desc()).first().id
 
 
-# ----------------------------------------------------------------
-# RBAC preservado (nada mudou)
-# ----------------------------------------------------------------
-
 def test_administrador_acessa_lista_e_detalhe(client, app):
     _login(client, PerfilUsuario.ADMINISTRADOR)
     assert client.get("/auditoria").status_code == 200
@@ -121,10 +98,6 @@ def test_usuario_nao_autenticado_nao_acessa(client):
     assert resp.status_code == 302
     assert "/login" in resp.headers["Location"]
 
-
-# ----------------------------------------------------------------
-# Somente leitura — nenhuma rota de edição/exclusão
-# ----------------------------------------------------------------
 
 def test_auditoria_continua_somente_leitura(client, app):
     _login(client, PerfilUsuario.ADMINISTRADOR)
@@ -156,10 +129,6 @@ def test_lista_mostra_aviso_de_somente_leitura(client):
     assert "Somente leitura" in html
 
 
-# ----------------------------------------------------------------
-# Filtros existentes continuam funcionando (mesma lógica)
-# ----------------------------------------------------------------
-
 def test_filtro_por_acao_continua_funcionando(client):
     _login(client, PerfilUsuario.ADMINISTRADOR)
     html = client.get("/auditoria?acao=LOGIN").get_data(as_text=True)
@@ -182,20 +151,12 @@ def test_filtro_por_usuario_continua_funcionando(client, app):
     assert "Usuário ADMINISTRADOR" in html
 
 
-# ----------------------------------------------------------------
-# Estados vazios diferenciados
-# ----------------------------------------------------------------
-
 def test_filtro_sem_resultado_mostra_mensagem_especifica(client):
     _login(client, PerfilUsuario.ADMINISTRADOR)
     html = client.get("/auditoria?acao=ACAO_QUE_NAO_EXISTE").get_data(as_text=True)
     assert "Nenhum registro de auditoria encontrado." in html
     assert "ajustar os critérios" in html
 
-
-# ----------------------------------------------------------------
-# Antes/Depois — sem inventar dados
-# ----------------------------------------------------------------
 
 def test_detalhe_mostra_antes_e_depois_quando_existem(client, app):
     from app.models import Auditoria

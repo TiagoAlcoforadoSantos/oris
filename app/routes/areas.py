@@ -1,17 +1,4 @@
-"""
-Rotas de teste do RBAC (Fase 4).
-
-Estas rotas NÃO são funcionalidades reais do ORIS — servem apenas
-para comprovar que a autorização por perfil (`roles_required`) está
-funcionando corretamente. As telas reais de cada área (gestão de
-usuários, validação de alterações, cadastro de unidades etc.) serão
-implementadas nas fases seguintes.
-
-Os perfis permitidos em cada rota vêm de app.utils.rbac
-(AREAS_DE_TESTE_RBAC), a mesma matriz usada para decidir quais links
-aparecem na página inicial — evitando duplicar a lista de perfis em
-dois lugares.
-"""
+"""Rotas de teste do RBAC (Fase 4)."""
 
 from flask import Blueprint, render_template
 

@@ -1,9 +1,4 @@
-"""
-Testes da FASE 8 — auditoria e rastreabilidade.
-
-Roda contra SQLite em memória (TestingConfig). Reaproveita o padrão
-de fixtures das fases anteriores.
-"""
+"""Testes da FASE 8 - auditoria e rastreabilidade."""
 
 import pytest
 
@@ -114,10 +109,6 @@ def _equipamento_id(app):
         return Equipamento.query.filter_by(nome="Cadeira Odontológica").first().id
 
 
-# ----------------------------------------------------------------
-# 1-2. Login e logout geram auditoria
-# ----------------------------------------------------------------
-
 def test_login_gera_auditoria(client, app):
     _login(client, PerfilUsuario.ADMINISTRADOR)
 
@@ -137,17 +128,11 @@ def test_logout_gera_auditoria(client, app):
         assert registro is not None
 
 
-# ----------------------------------------------------------------
-# 3-5. Unidade: criação/edição/situação geram auditoria QUANDO
-# EFETIVADAS (após aprovação) — nunca no momento da solicitação
-# ----------------------------------------------------------------
-
 def test_criacao_de_unidade_gera_auditoria_apenas_quando_efetivada(client, app):
     _login(client, PerfilUsuario.RESPONSAVEL_SAUDE_BUCAL)
     client.post("/unidades/nova", data=DADOS_UNIDADE_NOVA)
 
     with app.app_context():
-        # Ainda pendente: nenhuma auditoria de CRIAR, só de SOLICITAR_ALTERACAO
         assert Auditoria.query.filter_by(acao="CRIAR", tabela="unidades").first() is None
         assert Auditoria.query.filter_by(acao="SOLICITAR_ALTERACAO", tabela="unidades").first() is not None
 
@@ -155,7 +140,6 @@ def test_criacao_de_unidade_gera_auditoria_apenas_quando_efetivada(client, app):
         aprovador = _usuario(app, PerfilUsuario.ADMINISTRADOR)
         aprovar_alteracao(alteracao, aprovador)
 
-        # Agora sim, auditoria de CRIAR existe
         registro = Auditoria.query.filter_by(acao="CRIAR", tabela="unidades").first()
         assert registro is not None
         assert registro.registro_id == alteracao.registro_id
@@ -193,10 +177,6 @@ def test_alteracao_de_situacao_gera_auditoria(client, app):
         registro = Auditoria.query.filter_by(acao="ALTERAR_SITUACAO", tabela="unidades").first()
         assert registro is not None
 
-
-# ----------------------------------------------------------------
-# 6-8. Solicitação, aprovação e rejeição geram auditoria
-# ----------------------------------------------------------------
 
 def test_solicitacao_de_alteracao_gera_auditoria(client, app):
     _login(client, PerfilUsuario.RESPONSAVEL_SAUDE_BUCAL)
@@ -236,13 +216,8 @@ def test_rejeicao_gera_auditoria(client, app):
         registro = Auditoria.query.filter_by(acao="REJEITAR_ALTERACAO").first()
         assert registro is not None
         assert registro.usuario_id == aprovador.id
-        # Rejeição nunca gera auditoria de CRIAR (nada foi aplicado)
         assert Auditoria.query.filter_by(acao="CRIAR", tabela="unidades").first() is None
 
-
-# ----------------------------------------------------------------
-# 9-10. Serviço e Equipamento também geram auditoria
-# ----------------------------------------------------------------
 
 def test_servico_gera_auditoria(client, app):
     _login(client, PerfilUsuario.ADMINISTRADOR)
@@ -276,11 +251,6 @@ def test_equipamento_gera_auditoria(client, app):
         assert registro.registro_id == equipamento_id
 
 
-# ----------------------------------------------------------------
-# 11-15. Auditoria registra usuário, data/hora, ação, entidade,
-# registro corretos
-# ----------------------------------------------------------------
-
 def test_auditoria_registra_usuario_data_acao_entidade_registro_corretos(client, app):
     _login(client, PerfilUsuario.ADMINISTRADOR)
     unidade_id = _unidade_id(app)
@@ -296,10 +266,6 @@ def test_auditoria_registra_usuario_data_acao_entidade_registro_corretos(client,
         assert registro.tabela == "unidades"  # 14. entidade correta
         assert registro.registro_id == unidade_id  # 15. registro correto
 
-
-# ----------------------------------------------------------------
-# 16-17. Edição registra valor anterior e valor novo
-# ----------------------------------------------------------------
 
 def test_edicao_registra_valor_anterior_e_novo(client, app):
     _login(client, PerfilUsuario.ADMINISTRADOR)
@@ -319,10 +285,6 @@ def test_edicao_registra_valor_anterior_e_novo(client, app):
         assert "MANUTENCAO" in registro.valor_novo
 
 
-# ----------------------------------------------------------------
-# 18. Senha não aparece na auditoria
-# ----------------------------------------------------------------
-
 def test_senha_nao_aparece_na_auditoria(client, app):
     _login(client, PerfilUsuario.ADMINISTRADOR)
 
@@ -335,10 +297,6 @@ def test_senha_nao_aparece_na_auditoria(client, app):
             assert "senha_hash" not in texto_completo
             assert "$2b$" not in texto_completo  # assinatura de hash bcrypt
 
-
-# ----------------------------------------------------------------
-# 19-21. Controle de acesso à consulta de auditoria
-# ----------------------------------------------------------------
 
 def test_usuario_nao_autorizado_nao_acessa_auditoria(client):
     _login(client, PerfilUsuario.RESPONSAVEL_SAUDE_BUCAL)
@@ -367,17 +325,12 @@ def test_administrador_consulta_auditoria(client):
     assert resp.status_code == 200
 
 
-# ----------------------------------------------------------------
-# 22-23. Auditoria não pode ser editada nem excluída via aplicação
-# ----------------------------------------------------------------
-
 def test_nao_existe_rota_de_edicao_de_auditoria(client, app):
     _login(client, PerfilUsuario.ADMINISTRADOR)
 
     with app.app_context():
         registro_id = Auditoria.query.first().id
 
-    # Nenhuma dessas rotas existe na aplicação
     resp = client.post(f"/auditoria/{registro_id}/editar", data={"descricao": "adulterado"})
     assert resp.status_code == 404
 
@@ -396,19 +349,11 @@ def test_nao_existe_rota_de_exclusao_de_auditoria(client, app):
     assert resp.status_code == 404
 
     resp = client.delete(f"/auditoria/{registro_id}")
-    # A rota GET /auditoria/<id> existe (visualizar); tentar DELETE
-    # nela retorna 405 (método não permitido) — não existe NENHUMA
-    # forma de excluir um registro de auditoria pela aplicação.
     assert resp.status_code in (404, 405)
 
     with app.app_context():
         assert Auditoria.query.count() == total_antes
 
-
-# ----------------------------------------------------------------
-# Extra: listagem ordenada por data/hora decrescente, filtros, e
-# página de detalhe mostra valor anterior/novo
-# ----------------------------------------------------------------
 
 def test_listagem_ordenada_por_data_decrescente(client, app):
     _login(client, PerfilUsuario.ADMINISTRADOR)
@@ -417,13 +362,9 @@ def test_listagem_ordenada_por_data_decrescente(client, app):
 
     with app.app_context():
         registros = Auditoria.query.order_by(Auditoria.data_hora.desc()).all()
-        # LOGIN aconteceu antes de SOLICITAR_ALTERACAO — na ordenação
-        # decrescente (mais recente primeiro), SOLICITAR_ALTERACAO
-        # deve vir antes de LOGIN.
         acoes_em_ordem = [r.acao for r in registros]
         assert acoes_em_ordem.index("SOLICITAR_ALTERACAO") < acoes_em_ordem.index("LOGIN")
 
-    # E a página /auditoria usa exatamente essa mesma ordenação.
     resp = client.get("/auditoria")
     assert resp.status_code == 200
 
@@ -458,10 +399,6 @@ def test_auditoria_inexistente_retorna_404(client):
     resp = client.get("/auditoria/999999")
     assert resp.status_code == 404
 
-
-# ----------------------------------------------------------------
-# Modelo: novos campos da Fase 8
-# ----------------------------------------------------------------
 
 def test_modelo_auditoria_tem_os_novos_campos_da_fase8():
     from app.models import Auditoria as AuditoriaModel

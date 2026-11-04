@@ -1,17 +1,4 @@
-"""
-Testes da FASE 1 — estrutura inicial do projeto.
-
-Nesta fase ainda não existem models de negócio, login ou rotas de
-CRUD. O objetivo aqui é apenas garantir que:
-
-- a aplicação Flask é criada corretamente;
-- a configuração é carregada;
-- a rota de health check responde;
-- rotas inexistentes retornam 404.
-
-Usamos a configuração de TESTE (SQLite em memória) para não
-depender de um MySQL real durante a suíte automatizada.
-"""
+"""Testes da FASE 1 - estrutura inicial do projeto."""
 
 from app import create_app
 from config import TestingConfig

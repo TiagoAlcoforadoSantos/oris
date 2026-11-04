@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="pt-br">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>API do ORIS — Swagger</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swagger-ui-dist@5.17.14/swagger-ui.css">
+    <style>
+        body { margin: 0; background: #F7FAFA; }
+        .oris-api-topo { background: #0B2A4A; color: #F7FAFA; padding: 14px 20px;
+                         font-family: "IBM Plex Sans", system-ui, sans-serif; }
+        .oris-api-topo a { color: #39C6D3; }
+    </style>
+</head>
+<body>
+    <div class="oris-api-topo">
+        <strong>ORIS</strong> · Documentação da API v1 ·
+        <a href="{{ url_for('auth.login') }}">Fazer login</a> para testar as rotas ·
+        <a href="{{ url_for('api.openapi_json') }}">openapi.json</a>
+    </div>
+    <div id="swagger-ui"></div>
+    <script src="https://cdn.jsdelivr.net/npm/swagger-ui-dist@5.17.14/swagger-ui-bundle.js"></script>
+    <script>
+        window.ui = SwaggerUIBundle({
+            url: "{{ url_for('api.openapi_json') }}",
+            dom_id: "#swagger-ui",
+            withCredentials: true,
+            docExpansion: "list",
+            defaultModelsExpandDepth: 0,
+        });
+    </script>
+</body>
+</html>
