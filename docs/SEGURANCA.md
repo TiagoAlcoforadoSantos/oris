@@ -32,10 +32,17 @@ validação de entrada, tratamento de erros, secrets e dependências.
 | SEC-006 | Nenhuma página de transparência/privacidade documentando finalidade, dados tratados e retenção | INFORMATIVO (LGPD) | **Corrigido nesta fase** (`/privacidade`) |
 | SEC-007 | `cryptography` presente no `requirements.txt` sem import direto no código da aplicação | INFORMATIVO | Documentado - é dependência transitiva legítima do `PyMySQL` para o método de autenticação padrão do MySQL 8 (`caching_sha2_password`); sem ela, a conexão ao MySQL real falha. Mantida. |
 | SEC-008 | O sistema aceita upload de CSV/XLSX - risco teórico de *formula injection* (`=`, `+`, `-`, `@`) se esses dados fossem depois reexportados para planilha | INFORMATIVO | Não aplicável: o ORIS **só lê** planilhas enviadas pelo usuário; nunca gera um arquivo de download contendo dados vindos de fora (o único CSV gerado - o modelo de importação - tem apenas cabeçalhos fixos, sem dados de banco ou de terceiros). Documentado como limitação/não-funcionalidade, não implementada proteção desnecessária. |
+| SEC-009 | `SECRET_KEY` com valor padrão público no código: se faltasse no `.env` em produção, cookies de sessão e tokens CSRF poderiam ser forjados | ALTO | **Corrigido na revisão pós-Etapa 03** - `create_app` recusa iniciar sem DEBUG/TESTING se a chave for vazia ou igual à padrão (`tests/test_secret_key_producao.py`) |
+| SEC-010 | Rate limit de login sem limpeza: `bloqueado()` criava entradas até para emails que nunca falharam e nada expirava, permitindo crescimento ilimitado de memória (DoS) | MÉDIO | **Corrigido** - consulta sem efeito colateral, purga de chaves expiradas e teto `MAX_CHAVES` (`tests/test_rate_limit.py`) |
+| SEC-011 | Respostas da API v1 (dependentes de sessão) sem `Cache-Control`, podendo ser guardadas por proxy/navegador compartilhado | BAIXO | **Corrigido** - `Cache-Control: no-store` em todo o blueprint `/api` (`tests/test_api_seguranca.py`) |
+| SEC-012 | `GET /logout` encerra a sessão sem token CSRF: um site externo pode deslogar o usuário (logout CSRF) | INFORMATIVO | Não corrigido - efeito limitado (sem perda de dados). Melhoria futura: tornar o logout `POST` com token CSRF, o que exige alterar o menu de todos os templates |
+| SEC-013 | Busca em `/bd/unidades` usa `LIKE` sem escapar `%` e `_` do termo digitado | INFORMATIVO | Não corrigido - o valor é parametrizado (sem injeção); só altera o casamento da própria busca do usuário |
 | - | RBAC de todas as rotas (`/usuarios`, `/auditoria`, `/alteracoes`, `/unidades`, `/servicos`, `/equipamentos`, `/importacao`, `/dashboard`) | - | Revisado - todas as rotas mutáveis usam `roles_required` com o(s) perfil(is) corretos; nenhuma rota depende só de esconder o link do menu |
+| - | API REST v1 (`/api/v1/*`, somente leitura) | - | Revisado - todos os endpoints de dados exigem sessão válida **e usuário ativo** (401 em JSON); métodos de escrita não existem; paginação limitada a 200 itens; filtros `situacao` validados por whitelist (400). **Decisão a confirmar com o grupo:** qualquer perfil autenticado lê a API (não há RBAC por perfil na leitura); como ela expõe só dados da rede e nenhum dado pessoal, foi mantido assim |
+| - | Módulo Banco de Dados (`/bd/*`) | - | Revisado - leitura exige login; inserir/alterar/excluir exigem `ADMINISTRADOR` ou `GESTAO_INFORMACAO` (403 para os demais, coberto em `test_etapa03_bd.py`); exclusão por `POST` com token CSRF |
 | - | IDOR (acesso a registros por ID) | - | Revisado - todo endpoint com `<id>` usa um `_buscar_..._ou_404`, retornando 404 para inexistente e 403 (via RBAC) para quem não tem permissão; o ORIS não tem modelo de "dono do registro", então não há isolamento por usuário a criar |
 | - | XSS | - | Revisado - nenhum uso de `\|safe` ou `Markup()` com dados de usuário em nenhum template; autoescape do Jinja nunca foi desativado |
-| - | SQL Injection | - | Revisado - nenhuma consulta SQL manual/concatenada em todo o projeto; 100% via SQLAlchemy ORM |
+| - | SQL Injection | - | Revisado (atualizado após a Etapa 03) - o código do ORM (`app/models`, `app/routes`, `app/services`) usa só SQLAlchemy. O módulo `app/bd/` usa **SQL explícito via PyMySQL**, sempre parametrizado (`%s` / `%(nome)s`); nenhuma consulta é montada por concatenação ou f-string. O teste `tests/test_bd_sql_estatico.py` (análise de AST) impede regressão. Parâmetros de consulta passam por whitelist em `ler_parametros` |
 | - | Secrets no código/histórico do projeto | - | Revisado - `.env` nunca foi commitado (confirmado via `git log`), `.env.example` só tem placeholders, nenhuma senha real ou token está no código-fonte ou nos testes |
 
 ### Nota sobre um achado fora do código-fonte
@@ -78,7 +85,9 @@ feita.
   `Referrer-Policy` e uma `Content-Security-Policy` básica em toda
   resposta.
 - **Proteção de secrets:** `SECRET_KEY` e credenciais de banco vêm do
-  `.env` (nunca hardcoded, nunca versionado).
+  `.env` (nunca hardcoded, nunca versionado). Em produção a aplicação
+  **não inicia** com `SECRET_KEY` vazia ou igual ao valor padrão de
+  desenvolvimento.
 - **LGPD/proteção de dados:** ver seção correspondente no
   `README.md` - finalidade, minimização, retenção e página de
   transparência (`/privacidade`).
@@ -91,7 +100,8 @@ feita.
   isso está fora do que uma aplicação Flask sozinha controla.
 - **Rate limiting:** a implementação atual é em memória, por
   processo - não é compartilhada entre múltiplos processos/workers
-  nem sobrevive a um restart. Para produção com múltiplos workers,
+  nem sobrevive a um restart (a memória é limitada por `MAX_CHAVES` e as
+  entradas expiradas são descartadas). Para produção com múltiplos workers,
   recomenda-se um backend compartilhado (ex.: Redis) - deliberadamente
   fora do escopo desta fase.
 - **Content-Security-Policy com `unsafe-inline`:** vários templates

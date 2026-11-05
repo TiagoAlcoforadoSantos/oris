@@ -4,7 +4,7 @@ from flask import Flask, render_template
 from flask_wtf.csrf import CSRFProtect
 
 from app.extensions import db
-from config import get_config
+from config import SECRET_KEY_PADRAO, get_config
 
 
 def create_app(config_object=None):
@@ -12,6 +12,15 @@ def create_app(config_object=None):
     app = Flask(__name__)
 
     app.config.from_object(config_object or get_config())
+
+    # Fail-fast: em produção, assinar sessões/CSRF com a chave padrão (pública no
+    # repositório) permitiria forjar cookies de sessão de qualquer perfil.
+    if not app.config.get("DEBUG") and not app.config.get("TESTING"):
+        if app.config.get("SECRET_KEY") in (None, "", SECRET_KEY_PADRAO):
+            raise RuntimeError(
+                "SECRET_KEY não configurada: defina uma chave aleatória e secreta "
+                "no .env antes de iniciar o ORIS em produção."
+            )
 
     app.json.ensure_ascii = False
 

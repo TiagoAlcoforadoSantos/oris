@@ -7,11 +7,15 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+# Valor de fallback usado apenas em desenvolvimento. Em produção a aplicação
+# se recusa a iniciar com ele (ver create_app).
+SECRET_KEY_PADRAO = "dev-key-insegura-trocar-no-env"
+
 
 class Config:
     """Configuração base, compartilhada por todos os ambientes."""
 
-    SECRET_KEY = os.getenv("SECRET_KEY", "dev-key-insegura-trocar-no-env")
+    SECRET_KEY = os.getenv("SECRET_KEY", SECRET_KEY_PADRAO)
 
     DB_HOST = os.getenv("DB_HOST", "localhost")
     DB_PORT = os.getenv("DB_PORT", "3306")
