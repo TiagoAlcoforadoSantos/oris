@@ -14,6 +14,8 @@ membros, ex.: `member` = DN do usuário) e, se existir, também pelo
 atributo `memberOf` do próprio usuário.
 """
 
+import ssl
+
 from flask import current_app
 
 from app.services.diretorio_service import DiretorioConfigError, UsuarioExterno
@@ -21,7 +23,7 @@ from app.services.diretorio_service import DiretorioConfigError, UsuarioExterno
 
 def _abrir_conexao(config):
     """Abre a conexão autenticada com a conta de serviço."""
-    from ldap3 import ALL, Connection, Server
+    from ldap3 import ALL, Connection, Server, Tls
 
     uri = config.get("LDAP_URI") or ""
     if not uri:
@@ -34,7 +36,21 @@ def _abrir_conexao(config):
             "(ou LDAP_ALLOW_INSECURE=true apenas em laboratório)."
         )
 
-    servidor = Server(uri, get_info=ALL, connect_timeout=10)
+    # O padrão do ldap3 é NÃO validar o certificado (CERT_NONE). Aqui a
+    # cadeia e o nome do servidor são sempre verificados; para uma CA
+    # interna, aponte LDAP_CA_CERT_FILE para o certificado da CA.
+    tls = Tls(
+        validate=ssl.CERT_REQUIRED,
+        version=ssl.PROTOCOL_TLS_CLIENT,
+        ca_certs_file=config.get("LDAP_CA_CERT_FILE") or None,
+    )
+    servidor = Server(
+        uri,
+        use_ssl=uri.lower().startswith("ldaps://"),
+        tls=tls,
+        get_info=ALL,
+        connect_timeout=10,
+    )
     conexao = Connection(
         servidor,
         user=config.get("LDAP_BIND_DN") or None,
@@ -101,7 +117,12 @@ def buscar_usuarios_ldap(config=None, conexao=None):
                 continue
             grupos = set(grupos_por_dn.get(str(entrada.entry_dn).strip().lower(), set()))
             for dn_grupo in _valores(entrada, "memberOf"):
-                # "CN=oris-admin,OU=Grupos,..." -> "oris-admin"
+                # Só vale grupo localizado DENTRO da base de grupos
+                # configurada; sem base, memberOf é ignorado. Evita que um
+                # grupo homônimo (ex.: "oris-admin") criado em outra OU
+                # conceda perfil. "CN=oris-admin,OU=Grupos,..." -> "oris-admin"
+                if not base_grupos or not dn_grupo.strip().lower().endswith("," + base_grupos.strip().lower()):
+                    continue
                 primeiro = dn_grupo.split(",")[0]
                 if "=" in primeiro:
                     grupos.add(primeiro.split("=", 1)[1])

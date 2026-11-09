@@ -48,6 +48,7 @@ class Config:
     LDAP_URI = os.getenv("LDAP_URI", "")  # ex.: ldaps://ldap.exemplo.com
     LDAP_USE_STARTTLS = os.getenv("LDAP_USE_STARTTLS", "false").lower() == "true"
     LDAP_ALLOW_INSECURE = os.getenv("LDAP_ALLOW_INSECURE", "false").lower() == "true"
+    LDAP_CA_CERT_FILE = os.getenv("LDAP_CA_CERT_FILE", "")  # CA interna (opcional)
     LDAP_BIND_DN = os.getenv("LDAP_BIND_DN", "")
     LDAP_BIND_PASSWORD = os.getenv("LDAP_BIND_PASSWORD", "")
     LDAP_USER_BASE = os.getenv("LDAP_USER_BASE", "")

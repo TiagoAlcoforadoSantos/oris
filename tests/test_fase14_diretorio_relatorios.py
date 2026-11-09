@@ -253,6 +253,45 @@ def test_ldap_sem_tls_e_recusado(app):
         _abrir_conexao({"LDAP_URI": "ldap://servidor.exemplo"})
 
 
+def test_ldap_valida_certificado_do_servidor(app, monkeypatch, tmp_path):
+    import ldap3
+    import ssl as _ssl
+
+    capturado = {}
+
+    class ServidorFalso:
+        def __init__(self, uri, **kwargs):
+            capturado.update(kwargs)
+
+    class ConexaoFalsa:
+        def __init__(self, *a, **k):
+            pass
+
+        def bind(self):
+            return True
+
+    monkeypatch.setattr(ldap3, "Server", ServidorFalso)
+    monkeypatch.setattr(ldap3, "Connection", ConexaoFalsa)
+    ca = tmp_path / "ca.pem"
+    ca.write_text("ca")
+    _abrir_conexao({"LDAP_URI": "ldaps://ldap.exemplo.test", "LDAP_CA_CERT_FILE": str(ca)})
+    assert capturado["use_ssl"] is True
+    assert capturado["tls"].validate == _ssl.CERT_REQUIRED
+    assert capturado["tls"].ca_certs_file == str(ca)
+
+
+def test_ldap_ignora_memberof_fora_da_base_de_grupos(app):
+    _config_ldap(app)
+    conexao = _conexao_ldap_mock()
+    conexao.strategy.add_entry(
+        "uid=eva,ou=pessoas,o=oris",
+        {"objectClass": ["person"], "uid": "eva", "cn": "Eva", "mail": "eva@rede.gov",
+         "memberOf": ["cn=oris-admin,ou=outra-ou,o=oris", "cn=oris-gestor,ou=grupos,o=oris"]},
+    )
+    eva = {e.identificador: e for e in buscar_usuarios_ldap(conexao=conexao)}["eva"]
+    assert eva.grupos == ["oris-gestor"]  # o "oris-admin" de outra OU e ignorado
+
+
 def test_ldap_sem_uri_e_recusado(app):
     with pytest.raises(DiretorioConfigError):
         _abrir_conexao({})
