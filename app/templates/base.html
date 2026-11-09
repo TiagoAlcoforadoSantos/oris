@@ -75,6 +75,10 @@
                    href="{{ url_for('bd.estatistica_painel') }}">
                     <i class="bi bi-bar-chart-line"></i> <span>Estatística</span>
                 </a>
+                <a class="oris-nav-item {% if request.blueprint == 'relatorios' %}active{% endif %}"
+                   href="{{ url_for('relatorios.index') }}">
+                    <i class="bi bi-file-earmark-bar-graph"></i> <span>Relatórios</span>
+                </a>
                 <a class="oris-nav-item {% if request.blueprint == 'importacao' %}active{% endif %}"
                    href="{{ url_for('importacao.index') }}">
                     <i class="bi bi-file-earmark-arrow-up"></i> <span>Importar</span>

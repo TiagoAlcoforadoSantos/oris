@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+
+{% block title %}Relatórios — ORIS{% endblock %}
+
+{% block breadcrumb %}
+    <a href="{{ url_for('dashboard.index') }}">Início</a>
+    <span aria-hidden="true">/</span>
+    <span class="oris-breadcrumb-current">Relatórios</span>
+{% endblock %}
+
+{% block content %}
+<div class="oris-page-header">
+    <div>
+        <h1>Relatórios</h1>
+        <p>Baixe os dados da rede em CSV{% if pode_exportar %} ou envie uma cópia ao armazenamento em nuvem (Amazon S3){% endif %}.</p>
+    </div>
+</div>
+
+{% if pode_exportar and not s3_ativo %}
+<div class="alert alert-info">
+    <i class="bi bi-info-circle" aria-hidden="true"></i>
+    A exportação para a nuvem está desativada: configure <code>S3_BUCKET</code> no ambiente.
+</div>
+{% endif %}
+
+<div class="table-responsive">
+    <table class="table table-hover align-middle">
+        <thead>
+            <tr><th>Relatório</th><th class="text-end">Ações</th></tr>
+        </thead>
+        <tbody>
+            {% for entidade in entidades %}
+            <tr>
+                <td>{{ titulos[entidade] }}</td>
+                <td class="text-end">
+                    <a href="{{ url_for('relatorios.baixar', entidade=entidade) }}" class="btn btn-outline-secondary btn-sm">
+                        <i class="bi bi-download" aria-hidden="true"></i> Baixar CSV
+                    </a>
+                    {% if pode_exportar and s3_ativo %}
+                    <form method="POST" action="{{ url_for('relatorios.exportar_s3', entidade=entidade) }}" class="d-inline">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <button type="submit" class="btn btn-primary btn-sm">
+                            <i class="bi bi-cloud-arrow-up" aria-hidden="true"></i> Exportar para S3
+                        </button>
+                    </form>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

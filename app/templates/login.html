@@ -57,6 +57,11 @@
 
                 {{ form.submit(class="btn btn-primary w-100") }}
             </form>
+            {% if config.get('OIDC_ENABLED') and config.get('OIDC_ISSUER') %}
+            <a href="{{ url_for('auth.login_oidc') }}" class="btn btn-outline-secondary w-100 mt-3">
+                <i class="bi bi-box-arrow-in-right" aria-hidden="true"></i> Entrar com login institucional (SSO)
+            </a>
+            {% endif %}
         </div>
 
         <p class="oris-login-footnote">

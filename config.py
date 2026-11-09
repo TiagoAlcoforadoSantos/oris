@@ -39,6 +39,45 @@ class Config:
 
     RATE_LIMIT_LOGIN_ENABLED = True
 
+    # --- Diretório externo: LDAP e OIDC (Requisito 3) ---
+    # Nada sensível fica no código: tudo vem do .env. Mapeamento
+    # grupo -> perfil RBAC, em JSON, ex.:
+    #   {"oris-admin": "ADMINISTRADOR", "oris-gestao": "GESTAO_INFORMACAO"}
+    DIRETORIO_MAPA_GRUPO_PERFIL = os.getenv("DIRETORIO_MAPA_GRUPO_PERFIL", "{}")
+
+    LDAP_URI = os.getenv("LDAP_URI", "")  # ex.: ldaps://ldap.exemplo.com
+    LDAP_USE_STARTTLS = os.getenv("LDAP_USE_STARTTLS", "false").lower() == "true"
+    LDAP_ALLOW_INSECURE = os.getenv("LDAP_ALLOW_INSECURE", "false").lower() == "true"
+    LDAP_BIND_DN = os.getenv("LDAP_BIND_DN", "")
+    LDAP_BIND_PASSWORD = os.getenv("LDAP_BIND_PASSWORD", "")
+    LDAP_USER_BASE = os.getenv("LDAP_USER_BASE", "")
+    LDAP_USER_FILTER = os.getenv("LDAP_USER_FILTER", "(objectClass=person)")
+    LDAP_GROUP_BASE = os.getenv("LDAP_GROUP_BASE", "")
+    LDAP_GROUP_FILTER = os.getenv("LDAP_GROUP_FILTER", "(objectClass=groupOfNames)")
+    LDAP_ATTR_ID = os.getenv("LDAP_ATTR_ID", "uid")
+    LDAP_ATTR_NOME = os.getenv("LDAP_ATTR_NOME", "cn")
+    LDAP_ATTR_EMAIL = os.getenv("LDAP_ATTR_EMAIL", "mail")
+    LDAP_ATTR_GROUP_NAME = os.getenv("LDAP_ATTR_GROUP_NAME", "cn")
+    LDAP_ATTR_GROUP_MEMBER = os.getenv("LDAP_ATTR_GROUP_MEMBER", "member")
+
+    OIDC_ENABLED = os.getenv("OIDC_ENABLED", "false").lower() == "true"
+    OIDC_ISSUER = os.getenv("OIDC_ISSUER", "")  # ex.: https://login.exemplo.com/realms/oris
+    OIDC_CLIENT_ID = os.getenv("OIDC_CLIENT_ID", "")
+    OIDC_CLIENT_SECRET = os.getenv("OIDC_CLIENT_SECRET", "")
+    OIDC_SCOPES = os.getenv("OIDC_SCOPES", "openid profile email")
+    OIDC_CLAIM_GROUPS = os.getenv("OIDC_CLAIM_GROUPS", "groups")
+    OIDC_ALLOW_INSECURE = os.getenv("OIDC_ALLOW_INSECURE", "false").lower() == "true"
+
+    # --- Exportação de relatórios para nuvem: Amazon S3 (Requisito 4) ---
+    # Credenciais NÃO ficam aqui: o boto3 as obtém da cadeia padrão da
+    # AWS (variáveis AWS_ACCESS_KEY_ID/AWS_SECRET_ACCESS_KEY, perfil
+    # ~/.aws ou IAM Role da instância).
+    S3_BUCKET = os.getenv("S3_BUCKET", "")
+    S3_REGION = os.getenv("S3_REGION", "")
+    S3_PREFIX = os.getenv("S3_PREFIX", "oris/relatorios")
+    S3_ENDPOINT_URL = os.getenv("S3_ENDPOINT_URL", "")  # opcional (MinIO/LocalStack)
+    S3_URL_EXPIRA_SEGUNDOS = int(os.getenv("S3_URL_EXPIRA_SEGUNDOS", "900"))
+
 
 class DevelopmentConfig(Config):
     DEBUG = True

@@ -29,10 +29,36 @@ CREATE TABLE IF NOT EXISTS usuarios (
     senha_hash VARCHAR(255) NOT NULL,
     perfil ENUM('ADMINISTRADOR', 'GESTAO_INFORMACAO', 'RESPONSAVEL_SAUDE_BUCAL', 'GESTOR') NOT NULL,
     ativo BOOL NOT NULL DEFAULT TRUE,
+    origem ENUM('LOCAL', 'LDAP', 'OIDC') NOT NULL DEFAULT 'LOCAL',
+    identificador_externo VARCHAR(255) NULL,
     created_at DATETIME NOT NULL,
     updated_at DATETIME NOT NULL,
     PRIMARY KEY (id),
-    UNIQUE KEY uk_usuarios_email (email)
+    UNIQUE KEY uk_usuarios_email (email),
+    KEY ix_usuarios_identificador_externo (identificador_externo)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- ----------------------------------------------------------
+-- Tabelas: grupos e usuario_grupos (Fase 14 - Requisito 3)
+-- Grupos vindos do LDAP/OIDC e a associacao N:N com usuarios.
+-- ----------------------------------------------------------
+CREATE TABLE IF NOT EXISTS grupos (
+    id INT NOT NULL AUTO_INCREMENT,
+    nome VARCHAR(150) NOT NULL,
+    origem ENUM('LOCAL', 'LDAP', 'OIDC') NOT NULL,
+    created_at DATETIME NOT NULL,
+    updated_at DATETIME NOT NULL,
+    PRIMARY KEY (id),
+    KEY ix_grupos_nome (nome),
+    UNIQUE KEY uk_grupos_nome_origem (nome, origem)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS usuario_grupos (
+    usuario_id INT NOT NULL,
+    grupo_id INT NOT NULL,
+    PRIMARY KEY (usuario_id, grupo_id),
+    CONSTRAINT fk_usuario_grupos_usuario FOREIGN KEY (usuario_id) REFERENCES usuarios (id) ON DELETE CASCADE,
+    CONSTRAINT fk_usuario_grupos_grupo FOREIGN KEY (grupo_id) REFERENCES grupos (id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Tabela: unidades

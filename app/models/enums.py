@@ -12,6 +12,15 @@ class PerfilUsuario(str, enum.Enum):
     GESTOR = "GESTOR"
 
 
+class OrigemDiretorio(str, enum.Enum):
+    """De onde vem um usuário ou grupo: cadastro local do ORIS ou um
+    diretório externo (LDAP / OIDC) — ver app/services/diretorio_service.py."""
+
+    LOCAL = "LOCAL"
+    LDAP = "LDAP"
+    OIDC = "OIDC"
+
+
 class SituacaoUnidade(str, enum.Enum):
     """Situações possíveis de uma Unidade de Saúde Bucal."""
 

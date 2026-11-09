@@ -43,6 +43,7 @@ def create_app(config_object=None):
     from app.routes.dashboard import dashboard_bp
     from app.routes.importacao import importacao_bp
     from app.routes.usuarios import usuarios_bp
+    from app.routes.relatorios import relatorios_bp
     from app.routes.privacidade import privacidade_bp
     from app.routes.design_system import design_system_bp
     from app.routes.bd import bd_bp
@@ -59,6 +60,7 @@ def create_app(config_object=None):
     app.register_blueprint(dashboard_bp)
     app.register_blueprint(importacao_bp)
     app.register_blueprint(usuarios_bp)
+    app.register_blueprint(relatorios_bp)
     app.register_blueprint(privacidade_bp)
     app.register_blueprint(design_system_bp)
     app.register_blueprint(bd_bp)

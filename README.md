@@ -193,6 +193,17 @@ alguns filtros de listagem. Detalhes em `docs/SEGURANCA.md`.
 > equipe sobre o código-fonte - não
 > substitui um pentest profissional nem uma auditoria de terceiros.
 
+## Integração com diretórios e nuvem (Fase 14)
+
+- **Arquitetura, papéis e recursos:** `docs/ARQUITETURA.md`.
+- **LDAP:** `flask sincronizar-ldap [--simular] [--manter-ausentes]` popula as
+  tabelas `usuarios` e `grupos` (`app/services/ldap_service.py`,
+  `app/services/diretorio_service.py`).
+- **OIDC:** botão de login institucional em `/login/oidc` (Authorization Code + PKCE).
+- **Relatórios e S3:** `/relatorios` baixa CSV; ADMINISTRADOR e GESTAO_INFORMACAO
+  exportam ao Amazon S3 (`app/services/armazenamento_service.py`).
+- Variáveis em `.env.example`; migração em `database/migrations/0002_*.sql`.
+
 ## Perfis de acesso
 
 O sistema tem 4 perfis:
