@@ -579,7 +579,40 @@ ORIS_TEST_MYSQL=1 python -m pytest tests/test_etapa06_dashboard_rotinas.py  # + 
 
 ## Como executar
 
-### Pré-requisitos
+### Início rápido (um comando)
+
+Pré-requisitos: **Python 3.10+** e **MySQL Server 8.x instalado e ligado**. Depois:
+
+```bash
+git clone https://github.com/ramonlealfrazao/oris.git
+cd oris
+python iniciar.py
+```
+
+No Windows também dá para dar dois cliques em `iniciar.bat`; no Linux/Mac, `sh iniciar.sh`.
+
+O script `iniciar.py` faz tudo sozinho e pode ser repetido sem problema:
+
+1. cria o ambiente virtual (`venv`) e instala o `requirements.txt`;
+2. cria o `.env` com `SECRET_KEY` e senha do banco gerados na hora;
+3. cria o banco `oris_db` e o usuário `oris_user` (pede a senha do `root` do MySQL só na primeira vez, e não a grava);
+4. cria as tabelas, funções, procedures, triggers e views;
+5. pergunta se quer carregar os dados fictícios de demonstração e os usuários de teste;
+6. sobe o sistema em http://127.0.0.1:5000 e abre o navegador.
+
+Usuários de demonstração (senha de todos: `Oris@2026`, **trocar antes de colocar no ar**):
+`admin.demo@oris.example` (ADMINISTRADOR), `gi.demo@oris.example` (GESTAO_INFORMACAO),
+`rsb.demo@oris.example` (RESPONSAVEL_SAUDE_BUCAL) e `gestor.demo@oris.example` (GESTOR).
+
+Opções: `python iniciar.py --sem-seed` (não carrega dados de demonstração) e
+`python iniciar.py --so-preparar` (prepara tudo, mas não liga o servidor).
+Depois da primeira vez, `python iniciar.py` só liga o sistema. Para rodar os testes: `python -m pytest`.
+
+Problemas comuns: *MySQL não conecta* → ligue o serviço (Windows: Serviços → MySQL80 → Iniciar;
+Linux: `sudo systemctl start mysql`); *`python` não encontrado* → instale o Python marcando "Add to PATH".
+O passo a passo manual está nas seções abaixo.
+
+### Pré-requisitos (instalação manual)
 
 - Python 3.10+
 - MySQL Server 8.x
