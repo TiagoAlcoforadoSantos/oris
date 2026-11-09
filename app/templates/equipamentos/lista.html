@@ -62,7 +62,7 @@
                 <option value="">Todos os serviços</option>
                 {% for servico in servicos %}
                     <option value="{{ servico.id }}" {% if servico_id_filtro == servico.id %}selected{% endif %}>
-                        {{ servico.nome }} — {{ servico.unidade.nome }}
+                        {{ servico.nome }} — {{ servico.unidade.nome if servico.unidade else "sem unidade" }}
                     </option>
                 {% endfor %}
             </select>
@@ -106,9 +106,11 @@
                 </td>
                 <td>{{ equipamento.tipo }}</td>
                 <td>
+                    {% if equipamento.unidade %}
                     <a href="{{ url_for('unidades.visualizar', unidade_id=equipamento.unidade.id) }}" class="text-decoration-none">
                         {{ equipamento.unidade.nome }}
                     </a>
+                    {% else %}<span class="text-muted">Sem unidade</span>{% endif %}
                 </td>
                 <td>
                     {% if equipamento.servico %}

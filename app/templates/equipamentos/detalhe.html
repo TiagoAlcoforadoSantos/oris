@@ -56,10 +56,12 @@
         <div>
             <dt>Unidade</dt>
             <dd>
+                {% if equipamento.unidade %}
                 <a href="{{ url_for('unidades.visualizar', unidade_id=equipamento.unidade.id) }}">
                     {{ equipamento.unidade.nome }}
                 </a>
                 ({{ equipamento.unidade.cnes }})
+                {% else %}<span class="text-muted">Sem unidade</span>{% endif %}
             </dd>
         </div>
         <div>

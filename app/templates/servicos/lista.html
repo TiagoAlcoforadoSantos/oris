@@ -92,9 +92,11 @@
                     </a>
                 </td>
                 <td>
+                    {% if servico.unidade %}
                     <a href="{{ url_for('unidades.visualizar', unidade_id=servico.unidade.id) }}" class="text-decoration-none">
                         {{ servico.unidade.nome }}
                     </a>
+                    {% else %}<span class="text-muted">Sem unidade</span>{% endif %}
                 </td>
                 <td>
                     {% if servico.situacao.value == "ATIVO" %}

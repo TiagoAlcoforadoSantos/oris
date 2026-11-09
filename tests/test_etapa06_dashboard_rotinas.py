@@ -195,3 +195,21 @@ def test_dashboard_e_views_respondem(admin_mysql):
     assert d["kpis"]["unidades"] >= 0 and "mensal" in d
     for url in ("/bd/rotinas", "/bd/dashboard", "/bd/consultas/v1", "/bd/consultas/v2", "/bd/consultas/v3"):
         assert c.get(url).status_code == 200
+
+
+# ------------------------------------------- regressão: itens sem unidade (vínculo opcional)
+def test_listas_e_detalhes_aceitam_servico_e_equipamento_sem_unidade(app_sqlite):
+    from app.models import Equipamento, Servico, SituacaoAtivoInativo
+    with app_sqlite.app_context():
+        s = Servico(nome="Servico sem unidade", unidade_id=None, situacao=SituacaoAtivoInativo.ATIVO)
+        db.session.add(s)
+        db.session.flush()
+        e = Equipamento(nome="Equip sem unidade", tipo="X", unidade_id=None, servico_id=None,
+                        situacao=SituacaoAtivoInativo.ATIVO)
+        db.session.add(e)
+        db.session.commit()
+        sid, eid = s.id, e.id
+    c = app_sqlite.test_client()
+    c.post("/login", data={"email": "gestor@oris.com.br", "senha": SENHA})
+    for url in ("/servicos", f"/servicos/{sid}", "/equipamentos", f"/equipamentos/{eid}"):
+        assert c.get(url).status_code == 200, url
