@@ -102,7 +102,7 @@ TRIGGERS = {
 }
 
 VIEWS = {
-    "vw_painel_unidades": "Painel por unidade (usa fn_pct_equip_operantes, fn_classificar_unidade e fn_custo_manutencao).",
+    "vw_painel_unidades": "Painel por unidade: equipamentos operantes, classificação, manutenções abertas e custo (autossuficiente).",
     "vw_manutencoes_detalhe": "Manutenções com equipamento, unidade e duração em dias.",
     "vw_resumo_manutencao_mensal": "Manutenções agregadas por mês e tipo (quantidade, custo, duração média).",
 }
@@ -136,16 +136,29 @@ def codigo_fonte(nome):
 
 
 def aplicar_objetos(conexao=None):
-    """Cria/recria todos os objetos. Devolve a quantidade de comandos executados."""
+    """Cria/recria os objetos, um comando por vez. Devolve (aplicados, ignorados).
+
+    Funções, procedimentos e triggers exigem, com o log binário ligado, o ajuste
+    `log_bin_trust_function_creators=1` feito por um administrador (erro 1419);
+    nesse caso o comando é ignorado e a lista `ignorados` o informa. As views
+    não dependem disso e sempre são criadas."""
     propria = conexao is None
     conexao = conexao or abrir_conexao()
+    aplicados, ignorados = 0, []
     try:
-        comandos = ler_comandos()
         with conexao.cursor() as cur:
-            for sql in comandos:  # DDL vindo do arquivo versionado do repositório
-                cur.execute(sql)
+            for sql in ler_comandos():  # DDL vindo do arquivo versionado do repositório
+                try:
+                    cur.execute(sql)
+                    aplicados += 1
+                except Exception as erro:
+                    if getattr(erro, "args", (None,))[0] != 1419:
+                        raise
+                    primeira = sql.splitlines()[0]
+                    if not primeira.upper().startswith("DROP"):
+                        ignorados.append(primeira.split("(")[0].strip())
         conexao.commit()
-        return len(comandos)
+        return aplicados, ignorados
     finally:
         if propria:
             conexao.close()

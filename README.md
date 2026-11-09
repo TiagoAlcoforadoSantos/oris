@@ -566,7 +566,8 @@ mysql -u oris_user -p oris_db < database/seed_etapa06.sql    # (opcional) 90 man
 python run.py                                  # abra http://127.0.0.1:5000/bd/dashboard
 ```
 **Atenção (erro 1419):** com o log binário do MySQL ligado (padrão do 8.0), o usuário da aplicação não pode criar
-funções/triggers. Uma única vez, como administrador (root):
+funções/triggers. As views, o dashboard e o CRUD funcionam mesmo assim; o script avisa o que foi ignorado. Para ativar
+funções e triggers, uma única vez, como administrador (root):
 `SET GLOBAL log_bin_trust_function_creators = 1;` (para ser permanente, ponha
 `log_bin_trust_function_creators=1` no `my.ini`). O script avisa isso e é idempotente.
 

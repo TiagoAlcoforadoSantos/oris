@@ -290,11 +290,11 @@ CONSULTAS += [
         "pergunta": "Qual a saúde operacional de cada unidade (equipamentos operantes, classificação, "
                     "manutenções abertas e custo)?",
         "nivel": "View",
-        "conceitos": ["CREATE VIEW", "Subconsultas escalares", "Chamada de FUNÇÕES do banco",
+        "conceitos": ["CREATE VIEW", "Subconsultas escalares", "CASE para classificar",
                       "Filtro por classificação"],
-        "explicacao": "vw_painel_unidades consolida, por unidade, contagens por subconsulta e chama as funções "
-                      "fn_pct_equip_operantes, fn_classificar_unidade e fn_custo_manutencao. A consulta abaixo "
-                      "só filtra a view.",
+        "explicacao": "vw_painel_unidades consolida, por unidade, contagens por subconsulta e classifica pelo "
+                      "percentual de equipamentos operantes (mesma regra da função fn_classificar_unidade). "
+                      "A consulta abaixo só filtra a view.",
         "parametros": [
             {"nome": "classificacao", "rotulo": "Classificação", "tipo": "select",
              "opcoes": OPCOES_CLASSIFICACAO, "padrao": "", "exemplo": "CRITICA"},

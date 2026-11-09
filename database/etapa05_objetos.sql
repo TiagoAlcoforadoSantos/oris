@@ -295,23 +295,38 @@ END $$
 -- =====================================================================
 
 CREATE OR REPLACE VIEW vw_painel_unidades AS
-SELECT u.id AS unidade_id,
-       u.nome AS unidade,
-       COALESCE(NULLIF(TRIM(u.tipo), ''), '(nao informado)') AS tipo,
-       u.bairro,
-       u.situacao,
-       (SELECT COUNT(*) FROM servicos s
-         WHERE s.unidade_id = u.id AND s.situacao = 'ATIVO')          AS servicos_ativos,
-       (SELECT COUNT(*) FROM equipamentos e WHERE e.unidade_id = u.id) AS equipamentos_total,
-       (SELECT COUNT(*) FROM equipamentos e
-         WHERE e.unidade_id = u.id AND e.situacao = 'ATIVO')          AS equipamentos_ativos,
-       fn_pct_equip_operantes(u.id)                                   AS pct_operantes,
-       fn_classificar_unidade(u.id)                                   AS classificacao,
-       (SELECT COUNT(*) FROM manutencoes m
-          JOIN equipamentos e ON e.id = m.equipamento_id
-         WHERE e.unidade_id = u.id AND m.situacao = 'ABERTA')         AS manutencoes_abertas,
-       fn_custo_manutencao(u.id, NULL)                                AS custo_manutencao
-  FROM unidades u $$
+-- Autossuficiente de proposito: nao chama as funcoes (criar funcoes/triggers
+-- exige privilegio extra do administrador; as views funcionam sem isso).
+-- A logica equivale a fn_pct_equip_operantes / fn_classificar_unidade /
+-- fn_custo_manutencao.
+SELECT t.unidade_id, t.unidade, t.tipo, t.bairro, t.situacao, t.servicos_ativos,
+       t.equipamentos_total, t.equipamentos_ativos, t.pct_operantes,
+       CASE WHEN t.pct_operantes IS NULL THEN 'SEM_EQUIPAMENTO'
+            WHEN t.pct_operantes < 50    THEN 'CRITICA'
+            WHEN t.pct_operantes < 80    THEN 'ATENCAO'
+            ELSE 'ADEQUADA' END                                       AS classificacao,
+       t.manutencoes_abertas, t.custo_manutencao
+  FROM (
+    SELECT u.id AS unidade_id,
+           u.nome AS unidade,
+           COALESCE(NULLIF(TRIM(u.tipo), ''), '(nao informado)') AS tipo,
+           u.bairro,
+           u.situacao,
+           (SELECT COUNT(*) FROM servicos s
+             WHERE s.unidade_id = u.id AND s.situacao = 'ATIVO')          AS servicos_ativos,
+           (SELECT COUNT(*) FROM equipamentos e WHERE e.unidade_id = u.id) AS equipamentos_total,
+           (SELECT COUNT(*) FROM equipamentos e
+             WHERE e.unidade_id = u.id AND e.situacao = 'ATIVO')          AS equipamentos_ativos,
+           (SELECT ROUND(100 * SUM(e.situacao = 'ATIVO') / COUNT(*), 1)
+              FROM equipamentos e WHERE e.unidade_id = u.id)              AS pct_operantes,
+           (SELECT COUNT(*) FROM manutencoes m
+              JOIN equipamentos e ON e.id = m.equipamento_id
+             WHERE e.unidade_id = u.id AND m.situacao = 'ABERTA')         AS manutencoes_abertas,
+           (SELECT COALESCE(SUM(m.custo), 0) FROM manutencoes m
+              JOIN equipamentos e ON e.id = m.equipamento_id
+             WHERE e.unidade_id = u.id AND m.situacao = 'CONCLUIDA')      AS custo_manutencao
+      FROM unidades u
+  ) t $$
 
 CREATE OR REPLACE VIEW vw_manutencoes_detalhe AS
 SELECT m.id,

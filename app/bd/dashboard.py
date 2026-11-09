@@ -1,7 +1,6 @@
 """Dashboard estatístico integrado (Etapa 06) - todos os números vêm do MySQL.
 
-Usa as VIEWS criadas em database/etapa05_objetos.sql (que por sua vez
-chamam as FUNÇÕES do banco). Filtros interativos: período (data de
+Usa as VIEWS criadas em database/etapa05_objetos.sql. Filtros interativos: período (data de
 abertura da manutenção), tipo e situação da unidade e tipo de manutenção.
 Todos os filtros viajam como parâmetros do driver (%(nome)s).
 """
