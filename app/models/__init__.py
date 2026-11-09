@@ -14,6 +14,8 @@ from app.models.unidade import Unidade
 from app.models.servico import Servico
 from app.models.equipamento import Equipamento
 from app.models.alteracao import Alteracao
+from app.models.manutencao import Manutencao
+from app.models.manutencao import Manutencao
 from app.models.auditoria import Auditoria
 
 __all__ = [
@@ -25,6 +27,8 @@ __all__ = [
     "Servico",
     "Equipamento",
     "Alteracao",
+    "Manutencao",
+    "Manutencao",
     "Auditoria",
     "PerfilUsuario",
     "SituacaoUnidade",

@@ -7,6 +7,9 @@
 
 {% macro badge_situacao(valor) -%}
 {% if valor in ("ATIVA", "ATIVO") %}<span class="badge bg-success">{{ valor|capitalize }}</span>
+{% elif valor == "CONCLUIDA" %}<span class="badge bg-success">Concluída</span>
+{% elif valor == "ABERTA" %}<span class="badge bg-warning text-dark">Aberta</span>
+{% elif valor == "CANCELADA" %}<span class="badge bg-secondary">Cancelada</span>
 {% elif valor == "MANUTENCAO" %}<span class="badge bg-warning text-dark">Manutenção</span>
 {% elif valor in ("INATIVA", "INATIVO") %}<span class="badge bg-secondary">{{ valor|capitalize }}</span>
 {% else %}{{ valor if valor is not none else "—" }}{% endif %}

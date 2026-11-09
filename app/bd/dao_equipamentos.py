@@ -74,6 +74,7 @@ def _valores(dados):
 def inserir(dados, usuario_id):
     _validar_vinculo(dados)
     with transacao() as cur:
+        dao_auditoria.definir_usuario(cur, usuario_id)
         cur.execute(SQL_INSERIR, _valores(dados))
         novo_id = cur.lastrowid
         dao_auditoria.registrar(
@@ -89,6 +90,7 @@ def atualizar(equipamento_id, dados, usuario_id):
         raise ErroBanco("Equipamento não encontrado.")
     _validar_vinculo(dados)
     with transacao() as cur:
+        dao_auditoria.definir_usuario(cur, usuario_id)
         cur.execute(SQL_ATUALIZAR, _valores(dados) + (equipamento_id,))
         mudou = {c: dados[c] for c in CAMPOS if str(anterior.get(c)) != str(dados.get(c))}
         dao_auditoria.registrar(
@@ -104,6 +106,7 @@ def excluir(equipamento_id, usuario_id):
     if anterior is None:
         raise ErroBanco("Equipamento não encontrado.")
     with transacao() as cur:
+        dao_auditoria.definir_usuario(cur, usuario_id)
         cur.execute(SQL_EXCLUIR, (equipamento_id,))
         dao_auditoria.registrar(
             cur, usuario_id, "BD_EXCLUIR", "equipamentos", equipamento_id,
@@ -111,3 +114,16 @@ def excluir(equipamento_id, usuario_id):
             valor_anterior={c: anterior.get(c) for c in CAMPOS},
         )
         return cur.rowcount
+
+
+SQL_OPCOES = """
+    SELECT e.id, e.nome, u.nome AS unidade_nome
+      FROM equipamentos e
+      LEFT JOIN unidades u ON u.id = e.unidade_id
+     ORDER BY e.nome
+"""
+
+
+def opcoes():
+    _, linhas = consultar(SQL_OPCOES)
+    return [(l["id"], f"{l['nome']} — {l['unidade_nome'] or 'sem unidade'}") for l in linhas]

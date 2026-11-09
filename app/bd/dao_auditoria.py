@@ -10,11 +10,19 @@ SQL_INSERIR_AUDITORIA = """
         (%s, %s, %s, %s, %s, %s, %s, UTC_TIMESTAMP())
 """
 
+SQL_DEFINIR_USUARIO = "SET @oris_usuario_id = %s"
+
 
 def _json(valor):
     if not valor:
         return None
     return json.dumps(valor, ensure_ascii=False, default=str)
+
+
+def definir_usuario(cur, usuario_id):
+    """Informa aos triggers do MySQL quem está operando (variável de sessão
+    @oris_usuario_id, lida por trg_equipamentos_au e trg_unidades_au)."""
+    cur.execute(SQL_DEFINIR_USUARIO, (usuario_id,))
 
 
 def registrar(cur, usuario_id, acao, tabela, registro_id, descricao,

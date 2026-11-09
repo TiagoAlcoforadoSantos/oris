@@ -1,8 +1,8 @@
 """Formulários do módulo BD (Etapa 03)."""
 
 from flask_wtf import FlaskForm
-from wtforms import BooleanField, SelectField, StringField, SubmitField
-from wtforms.validators import DataRequired, Length, Optional, Regexp
+from wtforms import BooleanField, DateField, DecimalField, SelectField, StringField, SubmitField
+from wtforms.validators import DataRequired, Length, NumberRange, Optional, Regexp
 
 from app.forms import CNES_REGEX
 
@@ -74,6 +74,25 @@ class EquipamentoBDForm(FlaskForm):
     def dados(self):
         return {"nome": self.nome.data.strip(), "tipo": self.tipo.data.strip(),
                 "unidade_id": self.unidade_id.data, "servico_id": self.servico_id.data,
+                "situacao": self.situacao.data}
+
+
+class ManutencaoBDForm(FlaskForm):
+    equipamento_id = SelectField("Equipamento", choices=[], coerce=int)
+    tipo = SelectField("Tipo", choices=[("PREVENTIVA", "Preventiva"), ("CORRETIVA", "Corretiva")])
+    descricao = StringField("Descrição", validators=[DataRequired(message="Informe a descrição."), Length(max=255)])
+    data_abertura = DateField("Data de abertura", validators=[DataRequired(message="Informe a data de abertura.")])
+    data_conclusao = DateField("Data de conclusão (opcional)", validators=[Optional()])
+    custo = DecimalField("Custo (R$)", places=2, default=0, validators=[
+        NumberRange(min=0, max=99999999, message="O custo não pode ser negativo.")])
+    situacao = SelectField("Situação", choices=[("ABERTA", "Aberta"), ("CONCLUIDA", "Concluída"),
+                                                 ("CANCELADA", "Cancelada")])
+    submit = SubmitField("Salvar")
+
+    def dados(self):
+        return {"equipamento_id": self.equipamento_id.data, "tipo": self.tipo.data,
+                "descricao": self.descricao.data.strip(), "data_abertura": self.data_abertura.data,
+                "data_conclusao": self.data_conclusao.data, "custo": self.custo.data or 0,
                 "situacao": self.situacao.data}
 
 

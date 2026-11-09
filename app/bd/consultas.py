@@ -275,6 +275,87 @@ SELECT e.id,
     },
 ]
 
+OPCOES_CLASSIFICACAO = [("", "Todas"), ("CRITICA", "Crítica"), ("ATENCAO", "Atenção"),
+                        ("ADEQUADA", "Adequada"), ("SEM_EQUIPAMENTO", "Sem equipamento")]
+OPCOES_TIPO_MANUT = [("", "Todos"), ("PREVENTIVA", "Preventiva"), ("CORRETIVA", "Corretiva")]
+OPCOES_SITUACAO_MANUT = [("", "Todas"), ("ABERTA", "Aberta"), ("CONCLUIDA", "Concluída"),
+                         ("CANCELADA", "Cancelada")]
+
+# Views da Etapa 06 (criadas em database/etapa05_objetos.sql). Entram no mesmo
+# catálogo: aparecem com filtros/parâmetros e gráfico, como as consultas.
+CONSULTAS += [
+    {
+        "id": "v1",
+        "titulo": "View: painel das unidades",
+        "pergunta": "Qual a saúde operacional de cada unidade (equipamentos operantes, classificação, "
+                    "manutenções abertas e custo)?",
+        "nivel": "View",
+        "conceitos": ["CREATE VIEW", "Subconsultas escalares", "Chamada de FUNÇÕES do banco",
+                      "Filtro por classificação"],
+        "explicacao": "vw_painel_unidades consolida, por unidade, contagens por subconsulta e chama as funções "
+                      "fn_pct_equip_operantes, fn_classificar_unidade e fn_custo_manutencao. A consulta abaixo "
+                      "só filtra a view.",
+        "parametros": [
+            {"nome": "classificacao", "rotulo": "Classificação", "tipo": "select",
+             "opcoes": OPCOES_CLASSIFICACAO, "padrao": "", "exemplo": "CRITICA"},
+            {"nome": "situacao", "rotulo": "Situação da unidade", "tipo": "select",
+             "opcoes": OPCOES_SITUACAO_UNIDADE, "padrao": "", "exemplo": "ATIVA"},
+        ],
+        "sql": """
+SELECT unidade_id AS id, unidade, tipo, situacao, servicos_ativos, equipamentos_total,
+       equipamentos_ativos, pct_operantes, classificacao, manutencoes_abertas, custo_manutencao
+  FROM vw_painel_unidades
+ WHERE (%(classificacao)s IS NULL OR classificacao = %(classificacao)s)
+   AND (%(situacao)s IS NULL OR situacao = %(situacao)s)
+ ORDER BY pct_operantes IS NULL, pct_operantes, unidade
+""",
+        "grafico": {"tipo": "bar", "rotulo": "unidade", "series": ["pct_operantes"]},
+    },
+    {
+        "id": "v2",
+        "titulo": "View: manutenções detalhadas",
+        "pergunta": "Quais manutenções existem, em qual equipamento/unidade e quanto tempo levaram?",
+        "nivel": "View",
+        "conceitos": ["CREATE VIEW", "JOIN em 3 tabelas", "DATEDIFF", "Filtros por tipo e situação"],
+        "explicacao": "vw_manutencoes_detalhe junta manutenções, equipamentos e unidades e calcula a duração "
+                      "em dias (até hoje, se ainda aberta).",
+        "parametros": [
+            {"nome": "tipo", "rotulo": "Tipo", "tipo": "select", "opcoes": OPCOES_TIPO_MANUT,
+             "padrao": "", "exemplo": "CORRETIVA"},
+            {"nome": "situacao", "rotulo": "Situação", "tipo": "select", "opcoes": OPCOES_SITUACAO_MANUT,
+             "padrao": "", "exemplo": "ABERTA"},
+        ],
+        "sql": """
+SELECT id, unidade, equipamento, tipo, situacao, data_abertura, data_conclusao, dias_duracao, custo
+  FROM vw_manutencoes_detalhe
+ WHERE (%(tipo)s IS NULL OR tipo = %(tipo)s)
+   AND (%(situacao)s IS NULL OR situacao = %(situacao)s)
+ ORDER BY data_abertura DESC, id DESC
+ LIMIT 200
+""",
+        "grafico": None,
+    },
+    {
+        "id": "v3",
+        "titulo": "View: manutenção por mês",
+        "pergunta": "Quantas manutenções e qual custo por mês, separados por tipo?",
+        "nivel": "View",
+        "conceitos": ["View sobre outra view", "GROUP BY", "SUM/AVG", "Série temporal"],
+        "explicacao": "vw_resumo_manutencao_mensal agrega vw_manutencoes_detalhe por mês e tipo.",
+        "parametros": [
+            {"nome": "tipo", "rotulo": "Tipo", "tipo": "select", "opcoes": OPCOES_TIPO_MANUT,
+             "padrao": "", "exemplo": "PREVENTIVA"},
+        ],
+        "sql": """
+SELECT mes, tipo, qtd, concluidas, custo_total, dias_medios
+  FROM vw_resumo_manutencao_mensal
+ WHERE (%(tipo)s IS NULL OR tipo = %(tipo)s)
+ ORDER BY mes, tipo
+""",
+        "grafico": {"tipo": "bar", "rotulo": "mes", "series": ["qtd"]},
+    },
+]
+
 CONSULTAS_POR_ID = {c["id"]: c for c in CONSULTAS}
 
 

@@ -1,0 +1,200 @@
+{% extends "base.html" %}
+{% from "bd/_macros.html" import sql_box %}
+
+{% block title %}Funções, procedimentos e triggers — ORIS{% endblock %}
+
+{% block breadcrumb %}
+    <a href="{{ url_for('dashboard.index') }}">Início</a>
+    <span aria-hidden="true">/</span>
+    <a href="{{ url_for('bd.index') }}">Banco de Dados</a>
+    <span aria-hidden="true">/</span>
+    <span class="oris-breadcrumb-current">Rotinas</span>
+{% endblock %}
+
+{% block extra_css %}
+<link href="{{ url_for('static', filename='css/bd.css') }}" rel="stylesheet">
+{% endblock %}
+
+{% macro campo(p, caller_id, ctx_unidades, ctx_equip, ctx_abertas, valor="") -%}
+<div>
+    <label class="form-label small mb-1" for="f-{{ p.nome }}-{{ caller_id }}">{{ p.rotulo }}</label>
+    {% if p.tipo == "unidade" %}
+    <select class="form-select form-select-sm" name="{{ p.nome }}" id="f-{{ p.nome }}-{{ caller_id }}" required>
+        {% for id, rotulo in ctx_unidades %}<option value="{{ id }}" {% if valor == id|string %}selected{% endif %}>{{ rotulo }}</option>{% endfor %}
+    </select>
+    {% elif p.tipo == "equipamento" %}
+    <select class="form-select form-select-sm" name="{{ p.nome }}" id="f-{{ p.nome }}-{{ caller_id }}" required>
+        {% for id, rotulo in ctx_equip %}<option value="{{ id }}" {% if valor == id|string %}selected{% endif %}>{{ rotulo }}</option>{% endfor %}
+    </select>
+    {% elif p.tipo == "manutencao_aberta" %}
+    <select class="form-select form-select-sm" name="{{ p.nome }}" id="f-{{ p.nome }}-{{ caller_id }}" required>
+        {% for id, rotulo in ctx_abertas %}<option value="{{ id }}" {% if valor == id|string %}selected{% endif %}>{{ rotulo }}</option>{% endfor %}
+    </select>
+    {% elif p.tipo == "tipo_manutencao" %}
+    <select class="form-select form-select-sm" name="{{ p.nome }}" id="f-{{ p.nome }}-{{ caller_id }}">
+        <option value="CORRETIVA" {% if valor == "CORRETIVA" %}selected{% endif %}>Corretiva (tira o equipamento de operação)</option>
+        <option value="PREVENTIVA" {% if valor == "PREVENTIVA" %}selected{% endif %}>Preventiva</option>
+    </select>
+    {% elif p.tipo == "ano" %}
+    <input class="form-control form-control-sm" type="number" min="2000" max="2100" name="{{ p.nome }}"
+           id="f-{{ p.nome }}-{{ caller_id }}" value="{{ valor }}" placeholder="todos">
+    {% elif p.tipo == "custo" %}
+    <input class="form-control form-control-sm" type="number" min="0" step="0.01" name="{{ p.nome }}"
+           id="f-{{ p.nome }}-{{ caller_id }}" value="{{ valor or '0' }}" required>
+    {% else %}
+    <input class="form-control form-control-sm" type="text" maxlength="255" name="{{ p.nome }}"
+           id="f-{{ p.nome }}-{{ caller_id }}" value="{{ valor }}" required>
+    {% endif %}
+</div>
+{%- endmacro %}
+
+{% block content %}
+<div class="oris-page-header">
+    <div>
+        <h1>Funções, procedimentos e triggers</h1>
+        <p>Objetos programados no MySQL (Etapa 05) executados e visualizados pela interface.</p>
+    </div>
+    <div class="oris-page-header-actions">
+        <a href="{{ url_for('bd.dashboard_integrado') }}" class="btn btn-outline-primary">
+            <i class="bi bi-speedometer2" aria-hidden="true"></i> Dashboard
+        </a>
+    </div>
+</div>
+
+{% if erro %}<div class="alert alert-danger">{{ erro }}</div>{% endif %}
+
+{% if resultado %}
+<div class="oris-panel mb-3" id="resultado" style="border-left:4px solid {{ '#D9534F' if resultado.erro else '#39A96B' }}">
+    <p class="oris-section-label">Resultado — {{ resultado.titulo }} (<code>{{ resultado.objeto }}</code>)</p>
+    {% if resultado.erro %}
+        <div class="alert alert-danger mb-0">{{ resultado.erro }}</div>
+        {% if resultado.procedimento %}<p class="small text-muted mt-2 mb-0">A transação sofreu ROLLBACK: nada foi alterado.</p>{% endif %}
+    {% elif resultado.procedimento %}
+        <p class="small text-muted">Parâmetros: <code>{{ resultado.parametros|tojson }}</code> · transação com COMMIT.</p>
+        {% if resultado.linhas %}
+        <div class="table-responsive"><table class="table table-sm bd-tabela mb-2">
+            <thead><tr>{% for c in resultado.colunas %}<th>{{ c }}</th>{% endfor %}</tr></thead>
+            <tbody>{% for l in resultado.linhas %}<tr>{% for c in resultado.colunas %}<td>{{ l[c] if l[c] is not none else "—" }}</td>{% endfor %}</tr>{% endfor %}</tbody>
+        </table></div>
+        {% else %}<p class="mb-2">Procedimento executado com sucesso (sem conjunto de resultados).</p>{% endif %}
+        <p class="small mb-0">Veja logo abaixo, em <a href="#efeitos">Efeitos dos triggers</a>, o que o banco fez automaticamente.</p>
+    {% else %}
+        <p class="small text-muted">Parâmetros: <code>{{ resultado.parametros|tojson }}</code></p>
+        <p class="display-6 mb-0">{{ resultado.valor if resultado.valor is not none else "NULL" }}</p>
+    {% endif %}
+</div>
+{% endif %}
+
+{% if existentes is not none %}
+<div class="oris-panel mb-3">
+    <p class="oris-section-label">Objetos no banco ({{ existentes.funcoes|length }} funções · {{ existentes.procedimentos|length }} procedimentos · {{ existentes.triggers|length }} triggers · {{ existentes.views|length }} views)</p>
+    {% set faltando = [] %}
+    {% for n in funcoes if n not in existentes.funcoes %}{% if faltando.append(n) %}{% endif %}{% endfor %}
+    {% for n in procedimentos if n not in existentes.procedimentos %}{% if faltando.append(n) %}{% endif %}{% endfor %}
+    {% for n in triggers if n not in existentes.triggers %}{% if faltando.append(n) %}{% endif %}{% endfor %}
+    {% for n in views if n not in existentes.views %}{% if faltando.append(n) %}{% endif %}{% endfor %}
+    {% if faltando %}
+    <div class="alert alert-warning mb-0">
+        Ainda não criados no banco: <code>{{ faltando|join(", ") }}</code>.
+        Execute <code>python database/aplicar_migracoes.py</code> (se o MySQL recusar com o erro 1419, rode
+        <code>SET GLOBAL log_bin_trust_function_creators = 1;</code> como administrador e repita).
+    </div>
+    {% else %}
+    <p class="mb-0 small text-success"><i class="bi bi-check-circle"></i> Todos os objetos da Etapa 05 estão criados no banco.</p>
+    {% endif %}
+</div>
+{% endif %}
+
+<p class="oris-section-label">Funções (retornam um valor)</p>
+<div class="row g-3 mb-4">
+    {% for nome, f in funcoes.items() %}
+    <div class="col-lg-4">
+        <form method="post" action="{{ url_for('bd.rotinas_executar') }}" class="oris-panel h-100 d-flex flex-column gap-2">
+            {{ form.hidden_tag() }}
+            <input type="hidden" name="objeto" value="{{ nome }}">
+            <h3 class="h6 mb-0">{{ f.titulo }}</h3>
+            <code class="small">{{ nome }}</code>
+            <p class="small text-muted mb-1">{{ f.descricao }}</p>
+            {% for p in f.parametros %}{{ campo(p, nome, unidades, equipamentos, manutencoes_abertas) }}{% endfor %}
+            <button class="btn btn-sm btn-primary mt-auto" type="submit"><i class="bi bi-play-fill"></i> Executar função</button>
+            {{ sql_box("Código no banco", fontes[nome]) }}
+        </form>
+    </div>
+    {% endfor %}
+</div>
+
+<p class="oris-section-label">Procedimentos (CALL em transação)</p>
+<div class="row g-3 mb-4">
+    {% for nome, f in procedimentos.items() %}
+    <div class="col-lg-6">
+        <form method="post" action="{{ url_for('bd.rotinas_executar') }}" class="oris-panel h-100 d-flex flex-column gap-2"
+              {% if f.escrita %}onsubmit="return confirm('Executar {{ nome }}? A operação altera dados (COMMIT).');"{% endif %}>
+            {{ form.hidden_tag() }}
+            <input type="hidden" name="objeto" value="{{ nome }}">
+            <h3 class="h6 mb-0">{{ f.titulo }}
+                {% if f.escrita %}<span class="badge bg-warning text-dark">altera dados</span>{% else %}<span class="badge bg-secondary">somente leitura</span>{% endif %}</h3>
+            <code class="small">CALL {{ nome }}(…)</code>
+            <p class="small text-muted mb-1">{{ f.descricao }}</p>
+            {% for p in f.parametros %}{{ campo(p, nome, unidades, equipamentos, manutencoes_abertas) }}{% endfor %}
+            {% if f.escrita and not pode_escrever %}
+            <p class="small text-muted mb-0">Somente ADMINISTRADOR e GESTÃO DA INFORMAÇÃO executam procedimentos que alteram dados.</p>
+            {% else %}
+            <button class="btn btn-sm btn-primary mt-auto" type="submit"><i class="bi bi-play-fill"></i> Chamar procedimento</button>
+            {% endif %}
+            {{ sql_box("Código no banco", fontes[nome]) }}
+        </form>
+    </div>
+    {% endfor %}
+</div>
+
+<p class="oris-section-label" id="efeitos">Triggers — efeitos visíveis</p>
+<div class="row g-3 mb-4">
+    <div class="col-lg-5">
+        <div class="oris-panel h-100">
+            <p class="small text-muted">Disparam sozinhos quando os dados mudam. Experimente: chame <strong>Abrir manutenção</strong>
+                (corretiva) e veja o equipamento ficar INATIVO; depois <strong>Concluir manutenção</strong> e veja voltar a ATIVO.</p>
+            <ul class="list-unstyled mb-0 small">
+                {% for nome, desc in triggers.items() %}
+                <li class="mb-2"><code>{{ nome }}</code><br><span class="text-muted">{{ desc }}</span>
+                    {{ sql_box("Código", fontes[nome]) }}</li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+    <div class="col-lg-7">
+        <div class="oris-panel p-0 h-100">
+            <div class="px-3 pt-3 pb-2"><span class="oris-section-label mb-0">Trilha gravada pelos triggers (últimas 30)</span></div>
+            {% if efeitos %}
+            <div class="table-responsive"><table class="table table-sm table-hover align-middle mb-0 bd-tabela">
+                <thead><tr><th>Quando (UTC)</th><th>Ação</th><th>Registro</th><th>De</th><th>Para</th></tr></thead>
+                <tbody>
+                {% for e in efeitos %}
+                <tr><td class="small">{{ e.data_hora }}</td>
+                    <td><code class="small">{{ e.acao }}</code></td>
+                    <td class="small">{{ e.tabela }} #{{ e.registro_id }}</td>
+                    <td>{{ e.valor_anterior or "—" }}</td><td>{{ e.valor_novo or "—" }}</td></tr>
+                {% endfor %}
+                </tbody>
+            </table></div>
+            {% else %}<p class="px-3 pb-3 text-muted mb-0">Nenhum efeito registrado ainda.</p>{% endif %}
+        </div>
+    </div>
+</div>
+
+<p class="oris-section-label">Views (consultas salvas no banco)</p>
+<div class="row g-3 mb-4">
+    {% for nome, desc in views.items() %}
+    <div class="col-lg-4">
+        <div class="oris-panel h-100">
+            <h3 class="h6"><code>{{ nome }}</code></h3>
+            <p class="small text-muted">{{ desc }}</p>
+            {{ sql_box("Código no banco", fontes[nome]) }}
+        </div>
+    </div>
+    {% endfor %}
+</div>
+<p class="small text-muted">As views podem ser consultadas com filtros e gráficos em
+    <a href="{{ url_for('bd.executar_consulta', consulta_id='v1') }}">V1</a>,
+    <a href="{{ url_for('bd.executar_consulta', consulta_id='v2') }}">V2</a> e
+    <a href="{{ url_for('bd.executar_consulta', consulta_id='v3') }}">V3</a>.</p>
+{% endblock %}

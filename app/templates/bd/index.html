@@ -22,6 +22,12 @@
         <a href="{{ url_for('bd.estatistica_painel') }}" class="btn btn-primary">
             <i class="bi bi-bar-chart-line" aria-hidden="true"></i> Painel estatístico
         </a>
+        <a href="{{ url_for('bd.dashboard_integrado') }}" class="btn btn-primary">
+            <i class="bi bi-speedometer2" aria-hidden="true"></i> Dashboard
+        </a>
+        <a href="{{ url_for('bd.rotinas') }}" class="btn btn-outline-primary">
+            <i class="bi bi-gear-wide-connected" aria-hidden="true"></i> Funções, procedures e triggers
+        </a>
     </div>
 </div>
 
@@ -42,7 +48,7 @@
 </div>
 
 <div class="d-flex justify-content-between align-items-end">
-    <p class="oris-section-label mb-2">Consultas da Etapa 03 ({{ consultas|length }})</p>
+    <p class="oris-section-label mb-2">Consultas e views das Etapas 03 a 06 ({{ consultas|length }})</p>
     <a href="{{ url_for('bd.consultas') }}" class="small">Ver catálogo completo</a>
 </div>
 <div class="row g-3 mb-4">

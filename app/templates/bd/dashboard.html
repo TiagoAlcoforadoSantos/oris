@@ -1,0 +1,132 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard do banco — ORIS{% endblock %}
+
+{% block breadcrumb %}
+    <a href="{{ url_for('dashboard.index') }}">Início</a>
+    <span aria-hidden="true">/</span>
+    <a href="{{ url_for('bd.index') }}">Banco de Dados</a>
+    <span aria-hidden="true">/</span>
+    <span class="oris-breadcrumb-current">Dashboard</span>
+{% endblock %}
+
+{% block extra_css %}
+<link href="{{ url_for('static', filename='css/bd.css') }}" rel="stylesheet">
+<style>
+    .dbd-kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: .75rem; margin-bottom: 1rem; }
+    .dbd-kpi { background: var(--oris-surface, #fff); border: 1px solid var(--oris-border, #dfe7ea); border-radius: 12px; padding: .9rem 1rem; }
+    .dbd-kpi small { display: block; color: var(--oris-text-muted, #5B6B73); }
+    .dbd-kpi strong { display: block; font-family: "Space Grotesk", sans-serif; font-size: 1.6rem; line-height: 1.2; }
+    .dbd-kpi .dbd-sub { font-size: .8rem; color: var(--oris-text-muted, #5B6B73); }
+    .dbd-up { color: #D9534F; } .dbd-down { color: #39A96B; }
+    .dbd-chart { position: relative; height: 270px; }
+    .dbd-loading { opacity: .45; transition: opacity .15s; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="oris-page-header">
+    <div>
+        <h1>Dashboard do banco de dados</h1>
+        <p>Indicadores e gráficos calculados no MySQL (views e funções), com filtros interativos.</p>
+    </div>
+    <div class="oris-page-header-actions">
+        <a href="{{ url_for('bd.rotinas') }}" class="btn btn-outline-primary"><i class="bi bi-gear-wide-connected"></i> Rotinas</a>
+        <a href="{{ url_for('bd.consultas') }}" class="btn btn-outline-primary"><i class="bi bi-search"></i> Consultas e views</a>
+    </div>
+</div>
+
+{% if erro %}<div class="alert alert-danger">{{ erro }}</div>{% else %}
+
+<form id="filtros" class="bd-filtros oris-panel" onsubmit="return false;">
+    <div>
+        <label class="form-label small mb-1" for="data_ini">Manutenções de</label>
+        <input class="form-control form-control-sm" type="date" id="data_ini" name="data_ini">
+    </div>
+    <div>
+        <label class="form-label small mb-1" for="data_fim">até</label>
+        <input class="form-control form-control-sm" type="date" id="data_fim" name="data_fim">
+    </div>
+    <div>
+        <label class="form-label small mb-1" for="periodo">Período rápido</label>
+        <select class="form-select form-select-sm" id="periodo">
+            <option value="">Personalizado</option>
+            <option value="3">Últimos 3 meses</option>
+            <option value="6">Últimos 6 meses</option>
+            <option value="12">Últimos 12 meses</option>
+            <option value="0">Todo o histórico</option>
+        </select>
+    </div>
+    <div>
+        <label class="form-label small mb-1" for="unidade_tipo">Tipo de unidade</label>
+        <select class="form-select form-select-sm" id="unidade_tipo" name="unidade_tipo">
+            <option value="">Todos</option>
+            {% for t in opcoes.tipos_unidade %}<option value="{{ t }}">{{ t }}</option>{% endfor %}
+        </select>
+    </div>
+    <div>
+        <label class="form-label small mb-1" for="unidade_situacao">Situação da unidade</label>
+        <select class="form-select form-select-sm" id="unidade_situacao" name="unidade_situacao">
+            <option value="">Todas</option><option value="ATIVA">Ativa</option>
+            <option value="INATIVA">Inativa</option><option value="MANUTENCAO">Manutenção</option>
+        </select>
+    </div>
+    <div>
+        <label class="form-label small mb-1" for="tipo_manutencao">Tipo de manutenção</label>
+        <select class="form-select form-select-sm" id="tipo_manutencao" name="tipo_manutencao">
+            <option value="">Todos</option><option value="PREVENTIVA">Preventiva</option>
+            <option value="CORRETIVA">Corretiva</option>
+        </select>
+    </div>
+    <button class="btn btn-sm btn-link" type="button" id="limpar">Limpar filtros</button>
+</form>
+
+<div id="alerta" class="alert alert-danger d-none"></div>
+
+<div class="dbd-kpis" id="kpis" aria-live="polite"></div>
+
+<div id="painel">
+    <div class="row g-3 mb-3">
+        <div class="col-lg-4"><div class="oris-panel h-100">
+            <p class="oris-section-label">Unidades por classificação (pizza)</p>
+            <div class="dbd-chart"><canvas id="g-class"></canvas></div></div></div>
+        <div class="col-lg-8"><div class="oris-panel h-100">
+            <p class="oris-section-label">Manutenções e custo por mês (linha)</p>
+            <div class="dbd-chart"><canvas id="g-mensal"></canvas></div></div></div>
+    </div>
+    <div class="row g-3 mb-3">
+        <div class="col-lg-6"><div class="oris-panel h-100">
+            <p class="oris-section-label">Equipamentos por tipo — ativos × inativos (barras)</p>
+            <div class="dbd-chart"><canvas id="g-equip"></canvas></div></div></div>
+        <div class="col-lg-6"><div class="oris-panel h-100">
+            <p class="oris-section-label">Top 5 unidades por custo de manutenção (barras)</p>
+            <div class="dbd-chart"><canvas id="g-top"></canvas></div></div></div>
+    </div>
+    <div class="row g-3 mb-3">
+        <div class="col-lg-4"><div class="oris-panel h-100">
+            <p class="oris-section-label">Custo por tipo de manutenção (rosca)</p>
+            <div class="dbd-chart"><canvas id="g-custo-tipo"></canvas></div></div></div>
+        <div class="col-lg-4"><div class="oris-panel h-100">
+            <p class="oris-section-label">Manutenções por tipo de equipamento (radar)</p>
+            <div class="dbd-chart"><canvas id="g-radar"></canvas></div></div></div>
+        <div class="col-lg-4"><div class="oris-panel p-0 h-100">
+            <div class="px-3 pt-3 pb-2"><span class="oris-section-label mb-0">Unidades que pedem atenção</span></div>
+            <div class="table-responsive"><table class="table table-sm align-middle mb-0 bd-tabela">
+                <thead><tr><th>Unidade</th><th>% oper.</th><th>Class.</th></tr></thead>
+                <tbody id="tabela-atencao"></tbody></table></div>
+        </div></div>
+    </div>
+</div>
+<p class="small text-muted">Fonte: <code>vw_painel_unidades</code>, <code>vw_manutencoes_detalhe</code> e
+    <code>equipamentos</code>, via <code>GET /bd/dashboard/dados</code>. Tendência = variação do nº de manutenções do último mês
+    do período em relação ao mês anterior.</p>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+{% if not erro %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script src="{{ url_for('static', filename='js/bd-charts.js') }}"></script>
+<script src="{{ url_for('static', filename='js/bd-dashboard.js') }}"></script>
+{% endif %}
+{% endblock %}

@@ -525,6 +525,57 @@ python -m pytest tests/test_etapa03_bd.py            # sem MySQL (catálogo e RB
 ORIS_TEST_MYSQL=1 python -m pytest tests/test_etapa03_bd.py   # + integração com MySQL
 ```
 
+## Etapa 06 - Versão final: dashboard, rotinas do banco e 4 tabelas no CRUD
+
+Entrega da versão definitiva integrada ao MySQL. Tudo que aparece nas telas abaixo
+vem de consultas SQL ao banco (PyMySQL, com parâmetros `%s`/`%(nome)s`).
+
+| Requisito | Onde está | Tela |
+|---|---|---|
+| CRUD em ao menos 4 tabelas | `unidades`, `servicos`, `equipamentos` e **`manutencoes`** (nova): `app/bd/dao_*.py`, `app/routes/bd.py` | `/bd`, `/bd/manutencoes` |
+| Funções, procedimentos e triggers (Etapa 05) | `database/etapa05_objetos.sql` (3 funções, 4 procedimentos, 6 triggers); execução em `app/bd/objetos.py` | `/bd/rotinas` |
+| Consultas e views com filtros | 7 consultas (C1-C7) + 3 views (`vw_painel_unidades`, `vw_manutencoes_detalhe`, `vw_resumo_manutencao_mensal`) como V1-V3, com parâmetros e gráficos | `/bd/consultas`, `/bd/consultas/v1` |
+| Dashboard estatístico interativo | `app/bd/dashboard.py`, `app/templates/bd/dashboard.html`, `app/static/js/bd-dashboard.js` | `/bd/dashboard` |
+
+### Nova tabela: `manutencoes`
+Histórico de manutenção dos equipamentos (tipo PREVENTIVA/CORRETIVA, abertura, conclusão,
+custo, situação ABERTA/CONCLUIDA/CANCELADA). CRUD completo para ADMINISTRADOR e GESTÃO DA INFORMAÇÃO
+(demais perfis só leem), com auditoria na mesma transação.
+
+### Funções, procedimentos e triggers (`/bd/rotinas`)
+- **Funções:** `fn_pct_equip_operantes(unidade)`, `fn_classificar_unidade(unidade)` (CRITICA/ATENCAO/ADEQUADA),
+  `fn_custo_manutencao(unidade, ano)`. Executáveis na tela, com o código-fonte exibido.
+- **Procedimentos:** `sp_abrir_manutencao`, `sp_concluir_manutencao`, `sp_resumo_unidade`, `sp_inativar_unidade`
+  (chamados com `CALL` em transação; os que alteram dados exigem ADMINISTRADOR/GESTÃO DA INFORMAÇÃO e confirmação).
+- **Triggers:** validam manutenções (custo ≥ 0, conclusão ≥ abertura), tiram o equipamento de operação quando
+  uma corretiva é aberta e o devolvem quando ela é concluída/cancelada, e gravam em `auditorias` toda mudança
+  de situação de unidade/equipamento (`TRG_*`). A tela mostra a trilha gerada pelos triggers após cada chamada.
+- Os nomes de objetos executáveis vêm de uma lista fixa (nunca do usuário) e todos os valores vão como parâmetros.
+
+### Dashboard (`/bd/dashboard`)
+Indicadores (unidades, serviços, equipamentos, % operantes, manutenções e abertas, custo total e médio, duração
+média, tendência mensal) e gráficos de pizza, rosca, barras, linha+barras e radar, mais tabela de unidades em atenção.
+Filtros interativos que recarregam os dados sem recarregar a página: período (datas ou 3/6/12 meses), tipo e
+situação da unidade e tipo de manutenção. A URL guarda os filtros (link compartilhável).
+
+### Como rodar a Etapa 06
+```bash
+python database/aplicar_migracoes.py          # cria manutencoes + funções/procedimentos/triggers/views
+mysql -u oris_user -p oris_db < database/seed_etapa03.sql    # (opcional) dados de demonstração
+mysql -u oris_user -p oris_db < database/seed_etapa06.sql    # (opcional) 90 manutenções fictícias
+python run.py                                  # abra http://127.0.0.1:5000/bd/dashboard
+```
+**Atenção (erro 1419):** com o log binário do MySQL ligado (padrão do 8.0), o usuário da aplicação não pode criar
+funções/triggers. Uma única vez, como administrador (root):
+`SET GLOBAL log_bin_trust_function_creators = 1;` (para ser permanente, ponha
+`log_bin_trust_function_creators=1` no `my.ini`). O script avisa isso e é idempotente.
+
+### Testes da Etapa 06
+```bash
+python -m pytest tests/test_etapa06_dashboard_rotinas.py                    # sem MySQL
+ORIS_TEST_MYSQL=1 python -m pytest tests/test_etapa06_dashboard_rotinas.py  # + triggers/procedimentos reais
+```
+
 ## Como executar
 
 ### Pré-requisitos

@@ -80,6 +80,7 @@ def _valores(dados):
 
 def inserir(dados, usuario_id):
     with transacao() as cur:
+        dao_auditoria.definir_usuario(cur, usuario_id)
         cur.execute(SQL_INSERIR, _valores(dados))
         novo_id = cur.lastrowid  # ≈ getGeneratedKeys() do JDBC
         dao_auditoria.registrar(
@@ -95,6 +96,7 @@ def atualizar(unidade_id, dados, usuario_id):
     if anterior is None:
         raise ErroBanco("Unidade não encontrada.")
     with transacao() as cur:
+        dao_auditoria.definir_usuario(cur, usuario_id)
         cur.execute(SQL_ATUALIZAR, _valores(dados) + (unidade_id,))
         mudou = {c: dados[c] for c in CAMPOS if str(anterior.get(c)) != str(dados.get(c))}
         dao_auditoria.registrar(
@@ -120,6 +122,7 @@ def excluir(unidade_id, usuario_id):
         )
 
     with transacao() as cur:
+        dao_auditoria.definir_usuario(cur, usuario_id)
         cur.execute(SQL_EXCLUIR, (unidade_id,))
         dao_auditoria.registrar(
             cur, usuario_id, "BD_EXCLUIR", "unidades", unidade_id,

@@ -75,6 +75,25 @@ def main():
         else:
             print("Banco ja esta atualizado.")
 
+        # --- Etapa 05/06: tabela manutencoes (criada acima por create_all) e
+        # funcoes, procedimentos, triggers e views (database/etapa05_objetos.sql).
+        from app.bd import objetos
+
+        try:
+            total = objetos.aplicar_objetos()
+            print(f"Objetos do MySQL (funcoes/procedimentos/triggers/views): {total} comando(s) aplicados.")
+        except Exception as erro:
+            codigo = erro.args[0] if getattr(erro, "args", None) else None
+            if codigo == 1419:  # sem SUPER com log binario ligado
+                print(
+                    "AVISO: o MySQL recusou criar funcoes/triggers (erro 1419: binlog ligado e usuario sem SUPER).\n"
+                    "       Como administrador (root) execute UMA vez:\n"
+                    "         SET GLOBAL log_bin_trust_function_creators = 1;\n"
+                    "       e rode este script de novo."
+                )
+                sys.exit(2)
+            raise
+
 
 if __name__ == "__main__":
     main()

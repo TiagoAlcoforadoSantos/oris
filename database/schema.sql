@@ -128,6 +128,30 @@ CREATE TABLE IF NOT EXISTS equipamentos (
         FOREIGN KEY (servico_id) REFERENCES servicos (id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- Tabela: manutencoes (Etapa 06)
+-- Historico de manutencao dos equipamentos. Os triggers de
+-- database/etapa05_objetos.sql validam as datas/custo e mantem a
+-- situacao do equipamento coerente (corretiva aberta => INATIVO).
+CREATE TABLE IF NOT EXISTS manutencoes (
+    id INT NOT NULL AUTO_INCREMENT,
+    equipamento_id INT NOT NULL,
+    tipo ENUM('PREVENTIVA', 'CORRETIVA') NOT NULL,
+    descricao VARCHAR(255) NOT NULL,
+    data_abertura DATE NOT NULL,
+    data_conclusao DATE NULL,
+    custo DECIMAL(10, 2) NOT NULL DEFAULT 0,
+    situacao ENUM('ABERTA', 'CONCLUIDA', 'CANCELADA') NOT NULL DEFAULT 'ABERTA',
+    created_at DATETIME NOT NULL,
+    updated_at DATETIME NOT NULL,
+    PRIMARY KEY (id),
+    KEY ix_manutencoes_equipamento_id (equipamento_id),
+    CONSTRAINT fk_manutencoes_equipamento
+        FOREIGN KEY (equipamento_id) REFERENCES equipamentos (id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Funcoes, procedimentos, triggers e views: database/etapa05_objetos.sql
+-- (aplicados por database/aplicar_migracoes.py).
+
 -- Tabela: alteracoes
 -- Fluxo de aprovação (FASE 7). `tabela` + `registro_id` referenciam
 -- de forma genérica o registro afetado (ex.: tabela='unidades',

@@ -1,14 +1,17 @@
 """Módulo "Banco de Dados" — Etapa 03 (interface funcional com dashboard)."""
 
 import os
+from decimal import Decimal, InvalidOperation
 
-from flask import (Blueprint, abort, current_app, flash, redirect, render_template,
+from flask import (Blueprint, abort, current_app, flash, jsonify, redirect, render_template,
                    request, url_for)
 
 from app.bd import consultas as cat_consultas
-from app.bd import dao_equipamentos, dao_servicos, dao_unidades, estatistica
+from app.bd import dashboard as dash_bd
+from app.bd import objetos
+from app.bd import dao_equipamentos, dao_manutencoes, dao_servicos, dao_unidades, estatistica
 from app.bd.conexao import ErroBanco
-from app.bd.forms import EquipamentoBDForm, ExcluirForm, ServicoBDForm, UnidadeBDForm
+from app.bd.forms import EquipamentoBDForm, ExcluirForm, ManutencaoBDForm, ServicoBDForm, UnidadeBDForm
 from app.models import PerfilUsuario
 from app.utils.decorators import login_required, roles_required, usuario_atual
 
@@ -57,6 +60,18 @@ ENTIDADES = {
         "busca": False,
         "filtro_unidade": True,
     },
+    "manutencoes": {
+        "titulo": "Manutenções",
+        "singular": "manutenção",
+        "icone": "bi-wrench-adjustable",
+        "dao": dao_manutencoes,
+        "form": ManutencaoBDForm,
+        "colunas": [("equipamento_nome", "Equipamento"), ("unidade_nome", "Unidade"), ("tipo", "Tipo"),
+                    ("data_abertura", "Abertura"), ("custo", "Custo (R$)"), ("situacao", "Situação")],
+        "filtro_situacao": [("ABERTA", "Aberta"), ("CONCLUIDA", "Concluída"), ("CANCELADA", "Cancelada")],
+        "busca": False,
+        "filtro_unidade": True,
+    },
 }
 
 
@@ -75,6 +90,8 @@ def _pode_escrever():
 def _preencher_choices(nome, form):
     if hasattr(form, "unidade_id"):
         form.unidade_id.choices = [("", "— Nenhuma —")] + dao_unidades.opcoes()
+    if hasattr(form, "equipamento_id"):
+        form.equipamento_id.choices = dao_equipamentos.opcoes()
     if hasattr(form, "servico_id"):
         form.servico_id.choices = [("", "— Nenhum —")] + dao_servicos.opcoes()
 
@@ -124,6 +141,128 @@ def executar_consulta(consulta_id):
         "bd/consulta_resultado.html", consulta=consulta, parametros=parametros,
         colunas=colunas, linhas=linhas, erro=erro, consultas=cat_consultas.CONSULTAS,
     )
+
+
+# --------------------------------------------------------------------------
+# Dashboard integrado (Etapa 06)
+# --------------------------------------------------------------------------
+@bd_bp.route("/dashboard")
+@login_required
+def dashboard_integrado():
+    erro, opcoes = None, {"tipos_unidade": []}
+    try:
+        opcoes = dash_bd.opcoes_filtros()
+    except Exception:
+        current_app.logger.exception("Falha ao montar filtros do dashboard")
+        erro = "Não foi possível conectar ao MySQL. Verifique o .env e se o serviço está ativo."
+    return render_template("bd/dashboard.html", opcoes=opcoes, erro=erro)
+
+
+@bd_bp.route("/dashboard/dados")
+@login_required
+def dashboard_dados():
+    filtros = dash_bd.ler_filtros(request.args)
+    try:
+        return jsonify({"filtros": filtros, **dash_bd.dados(filtros)})
+    except Exception:
+        current_app.logger.exception("Falha ao calcular o dashboard")
+        return jsonify({"erro": "Não foi possível carregar os dados do banco."}), 500
+
+
+# --------------------------------------------------------------------------
+# Funções, procedimentos e triggers (Etapas 05/06)
+# --------------------------------------------------------------------------
+def _ler_parametro(p, bruto):
+    """Valida UM parâmetro de rotina; devolve o valor ou levanta ValueError."""
+    tipo, bruto = p["tipo"], (bruto or "").strip()
+    if tipo in ("unidade", "equipamento", "manutencao_aberta"):
+        valor = int(bruto)
+        if valor <= 0:
+            raise ValueError
+        return valor
+    if tipo == "ano":
+        if not bruto:
+            return None
+        valor = int(bruto)
+        if not 2000 <= valor <= 2100:
+            raise ValueError
+        return valor
+    if tipo == "tipo_manutencao":
+        if bruto not in ("PREVENTIVA", "CORRETIVA"):
+            raise ValueError
+        return bruto
+    if tipo == "texto":
+        if not 1 <= len(bruto) <= 255:
+            raise ValueError
+        return bruto
+    if tipo == "custo":
+        try:
+            valor = Decimal(bruto.replace(",", "."))
+        except InvalidOperation:
+            raise ValueError from None
+        if valor < 0 or valor > Decimal("99999999.99"):
+            raise ValueError
+        return valor
+    raise ValueError
+
+
+def _contexto_rotinas():
+    ctx = {"funcoes": objetos.FUNCOES, "procedimentos": objetos.PROCEDIMENTOS,
+           "triggers": objetos.TRIGGERS, "views": objetos.VIEWS,
+           "existentes": None, "efeitos": [], "unidades": [], "equipamentos": [],
+           "manutencoes_abertas": [], "erro": None, "fontes": {},
+           "pode_escrever": _pode_escrever(), "form": ExcluirForm()}
+    try:
+        ctx["existentes"] = objetos.objetos_existentes()
+        ctx["efeitos"] = objetos.efeitos_triggers()
+        ctx["unidades"] = dao_unidades.opcoes()
+        ctx["equipamentos"] = dao_equipamentos.opcoes()
+        ctx["manutencoes_abertas"] = dao_manutencoes.opcoes_abertas()
+    except Exception:
+        current_app.logger.exception("Falha ao consultar rotinas do banco")
+        ctx["erro"] = "Não foi possível consultar o MySQL. Verifique o .env e se o serviço está ativo."
+    for nome in [*objetos.FUNCOES, *objetos.PROCEDIMENTOS, *objetos.TRIGGERS, *objetos.VIEWS]:
+        ctx["fontes"][nome] = objetos.codigo_fonte(nome)
+    return ctx
+
+
+@bd_bp.route("/rotinas")
+@login_required
+def rotinas():
+    return render_template("bd/rotinas.html", resultado=None, **_contexto_rotinas())
+
+
+@bd_bp.route("/rotinas/executar", methods=["POST"])
+@login_required
+def rotinas_executar():
+    if not ExcluirForm().validate_on_submit():  # só valida o token CSRF
+        abort(400)
+    nome = request.form.get("objeto", "")
+    catalogo = objetos.FUNCOES.get(nome) or objetos.PROCEDIMENTOS.get(nome)
+    if catalogo is None:
+        abort(404)
+    eh_procedimento = nome in objetos.PROCEDIMENTOS
+    if eh_procedimento and catalogo["escrita"] and not _pode_escrever():
+        abort(403)
+
+    resultado = {"objeto": nome, "titulo": catalogo["titulo"], "colunas": [], "linhas": [],
+                 "valor": None, "erro": None, "procedimento": eh_procedimento, "parametros": {}}
+    try:
+        valores = tuple(_ler_parametro(p, request.form.get(p["nome"])) for p in catalogo["parametros"])
+        resultado["parametros"] = {p["nome"]: ("todos" if v is None else str(v)) for p, v in zip(catalogo["parametros"], valores)}
+        if eh_procedimento:
+            colunas, linhas = objetos.chamar_procedimento(nome, valores, usuario_atual().id)
+            resultado.update(colunas=colunas, linhas=linhas)
+        else:
+            resultado["valor"] = objetos.executar_funcao(nome, valores)
+    except ValueError:
+        resultado["erro"] = "Parâmetro inválido. Confira os valores informados."
+    except ErroBanco as erro:
+        resultado["erro"] = str(erro)
+    except Exception:
+        current_app.logger.exception("Falha ao executar %s", nome)
+        resultado["erro"] = "Não foi possível executar a rotina no banco."
+    return render_template("bd/rotinas.html", resultado=resultado, **_contexto_rotinas())
 
 
 def _imagens_estatistica():

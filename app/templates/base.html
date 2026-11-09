@@ -67,9 +67,17 @@
                     <i class="bi bi-clock-history"></i> <span>Auditoria</span>
                 </a>
                 {% endif %}
-                <a class="oris-nav-item {% if request.blueprint == 'bd' and request.endpoint != 'bd.estatistica_painel' %}active{% endif %}"
+                <a class="oris-nav-item {% if request.blueprint == 'bd' and request.endpoint not in ('bd.estatistica_painel', 'bd.dashboard_integrado', 'bd.rotinas', 'bd.rotinas_executar') %}active{% endif %}"
                    href="{{ url_for('bd.index') }}">
                     <i class="bi bi-database"></i> <span>Banco de Dados</span>
+                </a>
+                <a class="oris-nav-item {% if request.endpoint == 'bd.dashboard_integrado' %}active{% endif %}"
+                   href="{{ url_for('bd.dashboard_integrado') }}">
+                    <i class="bi bi-speedometer2"></i> <span>Dashboard BD</span>
+                </a>
+                <a class="oris-nav-item {% if request.endpoint in ('bd.rotinas', 'bd.rotinas_executar') %}active{% endif %}"
+                   href="{{ url_for('bd.rotinas') }}">
+                    <i class="bi bi-gear-wide-connected"></i> <span>Rotinas do BD</span>
                 </a>
                 <a class="oris-nav-item {% if request.endpoint == 'bd.estatistica_painel' %}active{% endif %}"
                    href="{{ url_for('bd.estatistica_painel') }}">
