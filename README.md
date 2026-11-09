@@ -579,9 +579,26 @@ ORIS_TEST_MYSQL=1 python -m pytest tests/test_etapa06_dashboard_rotinas.py  # + 
 
 ## Como executar
 
-### Início rápido (um comando)
+Existem **dois jeitos** de rodar o ORIS. Escolha um:
 
-Pré-requisitos: **Python 3.10+** e **MySQL Server 8.x instalado e ligado**. Depois:
+| | Opção 1 - Automático | Opção 2 - Manual |
+|---|---|---|
+| Esforço | 1 comando | ~7 passos |
+| Indicado para | primeira vez, avaliação, demonstração | quem quer entender/controlar cada etapa |
+| O que faz | tudo sozinho (venv, `.env`, banco, tabelas, dados de demonstração, servidor) | você executa cada passo |
+
+**Nos dois casos** você precisa de **Python 3.10+** e **MySQL Server 8.x instalado e LIGADO**
+(Windows: Serviços → MySQL80 → Iniciar; Linux: `sudo systemctl start mysql`).
+Se o `python` não for encontrado, reinstale o Python marcando "Add to PATH".
+
+Usuários de demonstração (criados pelos dados de demonstração; senha de todos: `Oris@2026`,
+**trocar antes de colocar no ar**): `admin.demo@oris.example` (ADMINISTRADOR),
+`gi.demo@oris.example` (GESTAO_INFORMACAO), `rsb.demo@oris.example` (RESPONSAVEL_SAUDE_BUCAL)
+e `gestor.demo@oris.example` (GESTOR).
+
+---
+
+### Opção 1 - Automático (um comando)
 
 ```bash
 git clone https://github.com/ramonlealfrazao/oris.git
@@ -591,84 +608,67 @@ python iniciar.py
 
 No Windows também dá para dar dois cliques em `iniciar.bat`; no Linux/Mac, `sh iniciar.sh`.
 
-O script `iniciar.py` faz tudo sozinho e pode ser repetido sem problema:
+O `iniciar.py` pode ser repetido sem problema e faz, nesta ordem:
 
 1. cria o ambiente virtual (`venv`) e instala o `requirements.txt`;
 2. cria o `.env` com `SECRET_KEY` e senha do banco gerados na hora;
-3. cria o banco `oris_db` e o usuário `oris_user` (pede a senha do `root` do MySQL só na primeira vez, e não a grava);
+3. cria o banco `oris_db` e o usuário `oris_user` (pede a senha do `root` do MySQL só na primeira vez e não a grava);
 4. cria as tabelas, funções, procedures, triggers e views;
 5. pergunta se quer carregar os dados fictícios de demonstração e os usuários de teste;
 6. sobe o sistema em http://127.0.0.1:5000 e abre o navegador.
 
-Usuários de demonstração (senha de todos: `Oris@2026`, **trocar antes de colocar no ar**):
-`admin.demo@oris.example` (ADMINISTRADOR), `gi.demo@oris.example` (GESTAO_INFORMACAO),
-`rsb.demo@oris.example` (RESPONSAVEL_SAUDE_BUCAL) e `gestor.demo@oris.example` (GESTOR).
-
 Opções: `python iniciar.py --sem-seed` (não carrega dados de demonstração) e
 `python iniciar.py --so-preparar` (prepara tudo, mas não liga o servidor).
-Depois da primeira vez, `python iniciar.py` só liga o sistema. Para rodar os testes: `python -m pytest`.
+Depois da primeira vez, `python iniciar.py` só liga o sistema.
 
-Problemas comuns: *MySQL não conecta* → ligue o serviço (Windows: Serviços → MySQL80 → Iniciar;
-Linux: `sudo systemctl start mysql`); *`python` não encontrado* → instale o Python marcando "Add to PATH".
-O passo a passo manual está nas seções abaixo.
+---
 
-### Pré-requisitos (instalação manual)
+### Opção 2 - Manual (passo a passo)
 
-- Python 3.10+
-- MySQL Server 8.x
-- pip
-
-### Instalação
+**Passo 1 - Baixar o projeto**
 
 ```bash
-cd ORIS
+git clone https://github.com/ramonlealfrazao/oris.git
+cd oris
+```
+
+**Passo 2 - Ambiente virtual e dependências**
+
+```bash
 python -m venv venv
 
 # Linux/Mac
 source venv/bin/activate
-# Windows (por padrão, o PowerShell bloqueia scripts de "autores
-# desconhecidos" - se necessário, ajuste a política de execução antes)
+# Windows (se o PowerShell bloquear scripts, ajuste a política de execução antes)
 venv\Scripts\activate
 
 pip install -r requirements.txt
 ```
 
-### Banco de dados
-
-Crie o banco de dados e um usuário dedicado para a aplicação:
+**Passo 3 - Criar o banco e o usuário no MySQL** (entre no MySQL como root, ex.: `mysql -u root -p`)
 
 ```sql
 CREATE DATABASE oris_db CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 CREATE USER 'oris_user'@'localhost' IDENTIFIED BY 'sua_senha_aqui';
 GRANT ALL PRIVILEGES ON oris_db.* TO 'oris_user'@'localhost';
 FLUSH PRIVILEGES;
+-- Necessário para criar funções/triggers com o log binário ligado (padrão do MySQL 8).
+-- Vale até reiniciar o MySQL; para ser permanente, ponha log_bin_trust_function_creators=1 no my.ini/my.cnf.
+SET GLOBAL log_bin_trust_function_creators = 1;
 ```
 
-Depois, crie as tabelas de uma das duas formas:
+**Passo 4 - Configurar o `.env`**
 
 ```bash
-# Opção A - via schema.sql (manual)
-mysql -u root < database/schema.sql
-
-# Opção B - via SQLAlchemy (recomendado em desenvolvimento)
-python -c "from app import create_app; from app.extensions import db; app = create_app(); app.app_context().push(); db.create_all()"
+cp .env.example .env        # Windows: copy .env.example .env
 ```
 
-A Opção B garante que as tabelas fiquem sempre sincronizadas com os
-models em `app/models/`.
-
-### Configuração (.env)
-
-```bash
-cp .env.example .env
-```
-
-Edite o `.env` com os dados do seu MySQL:
+Edite o `.env` com os dados do seu MySQL (use a mesma senha do passo 3):
 
 ```
 FLASK_ENV=development
 FLASK_DEBUG=True
-SECRET_KEY=gere-uma-chave-forte-aqui
+SECRET_KEY=gere-uma-chave-forte-aqui     # python -c "import secrets; print(secrets.token_hex(32))"
 DB_HOST=localhost
 DB_PORT=3306
 DB_NAME=oris_db
@@ -677,41 +677,49 @@ DB_PASSWORD=sua_senha_aqui
 SESSION_LIFETIME_MINUTES=60
 ```
 
-> O arquivo `.env` nunca deve ser enviado ao repositório (já está no
-> `.gitignore`).
+> O arquivo `.env` nunca deve ser enviado ao repositório (já está no `.gitignore`).
 
-### Executando
+**Passo 5 - Criar tabelas, funções, procedures, triggers e views**
+
+```bash
+python database/aplicar_migracoes.py
+```
+
+(Pode repetir quando quiser. Se aparecer o aviso do erro 1419, execute o `SET GLOBAL` do passo 3 como root e rode de novo.)
+
+**Passo 6 - Dados e usuários**
+
+Escolha um:
+
+```bash
+# (a) Dados fictícios de demonstração + os 4 usuários demo (APAGA unidades/serviços/equipamentos/alterações)
+mysql -u oris_user -p oris_db < database/seed_etapa03.sql
+mysql -u oris_user -p oris_db < database/seed_etapa06.sql
+
+# (b) Só criar os seus próprios usuários (pede nome, e-mail, senha e perfil)
+flask --app run.py criar-usuario
+```
+
+> Evite domínios reservados como `.local` ou `.test` no e-mail (a validação os rejeita);
+> prefira algo como `usuario@oris.com.br`. Crie um usuário de cada perfil
+> (`ADMINISTRADOR`, `GESTAO_INFORMACAO`, `RESPONSAVEL_SAUDE_BUCAL`, `GESTOR`) para ver a matriz de acesso.
+
+**Passo 7 - Ligar o sistema**
 
 ```bash
 python run.py
 ```
 
-A aplicação sobe em `http://127.0.0.1:5000`. Para verificar que a
-aplicação e a conexão com o banco estão funcionando:
+Abra http://127.0.0.1:5000. Para conferir aplicação e banco: http://127.0.0.1:5000/health.
 
-```
-GET http://127.0.0.1:5000/health
-```
+---
 
-### Usuário de teste
+### Como saber se deu certo
 
-Não existe usuário fixo/hardcoded no código. Para criar um usuário
-(desenvolvimento ou demonstração), use o comando de CLI do Flask, que
-pede a senha de forma oculta e já salva o hash bcrypt:
-
-```bash
-flask --app run.py criar-usuario
-```
-
-O comando pergunta nome completo, email, senha (duas vezes, para
-confirmar) e perfil (`ADMINISTRADOR`, `GESTAO_INFORMACAO`,
-`RESPONSAVEL_SAUDE_BUCAL` ou `GESTOR`).
-
-> Evite domínios reservados para teste como `.local` ou `.test`
-> no email - a validação de formato os rejeita. Prefira
-> algo como `usuario@oris.com.br`.
-
-Crie um usuário de cada perfil para demonstrar a matriz de acesso.
+- `http://127.0.0.1:5000/health` responde `"status": "ok"`.
+- O login abre e você entra com um usuário demo (ou o que criou).
+- `http://127.0.0.1:5000/bd/dashboard` mostra os gráficos (com os dados de demonstração carregados).
+- `python -m pytest` passa (a suíte completa pode levar alguns minutos).
 
 ## Testes
 
