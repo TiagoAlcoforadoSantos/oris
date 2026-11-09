@@ -209,7 +209,11 @@ def test_listas_e_detalhes_aceitam_servico_e_equipamento_sem_unidade(app_sqlite)
         db.session.add(e)
         db.session.commit()
         sid, eid = s.id, e.id
+        db.session.add(Usuario(nome="Admin", email="admin@oris.com.br", senha_hash=gerar_hash_senha(SENHA),
+                               perfil=PerfilUsuario.ADMINISTRADOR, ativo=True))
+        db.session.commit()
     c = app_sqlite.test_client()
-    c.post("/login", data={"email": "gestor@oris.com.br", "senha": SENHA})
-    for url in ("/servicos", f"/servicos/{sid}", "/equipamentos", f"/equipamentos/{eid}"):
+    c.post("/login", data={"email": "admin@oris.com.br", "senha": SENHA})
+    for url in ("/servicos", f"/servicos/{sid}", "/equipamentos", f"/equipamentos/{eid}",
+                "/equipamentos/novo", f"/equipamentos/{eid}/editar", "/servicos/novo", f"/servicos/{sid}/editar"):
         assert c.get(url).status_code == 200, url

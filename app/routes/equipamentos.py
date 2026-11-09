@@ -35,7 +35,7 @@ def _preencher_choices(form):
         for unidade in Unidade.query.order_by(Unidade.nome).all()
     ]
     form.servico_id.choices = [("", "Nenhum")] + [
-        (servico.id, f"{servico.nome} — {servico.unidade.nome}")
+        (servico.id, f"{servico.nome} — {servico.unidade.nome if servico.unidade else 'sem unidade'}")
         for servico in Servico.query.order_by(Servico.nome).all()
     ]
 
