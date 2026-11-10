@@ -122,3 +122,16 @@ def test_rbac_continua_funcionando(client, app):
 def test_privacidade_continua_funcionando(client):
     resp = client.get("/privacidade")
     assert resp.status_code == 200
+
+
+@pytest.mark.parametrize("rota", ["/design-system", "/privacidade"])
+def test_botao_voltar_para_login_aparece_apenas_sem_autenticacao(client, rota):
+    resposta_publica = client.get(rota)
+    html_publico = resposta_publica.get_data(as_text=True)
+    assert 'href="/login"' in html_publico
+    assert "Voltar" in html_publico
+
+    _login(client)
+    resposta_autenticada = client.get(rota)
+    html_autenticado = resposta_autenticada.get_data(as_text=True)
+    assert "Voltar" not in html_autenticado

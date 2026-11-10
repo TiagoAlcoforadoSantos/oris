@@ -13,6 +13,12 @@
 {% endblock %}
 
 {% block content %}
+{% if not session.autenticado %}
+<a href="{{ url_for('auth.login') }}" class="btn btn-outline-secondary mb-3">
+    <i class="bi bi-arrow-left" aria-hidden="true"></i> Voltar
+</a>
+{% endif %}
+
 <section class="oris-privacidade-hero">
     <h1><i class="bi bi-shield-lock" aria-hidden="true"></i> Privacidade e Transparência</h1>
     <p>
