@@ -71,7 +71,10 @@ def visualizar(servico_id):
         "servicos/detalhe.html",
         servico=servico,
         pode_alterar=_usuario_pode_alterar(),
-        form_situacao=AlterarSituacaoAtivoInativoForm(situacao=servico.situacao.value),
+        form_situacao=AlterarSituacaoAtivoInativoForm(
+            situacao=servico.situacao.value,
+            descricao_situacao=servico.descricao_situacao,
+        ),
     )
 
 
@@ -91,6 +94,7 @@ def novo():
             "nome": form.nome.data.strip(),
             "unidade_id": unidade.id,
             "situacao": form.situacao.data,
+            "descricao_situacao": (form.descricao_situacao.data or "").strip() or None,
         }
         descricao = f"Criação de novo Serviço: {dados['nome']} (Unidade {unidade.nome})"
 
@@ -128,12 +132,14 @@ def editar(servico_id):
             "nome": form.nome.data.strip(),
             "unidade_id": unidade.id,
             "situacao": form.situacao.data,
+            "descricao_situacao": (form.descricao_situacao.data or "").strip() or None,
         }
 
         valores_atuais = {
             "nome": servico.nome,
             "unidade_id": servico.unidade_id,
             "situacao": servico.situacao.value,
+            "descricao_situacao": servico.descricao_situacao,
         }
         campos_alterados = [
             f"{campo} '{valores_atuais[campo]}' → '{valor}'"
@@ -163,6 +169,7 @@ def editar(servico_id):
         form.nome.data = servico.nome
         form.unidade_id.data = servico.unidade_id
         form.situacao.data = servico.situacao.value
+        form.descricao_situacao.data = servico.descricao_situacao
 
     return render_template(
         "servicos/form.html", form=form, titulo=f"Editar Serviço — {servico.nome}", servico=servico
@@ -176,7 +183,12 @@ def alterar_situacao(servico_id):
     form = AlterarSituacaoAtivoInativoForm()
 
     if not form.validate_on_submit():
-        flash("Situação inválida.", "danger")
+        mensagem = (
+            form.descricao_situacao.errors[0]
+            if form.descricao_situacao.errors
+            else "Situação inválida."
+        )
+        flash(mensagem, "danger")
         return redirect(url_for("servicos.visualizar", servico_id=servico.id))
 
     nova_situacao = form.situacao.data
@@ -185,10 +197,16 @@ def alterar_situacao(servico_id):
         flash("O serviço já está nessa situação.", "warning")
         return redirect(url_for("servicos.visualizar", servico_id=servico.id))
 
+    descricao_situacao = (form.descricao_situacao.data or "").strip() or None
     descricao = f"Alteração do Serviço {servico.id} ({servico.nome}): situação {servico.situacao.value} → {nova_situacao}"
 
     alteracao = registrar_alteracao(
-        usuario_atual(), "servicos", servico.id, "ALTERAR_SITUACAO", {"situacao": nova_situacao}, descricao
+        usuario_atual(),
+        "servicos",
+        servico.id,
+        "ALTERAR_SITUACAO",
+        {"situacao": nova_situacao, "descricao_situacao": descricao_situacao},
+        descricao,
     )
 
     flash(

@@ -161,7 +161,7 @@ def test_alteracoes_pendentes_aprovadas_rejeitadas_contabilizadas(client, app):
         dados3 = dict(dados)
         dados3["cnes"] = "7777777"
         alt_rejeitar = registrar_alteracao(responsavel, "unidades", None, "CRIAR", dados3, "teste rejeitar")
-        rejeitar_alteracao(alt_rejeitar, gestao)
+        rejeitar_alteracao(alt_rejeitar, gestao, "Solicitação de teste rejeitada")
 
     from app.services.dashboard_service import obter_indicadores
 

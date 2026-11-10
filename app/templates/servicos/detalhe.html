@@ -22,6 +22,8 @@
             {{ servico.nome }}
             {% if servico.situacao.value == "ATIVO" %}
                 <span class="badge bg-success">Ativo</span>
+            {% elif servico.situacao.value == "MANUTENCAO" %}
+                <span class="badge bg-warning text-dark">Manutenção</span>
             {% else %}
                 <span class="badge bg-secondary">Inativo</span>
             {% endif %}
@@ -55,11 +57,19 @@
             <dd>
                 {% if servico.situacao.value == "ATIVO" %}
                     <span class="badge bg-success">Ativo</span>
+                {% elif servico.situacao.value == "MANUTENCAO" %}
+                    <span class="badge bg-warning text-dark">Manutenção</span>
                 {% else %}
                     <span class="badge bg-secondary">Inativo</span>
                 {% endif %}
             </dd>
         </div>
+        {% if servico.descricao_situacao %}
+        <div>
+            <dt>Descrição</dt>
+            <dd>{{ servico.descricao_situacao }}</dd>
+        </div>
+        {% endif %}
         <div>
             <dt>Criado em</dt>
             <dd>{{ servico.created_at.strftime("%d/%m/%Y %H:%M") }}</dd>
@@ -80,7 +90,11 @@
             <label class="form-label small text-muted" for="{{ form_situacao.situacao.id }}">
                 {{ form_situacao.situacao.label.text }}
             </label>
-            {{ form_situacao.situacao(class="form-select") }}
+            {{ form_situacao.situacao(class="form-select js-situacao-select") }}
+        </div>
+        <div class="col-md-6 js-descricao-situacao" {% if form_situacao.situacao.data not in ["INATIVO", "MANUTENCAO"] %}hidden{% endif %}>
+            {{ form_situacao.descricao_situacao.label(class="form-label small text-muted") }}
+            {{ form_situacao.descricao_situacao(class="form-control", rows="2", maxlength="2000") }}
         </div>
         <div class="col-auto">
             {{ form_situacao.submit(class="btn btn-outline-primary") }}
@@ -88,4 +102,8 @@
     </form>
 </div>
 {% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/descricao-situacao.js') }}" defer></script>
 {% endblock %}

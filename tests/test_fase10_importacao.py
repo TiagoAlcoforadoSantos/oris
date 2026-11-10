@@ -395,7 +395,7 @@ def test_rejeicao_nao_altera_registro_original(client, app):
     with app.app_context():
         alteracao = Alteracao.query.filter_by(tabela="unidades", operacao="EDITAR").first()
         aprovador = _usuario(app, PerfilUsuario.ADMINISTRADOR)
-        ok, _ = rejeitar_alteracao(alteracao, aprovador)
+        ok, _ = rejeitar_alteracao(alteracao, aprovador, "Revisar os dados importados")
         assert ok is True
 
         unidade = Unidade.query.filter_by(cnes="9990001").first()

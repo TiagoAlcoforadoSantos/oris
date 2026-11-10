@@ -167,7 +167,10 @@ def test_alteracao_de_situacao_gera_auditoria(client, app):
     _login(client, PerfilUsuario.ADMINISTRADOR)
     unidade_id = _unidade_id(app)
 
-    client.post(f"/unidades/{unidade_id}/situacao", data={"situacao": "MANUTENCAO"})
+    client.post(
+        f"/unidades/{unidade_id}/situacao",
+        data={"situacao": "MANUTENCAO", "descricao_situacao": "Reforma da unidade"},
+    )
 
     with app.app_context():
         alteracao = Alteracao.query.filter_by(tabela="unidades", operacao="ALTERAR_SITUACAO").first()
@@ -211,7 +214,7 @@ def test_rejeicao_gera_auditoria(client, app):
     with app.app_context():
         alteracao = Alteracao.query.filter_by(tabela="unidades", operacao="CRIAR").first()
         aprovador = _usuario(app, PerfilUsuario.GESTAO_INFORMACAO)
-        rejeitar_alteracao(alteracao, aprovador)
+        rejeitar_alteracao(alteracao, aprovador, "Solicitação incompleta")
 
         registro = Auditoria.query.filter_by(acao="REJEITAR_ALTERACAO").first()
         assert registro is not None
@@ -223,7 +226,10 @@ def test_servico_gera_auditoria(client, app):
     _login(client, PerfilUsuario.ADMINISTRADOR)
     servico_id = _servico_id(app)
 
-    client.post(f"/servicos/{servico_id}/situacao", data={"situacao": "INATIVO"})
+    client.post(
+        f"/servicos/{servico_id}/situacao",
+        data={"situacao": "INATIVO", "descricao_situacao": "Serviço suspenso"},
+    )
 
     with app.app_context():
         alteracao = Alteracao.query.filter_by(tabela="servicos", operacao="ALTERAR_SITUACAO").first()
@@ -239,7 +245,10 @@ def test_equipamento_gera_auditoria(client, app):
     _login(client, PerfilUsuario.ADMINISTRADOR)
     equipamento_id = _equipamento_id(app)
 
-    client.post(f"/equipamentos/{equipamento_id}/situacao", data={"situacao": "INATIVO"})
+    client.post(
+        f"/equipamentos/{equipamento_id}/situacao",
+        data={"situacao": "INATIVO", "descricao_situacao": "Aguardando reparo"},
+    )
 
     with app.app_context():
         alteracao = Alteracao.query.filter_by(tabela="equipamentos", operacao="ALTERAR_SITUACAO").first()
@@ -256,7 +265,10 @@ def test_auditoria_registra_usuario_data_acao_entidade_registro_corretos(client,
     unidade_id = _unidade_id(app)
     admin = _usuario(app, PerfilUsuario.ADMINISTRADOR)
 
-    client.post(f"/unidades/{unidade_id}/situacao", data={"situacao": "MANUTENCAO"})
+    client.post(
+        f"/unidades/{unidade_id}/situacao",
+        data={"situacao": "MANUTENCAO", "descricao_situacao": "Reforma da unidade"},
+    )
 
     with app.app_context():
         registro = Auditoria.query.filter_by(acao="SOLICITAR_ALTERACAO").first()
@@ -271,7 +283,10 @@ def test_edicao_registra_valor_anterior_e_novo(client, app):
     _login(client, PerfilUsuario.ADMINISTRADOR)
     unidade_id = _unidade_id(app)
 
-    client.post(f"/unidades/{unidade_id}/situacao", data={"situacao": "MANUTENCAO"})
+    client.post(
+        f"/unidades/{unidade_id}/situacao",
+        data={"situacao": "MANUTENCAO", "descricao_situacao": "Reforma da unidade"},
+    )
 
     with app.app_context():
         alteracao = Alteracao.query.filter_by(tabela="unidades", operacao="ALTERAR_SITUACAO").first()
@@ -358,7 +373,10 @@ def test_nao_existe_rota_de_exclusao_de_auditoria(client, app):
 def test_listagem_ordenada_por_data_decrescente(client, app):
     _login(client, PerfilUsuario.ADMINISTRADOR)
     unidade_id = _unidade_id(app)
-    client.post(f"/unidades/{unidade_id}/situacao", data={"situacao": "MANUTENCAO"})
+    client.post(
+        f"/unidades/{unidade_id}/situacao",
+        data={"situacao": "MANUTENCAO", "descricao_situacao": "Reforma da unidade"},
+    )
 
     with app.app_context():
         registros = Auditoria.query.order_by(Auditoria.data_hora.desc()).all()
@@ -380,7 +398,10 @@ def test_filtro_por_acao(client, app):
 def test_pagina_de_detalhe_mostra_valores(client, app):
     _login(client, PerfilUsuario.ADMINISTRADOR)
     unidade_id = _unidade_id(app)
-    client.post(f"/unidades/{unidade_id}/situacao", data={"situacao": "MANUTENCAO"})
+    client.post(
+        f"/unidades/{unidade_id}/situacao",
+        data={"situacao": "MANUTENCAO", "descricao_situacao": "Reforma da unidade"},
+    )
 
     with app.app_context():
         alteracao = Alteracao.query.filter_by(tabela="unidades", operacao="ALTERAR_SITUACAO").first()

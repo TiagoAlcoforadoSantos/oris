@@ -1,5 +1,7 @@
 """Testes da FASE 6 - CRUD de Serviços e Equipamentos."""
 
+import json
+
 import pytest
 
 from app import create_app
@@ -202,7 +204,11 @@ def test_solicita_alteracao_de_situacao_servico(client, app):
     ids = _ids(app)
     _login(client, PerfilUsuario.ADMINISTRADOR)
 
-    resp = client.post(f"/servicos/{ids['servico_a']}/situacao", data={"situacao": "INATIVO"}, follow_redirects=True)
+    resp = client.post(
+        f"/servicos/{ids['servico_a']}/situacao",
+        data={"situacao": "INATIVO", "descricao_situacao": "Serviço temporariamente suspenso"},
+        follow_redirects=True,
+    )
     assert resp.status_code == 200
     assert "aguardando aprovação" in resp.get_data(as_text=True)
 
@@ -215,7 +221,10 @@ def test_aprovar_alteracao_de_situacao_de_servico_aplica_a_mudanca(client, app):
     ids = _ids(app)
     _login(client, PerfilUsuario.ADMINISTRADOR)
 
-    client.post(f"/servicos/{ids['servico_a']}/situacao", data={"situacao": "INATIVO"})
+    client.post(
+        f"/servicos/{ids['servico_a']}/situacao",
+        data={"situacao": "INATIVO", "descricao_situacao": "Serviço temporariamente suspenso"},
+    )
 
     with app.app_context():
         alteracao = Alteracao.query.filter_by(tabela="servicos", operacao="ALTERAR_SITUACAO").first()
@@ -225,6 +234,97 @@ def test_aprovar_alteracao_de_situacao_de_servico_aplica_a_mudanca(client, app):
 
         servico = db.session.get(Servico, ids["servico_a"])
         assert servico.situacao == SituacaoAtivoInativo.INATIVO
+
+
+@pytest.mark.parametrize(
+    ("tabela", "situacao"),
+    [
+        ("servicos", "INATIVO"),
+        ("servicos", "MANUTENCAO"),
+        ("equipamentos", "INATIVO"),
+        ("equipamentos", "MANUTENCAO"),
+    ],
+)
+def test_descricao_de_situacao_e_salva_apos_aprovacao(client, app, tabela, situacao):
+    ids = _ids(app)
+    _login(client, PerfilUsuario.ADMINISTRADOR)
+    if tabela == "servicos":
+        registro_id = ids["servico_a"]
+    else:
+        registro_id = ids["equipamento_a"]
+
+    resposta = client.post(
+        f"/{tabela}/{registro_id}/situacao",
+        data={"situacao": situacao, "descricao_situacao": "Motivo registrado no teste"},
+    )
+    assert resposta.status_code == 302
+
+    with app.app_context():
+        alteracao = Alteracao.query.filter_by(
+            tabela=tabela,
+            registro_id=registro_id,
+            operacao="ALTERAR_SITUACAO",
+        ).one()
+        assert json.loads(alteracao.dados_novos)["descricao_situacao"] == "Motivo registrado no teste"
+        aprovador = _usuario(app, PerfilUsuario.GESTAO_INFORMACAO)
+        sucesso, _ = aprovar_alteracao(alteracao, aprovador)
+        assert sucesso is True
+
+        modelo = Servico if tabela == "servicos" else Equipamento
+        registro = db.session.get(modelo, registro_id)
+        assert registro.situacao.value == situacao
+        assert registro.descricao_situacao == "Motivo registrado no teste"
+
+
+def test_situacao_inativa_sem_descricao_nao_cria_alteracao(client, app):
+    ids = _ids(app)
+    _login(client, PerfilUsuario.ADMINISTRADOR)
+
+    resposta = client.post(
+        f"/servicos/{ids['servico_a']}/situacao",
+        data={"situacao": "INATIVO"},
+        follow_redirects=True,
+    )
+
+    assert "Informe a descrição para essa situação." in resposta.get_data(as_text=True)
+    with app.app_context():
+        assert Alteracao.query.filter_by(tabela="servicos", operacao="ALTERAR_SITUACAO").count() == 0
+
+
+@pytest.mark.parametrize("tabela", ["servicos", "equipamentos"])
+def test_cadastro_em_manutencao_salva_descricao(client, app, tabela):
+    ids = _ids(app)
+    _login(client, PerfilUsuario.ADMINISTRADOR)
+    descricao = "Cadastro em manutenção aguardando avaliação"
+    if tabela == "servicos":
+        url = "/servicos/novo"
+        dados = {"nome": "Serviço em manutenção", "unidade_id": ids["unidade_a"]}
+        modelo = Servico
+    else:
+        url = "/equipamentos/novo"
+        dados = {
+            "nome": "Equipamento em manutenção",
+            "tipo": "Clínico",
+            "unidade_id": ids["unidade_a"],
+            "servico_id": "",
+        }
+        modelo = Equipamento
+    dados.update(
+        {"situacao": "MANUTENCAO", "descricao_situacao": descricao}
+    )
+
+    resposta = client.post(url, data=dados)
+    assert resposta.status_code == 302
+
+    with app.app_context():
+        alteracao = Alteracao.query.filter_by(tabela=tabela, operacao="CRIAR").one()
+        sucesso, _ = aprovar_alteracao(
+            alteracao, _usuario(app, PerfilUsuario.GESTAO_INFORMACAO)
+        )
+        assert sucesso is True
+        registro = modelo.query.filter_by(nome=dados["nome"]).one()
+        assert registro.situacao.value == "MANUTENCAO"
+        assert registro.descricao_situacao == descricao
 
 
 def test_gestor_consulta_servico(client, app):
@@ -450,7 +550,9 @@ def test_solicita_alteracao_de_situacao_equipamento(client, app):
     _login(client, PerfilUsuario.ADMINISTRADOR)
 
     resp = client.post(
-        f"/equipamentos/{ids['equipamento_a']}/situacao", data={"situacao": "INATIVO"}, follow_redirects=True
+        f"/equipamentos/{ids['equipamento_a']}/situacao",
+        data={"situacao": "INATIVO", "descricao_situacao": "Equipamento aguardando reparo"},
+        follow_redirects=True,
     )
     assert resp.status_code == 200
     assert "aguardando aprovação" in resp.get_data(as_text=True)
@@ -464,7 +566,10 @@ def test_aprovar_alteracao_de_situacao_de_equipamento_aplica_a_mudanca(client, a
     ids = _ids(app)
     _login(client, PerfilUsuario.ADMINISTRADOR)
 
-    client.post(f"/equipamentos/{ids['equipamento_a']}/situacao", data={"situacao": "INATIVO"})
+    client.post(
+        f"/equipamentos/{ids['equipamento_a']}/situacao",
+        data={"situacao": "INATIVO", "descricao_situacao": "Equipamento aguardando reparo"},
+    )
 
     with app.app_context():
         alteracao = Alteracao.query.filter_by(tabela="equipamentos", operacao="ALTERAR_SITUACAO").first()

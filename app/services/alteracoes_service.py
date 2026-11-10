@@ -121,7 +121,7 @@ def aprovar_alteracao(alteracao, aprovador):
     return True, "Alteração aprovada e aplicada com sucesso."
 
 
-def rejeitar_alteracao(alteracao, aprovador):
+def rejeitar_alteracao(alteracao, aprovador, motivo_rejeicao):
     """Rejeita uma alteração PENDENTE"""
     if alteracao.status != StatusAlteracao.PENDENTE:
         return False, "Esta alteração já foi processada e não pode ser rejeitada novamente."
@@ -129,16 +129,24 @@ def rejeitar_alteracao(alteracao, aprovador):
     if alteracao.usuario_id == aprovador.id:
         return False, "Você não pode rejeitar a própria alteração."
 
+    motivo_rejeicao = (motivo_rejeicao or "").strip()
+    if not motivo_rejeicao:
+        return False, "Informe a descrição do motivo da rejeição."
+
     alteracao.status = StatusAlteracao.REJEITADO
     alteracao.approved_by = aprovador.id
     alteracao.approved_at = utcnow()
+    alteracao.motivo_rejeicao = motivo_rejeicao
 
     registrar_auditoria(
         usuario=aprovador,
         acao="REJEITAR_ALTERACAO",
         tabela="alteracoes",
         registro_id=alteracao.id,
-        descricao=f"Rejeitou a alteração #{alteracao.id} ({alteracao.tabela}): {alteracao.descricao}",
+        descricao=(
+            f"Rejeitou a alteração #{alteracao.id} ({alteracao.tabela}): "
+            f"{motivo_rejeicao}"
+        ),
     )
 
     db.session.commit()

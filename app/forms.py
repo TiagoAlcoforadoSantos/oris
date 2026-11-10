@@ -1,10 +1,17 @@
 """Formulários da aplicação ORIS."""
 
 from flask_wtf import FlaskForm
-from wtforms import PasswordField, SelectField, StringField, SubmitField
+from wtforms import PasswordField, SelectField, StringField, SubmitField, TextAreaField
 from wtforms.validators import DataRequired, Email, Length, Regexp, ValidationError
 
 CNES_REGEX = r"^\d{7,15}$"
+
+
+def _descricao_situacao_obrigatoria(form, field):
+    """Exige justificativa quando uma entidade não está ativa."""
+    situacao = form.situacao.data
+    if situacao in {"INATIVA", "INATIVO", "MANUTENCAO"} and not (field.data or "").strip():
+        raise ValidationError("Informe a descrição para essa situação.")
 
 
 class LoginForm(FlaskForm):
@@ -72,6 +79,11 @@ class UnidadeForm(FlaskForm):
         validators=[DataRequired(message="Selecione uma situação.")],
     )
 
+    descricao_situacao = TextAreaField(
+        "Descrição",
+        validators=[Length(max=2000), _descricao_situacao_obrigatoria],
+    )
+
     submit = SubmitField("Salvar")
 
 
@@ -86,6 +98,10 @@ class AlterarSituacaoForm(FlaskForm):
             ("MANUTENCAO", "Manutenção"),
         ],
         validators=[DataRequired(message="Selecione uma situação.")],
+    )
+    descricao_situacao = TextAreaField(
+        "Descrição",
+        validators=[Length(max=2000), _descricao_situacao_obrigatoria],
     )
     submit = SubmitField("Alterar situação")
 
@@ -114,8 +130,13 @@ class ServicoForm(FlaskForm):
 
     situacao = SelectField(
         "Situação",
-        choices=[("ATIVO", "Ativo"), ("INATIVO", "Inativo")],
+        choices=[("ATIVO", "Ativo"), ("INATIVO", "Inativo"), ("MANUTENCAO", "Manutenção")],
         validators=[DataRequired(message="Selecione uma situação.")],
+    )
+
+    descricao_situacao = TextAreaField(
+        "Descrição",
+        validators=[Length(max=2000), _descricao_situacao_obrigatoria],
     )
 
     submit = SubmitField("Salvar")
@@ -150,20 +171,29 @@ class EquipamentoForm(FlaskForm):
 
     situacao = SelectField(
         "Situação",
-        choices=[("ATIVO", "Ativo"), ("INATIVO", "Inativo")],
+        choices=[("ATIVO", "Ativo"), ("INATIVO", "Inativo"), ("MANUTENCAO", "Manutenção")],
         validators=[DataRequired(message="Selecione uma situação.")],
+    )
+
+    descricao_situacao = TextAreaField(
+        "Descrição",
+        validators=[Length(max=2000), _descricao_situacao_obrigatoria],
     )
 
     submit = SubmitField("Salvar")
 
 
 class AlterarSituacaoAtivoInativoForm(FlaskForm):
-    """Formulário simples para alterar a situação (ATIVO/INATIVO) de um Serviço ou..."""
+    """Formulário para alterar a situação de um Serviço ou Equipamento."""
 
     situacao = SelectField(
         "Nova situação",
-        choices=[("ATIVO", "Ativo"), ("INATIVO", "Inativo")],
+        choices=[("ATIVO", "Ativo"), ("INATIVO", "Inativo"), ("MANUTENCAO", "Manutenção")],
         validators=[DataRequired(message="Selecione uma situação.")],
+    )
+    descricao_situacao = TextAreaField(
+        "Descrição",
+        validators=[Length(max=2000), _descricao_situacao_obrigatoria],
     )
     submit = SubmitField("Alterar situação")
 
@@ -171,6 +201,7 @@ class AlterarSituacaoAtivoInativoForm(FlaskForm):
 class AcaoAlteracaoForm(FlaskForm):
     """Formulário mínimo, usado só para dar proteção CSRF aos botões de aprovar/rejeitar..."""
 
+    motivo_rejeicao = TextAreaField("Descrição", validators=[Length(max=2000)])
     submit = SubmitField("Confirmar")
 
 

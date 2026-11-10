@@ -25,6 +25,7 @@ class Servico(db.Model, TimestampMixin):
         default=SituacaoAtivoInativo.ATIVO,
     )
 
+    descricao_situacao = db.Column(db.Text, nullable=True)
 
     unidade = db.relationship("Unidade", back_populates="servicos")
 

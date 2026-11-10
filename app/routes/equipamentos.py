@@ -100,7 +100,10 @@ def visualizar(equipamento_id):
         "equipamentos/detalhe.html",
         equipamento=equipamento,
         pode_alterar=_usuario_pode_alterar(),
-        form_situacao=AlterarSituacaoAtivoInativoForm(situacao=equipamento.situacao.value),
+        form_situacao=AlterarSituacaoAtivoInativoForm(
+            situacao=equipamento.situacao.value,
+            descricao_situacao=equipamento.descricao_situacao,
+        ),
     )
 
 
@@ -127,6 +130,7 @@ def novo():
             "unidade_id": unidade.id,
             "servico_id": servico.id if servico else None,
             "situacao": form.situacao.data,
+            "descricao_situacao": (form.descricao_situacao.data or "").strip() or None,
         }
         descricao = f"Criação de novo Equipamento: {dados['nome']} (Unidade {unidade.nome})"
         if servico:
@@ -181,6 +185,7 @@ def editar(equipamento_id):
             "unidade_id": unidade.id,
             "servico_id": servico.id if servico else None,
             "situacao": form.situacao.data,
+            "descricao_situacao": (form.descricao_situacao.data or "").strip() or None,
         }
 
         valores_atuais = {
@@ -189,6 +194,7 @@ def editar(equipamento_id):
             "unidade_id": equipamento.unidade_id,
             "servico_id": equipamento.servico_id,
             "situacao": equipamento.situacao.value,
+            "descricao_situacao": equipamento.descricao_situacao,
         }
         campos_alterados = [
             f"{campo} '{valores_atuais[campo]}' → '{valor}'"
@@ -223,6 +229,7 @@ def editar(equipamento_id):
         form.unidade_id.data = equipamento.unidade_id
         form.servico_id.data = equipamento.servico_id
         form.situacao.data = equipamento.situacao.value
+        form.descricao_situacao.data = equipamento.descricao_situacao
 
     return render_template(
         "equipamentos/form.html",
@@ -239,7 +246,12 @@ def alterar_situacao(equipamento_id):
     form = AlterarSituacaoAtivoInativoForm()
 
     if not form.validate_on_submit():
-        flash("Situação inválida.", "danger")
+        mensagem = (
+            form.descricao_situacao.errors[0]
+            if form.descricao_situacao.errors
+            else "Situação inválida."
+        )
+        flash(mensagem, "danger")
         return redirect(url_for("equipamentos.visualizar", equipamento_id=equipamento.id))
 
     nova_situacao = form.situacao.data
@@ -248,13 +260,19 @@ def alterar_situacao(equipamento_id):
         flash("O equipamento já está nessa situação.", "warning")
         return redirect(url_for("equipamentos.visualizar", equipamento_id=equipamento.id))
 
+    descricao_situacao = (form.descricao_situacao.data or "").strip() or None
     descricao = (
         f"Alteração do Equipamento {equipamento.id} ({equipamento.nome}): "
         f"situação {equipamento.situacao.value} → {nova_situacao}"
     )
 
     alteracao = registrar_alteracao(
-        usuario_atual(), "equipamentos", equipamento.id, "ALTERAR_SITUACAO", {"situacao": nova_situacao}, descricao
+        usuario_atual(),
+        "equipamentos",
+        equipamento.id,
+        "ALTERAR_SITUACAO",
+        {"situacao": nova_situacao, "descricao_situacao": descricao_situacao},
+        descricao,
     )
 
     flash(

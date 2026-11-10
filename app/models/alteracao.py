@@ -30,6 +30,8 @@ class Alteracao(db.Model):
 
     descricao = db.Column(db.Text, nullable=True)
 
+    motivo_rejeicao = db.Column(db.Text, nullable=True)
+
     status = db.Column(
         db.Enum(StatusAlteracao, name="status_alteracao_enum"),
         nullable=False,

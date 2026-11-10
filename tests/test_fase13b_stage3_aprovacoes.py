@@ -261,10 +261,44 @@ def test_rejeicao_nao_aplica_a_mudanca(client, app):
     with app.app_context():
         alteracao = db.session.get(Alteracao, alt_id)
         aprovador = _usuario(app, PerfilUsuario.ADMINISTRADOR)
-        ok, _ = rejeitar_alteracao(alteracao, aprovador)
+        ok, _ = rejeitar_alteracao(alteracao, aprovador, "Informações incompletas")
         assert ok is True
         assert Unidade.query.filter_by(cnes="6667778").first() is None
         assert Auditoria.query.filter_by(acao="REJEITAR_ALTERACAO").first() is not None
+
+
+def test_rejeicao_exige_e_salva_descricao(client, app):
+    alt_id = _criar_alteracao(
+        app,
+        "unidades",
+        None,
+        "CRIAR",
+        {"nome": "UBS Motivo", "cnes": "1113334", "tipo": "UBS", "cidade": "Recife", "uf": "PE", "situacao": "ATIVA"},
+        "Criação de unidade para teste de rejeição",
+    )
+    _login(client, PerfilUsuario.ADMINISTRADOR)
+
+    resposta_sem_motivo = client.post(
+        f"/alteracoes/{alt_id}/rejeitar",
+        data={"motivo_rejeicao": ""},
+        follow_redirects=True,
+    )
+    assert "Informe a descrição do motivo da rejeição." in resposta_sem_motivo.get_data(as_text=True)
+    with app.app_context():
+        assert db.session.get(Alteracao, alt_id).status.value == "PENDENTE"
+
+    client.post(
+        f"/alteracoes/{alt_id}/rejeitar",
+        data={"motivo_rejeicao": "Dados cadastrais precisam ser corrigidos"},
+    )
+
+    with app.app_context():
+        alteracao = db.session.get(Alteracao, alt_id)
+        assert alteracao.status.value == "REJEITADO"
+        assert alteracao.motivo_rejeicao == "Dados cadastrais precisam ser corrigidos"
+
+    html = client.get(f"/alteracoes/{alt_id}").get_data(as_text=True)
+    assert "Dados cadastrais precisam ser corrigidos" in html
 
 
 def test_badge_rejeitado_usa_cor_danger(client, app):
@@ -277,7 +311,7 @@ def test_badge_rejeitado_usa_cor_danger(client, app):
     with app.app_context():
         alteracao = db.session.get(Alteracao, alt_id)
         aprovador = _usuario(app, PerfilUsuario.ADMINISTRADOR)
-        rejeitar_alteracao(alteracao, aprovador)
+        rejeitar_alteracao(alteracao, aprovador, "Solicitação fora do escopo")
 
     _login(client, PerfilUsuario.ADMINISTRADOR)
     html = client.get(f"/alteracoes/{alt_id}").get_data(as_text=True)

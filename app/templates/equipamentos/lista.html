@@ -26,7 +26,8 @@
 {% if equipamentos %}
 {% set total = equipamentos|length %}
 {% set ativos = equipamentos|selectattr("situacao.value", "equalto", "ATIVO")|list|length %}
-{% set inativos = total - ativos %}
+{% set inativos = equipamentos|selectattr("situacao.value", "equalto", "INATIVO")|list|length %}
+{% set manutencao = equipamentos|selectattr("situacao.value", "equalto", "MANUTENCAO")|list|length %}
 <div class="oris-stat-strip">
     <div class="oris-stat-card">
         <span class="oris-stat-value">{{ total }}</span>
@@ -39,6 +40,10 @@
     <div class="oris-stat-card">
         <span class="oris-stat-value">{{ inativos }}</span>
         <span class="oris-stat-label">Inativos</span>
+    </div>
+    <div class="oris-stat-card">
+        <span class="oris-stat-value">{{ manutencao }}</span>
+        <span class="oris-stat-label">Em manutenção</span>
     </div>
 </div>
 {% endif %}
@@ -73,6 +78,7 @@
                 <option value="">Todas as situações</option>
                 <option value="ATIVO" {% if situacao_filtro == "ATIVO" %}selected{% endif %}>Ativo</option>
                 <option value="INATIVO" {% if situacao_filtro == "INATIVO" %}selected{% endif %}>Inativo</option>
+                <option value="MANUTENCAO" {% if situacao_filtro == "MANUTENCAO" %}selected{% endif %}>Manutenção</option>
             </select>
         </div>
         {% if unidade_id_filtro or servico_id_filtro or situacao_filtro %}
@@ -124,6 +130,8 @@
                 <td>
                     {% if equipamento.situacao.value == "ATIVO" %}
                         <span class="badge bg-success">Ativo</span>
+                    {% elif equipamento.situacao.value == "MANUTENCAO" %}
+                        <span class="badge bg-warning text-dark">Manutenção</span>
                     {% else %}
                         <span class="badge bg-secondary">Inativo</span>
                     {% endif %}

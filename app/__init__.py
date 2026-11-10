@@ -96,6 +96,7 @@ def create_app(config_object=None):
         "cidade": "Cidade",
         "uf": "UF",
         "situacao": "Situação",
+        "descricao_situacao": "Descrição",
     }
 
     @app.template_filter("rotulo_campo")

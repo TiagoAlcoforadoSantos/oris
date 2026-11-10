@@ -99,7 +99,12 @@ def rejeitar(alteracao_id):
     form = AcaoAlteracaoForm()
 
     if not form.validate_on_submit():
-        flash("Não foi possível processar a solicitação.", "danger")
+        mensagem = (
+            form.motivo_rejeicao.errors[0]
+            if form.motivo_rejeicao.errors
+            else "Não foi possível processar a solicitação."
+        )
+        flash(mensagem, "danger")
         return redirect(url_for("alteracoes.visualizar", alteracao_id=alteracao.id))
 
     aprovador = usuario_atual()
@@ -107,6 +112,11 @@ def rejeitar(alteracao_id):
     if alteracao.usuario_id == aprovador.id:
         abort(403)
 
-    sucesso, mensagem = rejeitar_alteracao(alteracao, aprovador)
+    motivo_rejeicao = (form.motivo_rejeicao.data or "").strip()
+    if not motivo_rejeicao:
+        flash("Informe a descrição do motivo da rejeição.", "danger")
+        return redirect(url_for("alteracoes.visualizar", alteracao_id=alteracao.id))
+
+    sucesso, mensagem = rejeitar_alteracao(alteracao, aprovador, motivo_rejeicao)
     flash(mensagem, "success" if sucesso else "danger")
     return redirect(url_for("alteracoes.visualizar", alteracao_id=alteracao.id))

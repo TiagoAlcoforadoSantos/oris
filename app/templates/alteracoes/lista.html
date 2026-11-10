@@ -122,12 +122,22 @@
                                 <i class="bi bi-check-lg" aria-hidden="true"></i> Aprovar
                             </button>
                         </form>
-                        <form method="POST" action="{{ url_for('alteracoes.rejeitar', alteracao_id=alteracao.id) }}" class="d-inline">
+                        <form method="POST" action="{{ url_for('alteracoes.rejeitar', alteracao_id=alteracao.id) }}" class="d-inline js-form-rejeicao">
                             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                            <button type="submit" class="btn btn-sm btn-outline-danger"
+                            <button type="button" class="btn btn-sm btn-outline-danger js-show-rejection"
                                     aria-label="Rejeitar alteração #{{ alteracao.id }}" title="Rejeitar">
                                 <i class="bi bi-x-lg" aria-hidden="true"></i> Rejeitar
                             </button>
+                            <div class="js-rejection-details mt-2" hidden>
+                                <label class="form-label small" for="motivo-rejeicao-{{ alteracao.id }}">Descrição</label>
+                                <textarea id="motivo-rejeicao-{{ alteracao.id }}" name="motivo_rejeicao"
+                                          class="form-control form-control-sm mb-2" rows="2"
+                                          maxlength="2000" required></textarea>
+                                <button type="submit" class="btn btn-sm btn-danger">Confirmar</button>
+                                <button type="button" class="btn btn-sm btn-outline-secondary js-cancel-rejection">
+                                    Cancelar
+                                </button>
+                            </div>
                         </form>
                     {% endif %}
                 </td>
@@ -155,4 +165,8 @@
     e nunca para quem solicitou a própria alteração — mas a proteção
     real acontece sempre no backend.
 </p>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/rejeicao-descricao.js') }}" defer></script>
 {% endblock %}

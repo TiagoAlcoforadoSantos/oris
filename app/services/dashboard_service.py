@@ -25,9 +25,13 @@ def obter_indicadores():
         "servicos_total": Servico.query.count(),
         "servicos_ativos": Servico.query.filter_by(situacao=SituacaoAtivoInativo.ATIVO).count(),
         "servicos_inativos": Servico.query.filter_by(situacao=SituacaoAtivoInativo.INATIVO).count(),
+        "servicos_manutencao": Servico.query.filter_by(situacao=SituacaoAtivoInativo.MANUTENCAO).count(),
         "equipamentos_total": Equipamento.query.count(),
         "equipamentos_ativos": Equipamento.query.filter_by(situacao=SituacaoAtivoInativo.ATIVO).count(),
         "equipamentos_inativos": Equipamento.query.filter_by(situacao=SituacaoAtivoInativo.INATIVO).count(),
+        "equipamentos_manutencao": Equipamento.query.filter_by(
+            situacao=SituacaoAtivoInativo.MANUTENCAO
+        ).count(),
         "alteracoes_pendentes": Alteracao.query.filter_by(status=StatusAlteracao.PENDENTE).count(),
         "alteracoes_aprovadas": Alteracao.query.filter_by(status=StatusAlteracao.APROVADO).count(),
         "alteracoes_rejeitadas": Alteracao.query.filter_by(status=StatusAlteracao.REJEITADO).count(),

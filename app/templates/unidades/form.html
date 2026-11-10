@@ -98,8 +98,15 @@
         <div class="row g-3 mb-4">
             <div class="col-md-4">
                 {{ form.situacao.label(class="form-label") }}
-                {{ form.situacao(class="form-select") }}
+                {{ form.situacao(class="form-select js-situacao-select") }}
                 {% for erro in form.situacao.errors %}
+                    <div class="text-danger small">{{ erro }}</div>
+                {% endfor %}
+            </div>
+            <div class="col-md-8 js-descricao-situacao" {% if form.situacao.data not in ["INATIVA", "MANUTENCAO"] %}hidden{% endif %}>
+                {{ form.descricao_situacao.label(class="form-label") }}
+                {{ form.descricao_situacao(class="form-control", rows="3", maxlength="2000") }}
+                {% for erro in form.descricao_situacao.errors %}
                     <div class="text-danger small">{{ erro }}</div>
                 {% endfor %}
             </div>
@@ -113,4 +120,8 @@
         </div>
     </form>
 </div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/descricao-situacao.js') }}" defer></script>
 {% endblock %}

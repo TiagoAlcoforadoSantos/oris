@@ -50,7 +50,10 @@ def visualizar(unidade_id):
         "unidades/detalhe.html",
         unidade=unidade,
         pode_alterar=_usuario_pode_alterar(),
-        form_situacao=AlterarSituacaoForm(situacao=unidade.situacao.value),
+        form_situacao=AlterarSituacaoForm(
+            situacao=unidade.situacao.value,
+            descricao_situacao=unidade.descricao_situacao,
+        ),
     )
 
 
@@ -75,6 +78,7 @@ def nova():
             "cidade": form.cidade.data.strip(),
             "uf": form.uf.data.strip().upper(),
             "situacao": form.situacao.data,
+            "descricao_situacao": (form.descricao_situacao.data or "").strip() or None,
         }
         descricao = f"Criação de nova Unidade: {dados['nome']} (CNES {cnes})"
 
@@ -120,6 +124,7 @@ def editar(unidade_id):
             "cidade": form.cidade.data.strip(),
             "uf": form.uf.data.strip().upper(),
             "situacao": form.situacao.data,
+            "descricao_situacao": (form.descricao_situacao.data or "").strip() or None,
         }
 
         campos_alterados = [
@@ -155,6 +160,7 @@ def editar(unidade_id):
         form.cidade.data = unidade.cidade
         form.uf.data = unidade.uf
         form.situacao.data = unidade.situacao.value
+        form.descricao_situacao.data = unidade.descricao_situacao
 
     return render_template(
         "unidades/form.html", form=form, titulo=f"Editar Unidade — {unidade.nome}", unidade=unidade
@@ -168,7 +174,12 @@ def alterar_situacao(unidade_id):
     form = AlterarSituacaoForm()
 
     if not form.validate_on_submit():
-        flash("Situação inválida.", "danger")
+        mensagem = (
+            form.descricao_situacao.errors[0]
+            if form.descricao_situacao.errors
+            else "Situação inválida."
+        )
+        flash(mensagem, "danger")
         return redirect(url_for("unidades.visualizar", unidade_id=unidade.id))
 
     nova_situacao = form.situacao.data
@@ -177,10 +188,16 @@ def alterar_situacao(unidade_id):
         flash("A unidade já está nessa situação.", "warning")
         return redirect(url_for("unidades.visualizar", unidade_id=unidade.id))
 
+    descricao_situacao = (form.descricao_situacao.data or "").strip() or None
     descricao = f"Alteração da Unidade {unidade.id} ({unidade.nome}): situação {unidade.situacao.value} → {nova_situacao}"
 
     alteracao = registrar_alteracao(
-        usuario_atual(), "unidades", unidade.id, "ALTERAR_SITUACAO", {"situacao": nova_situacao}, descricao
+        usuario_atual(),
+        "unidades",
+        unidade.id,
+        "ALTERAR_SITUACAO",
+        {"situacao": nova_situacao, "descricao_situacao": descricao_situacao},
+        descricao,
     )
 
     flash(

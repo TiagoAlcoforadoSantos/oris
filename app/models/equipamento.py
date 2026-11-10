@@ -33,6 +33,7 @@ class Equipamento(db.Model, TimestampMixin):
         default=SituacaoAtivoInativo.ATIVO,
     )
 
+    descricao_situacao = db.Column(db.Text, nullable=True)
 
     unidade = db.relationship("Unidade", back_populates="equipamentos")
     servico = db.relationship("Servico", back_populates="equipamentos")

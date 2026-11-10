@@ -3,6 +3,7 @@ Aplica, de forma idempotente, as migracoes pendentes do banco:
 - 0001 (database/migrations/0001_...sql): CNES deixa de ser unico, coluna
   unidades.unidade_e_mista, servicos/equipamentos.unidade_id opcional;
 - 0002 (database/migrations/0002_...sql): Fase 14.
+- 0003 (database/migrations/0003_...sql): descricoes de situacao e motivo de rejeicao.
 
 Fase 14:
 - Cria as tabelas que faltam (grupos, usuario_grupos) com db.create_all().
@@ -65,6 +66,26 @@ def main():
         if "identificador_externo" not in colunas:
             comandos.append("ALTER TABLE usuarios ADD COLUMN identificador_externo VARCHAR(255) NULL")
             comandos.append("CREATE INDEX ix_usuarios_identificador_externo ON usuarios (identificador_externo)")
+
+        # --- Migracao 0003 (descricao de situacao e motivo de rejeicao) ---
+        for tabela in ("unidades", "servicos", "equipamentos"):
+            colunas_tabela = {c["name"] for c in insp.get_columns(tabela)}
+            if "descricao_situacao" not in colunas_tabela:
+                comandos.append(f"ALTER TABLE {tabela} ADD COLUMN descricao_situacao TEXT NULL")
+
+        colunas_alteracoes = {c["name"] for c in insp.get_columns("alteracoes")}
+        if "motivo_rejeicao" not in colunas_alteracoes:
+            comandos.append("ALTER TABLE alteracoes ADD COLUMN motivo_rejeicao TEXT NULL")
+
+        for tabela in ("servicos", "equipamentos"):
+            coluna_situacao = next(
+                c for c in insp.get_columns(tabela) if c["name"] == "situacao"
+            )
+            if "MANUTENCAO" not in str(coluna_situacao["type"]).upper():
+                comandos.append(
+                    f"ALTER TABLE {tabela} MODIFY COLUMN situacao "
+                    "ENUM('ATIVO','INATIVO','MANUTENCAO') NOT NULL DEFAULT 'ATIVO'"
+                )
 
         for comando in comandos:
             db.session.execute(text(comando))

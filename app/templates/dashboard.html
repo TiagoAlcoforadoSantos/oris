@@ -53,7 +53,10 @@
         <div>
             <span class="oris-kpi-label">Serviços</span>
             <span class="oris-kpi-value">{{ indicadores.servicos_total }}</span>
-            <span class="oris-kpi-meta">{{ indicadores.servicos_ativos }} ativos · {{ indicadores.servicos_inativos }} inativos</span>
+            <span class="oris-kpi-meta">
+                {{ indicadores.servicos_ativos }} ativos · {{ indicadores.servicos_inativos }} inativos ·
+                {{ indicadores.servicos_manutencao }} em manutenção
+            </span>
         </div>
     </article>
 
@@ -62,7 +65,10 @@
         <div>
             <span class="oris-kpi-label">Equipamentos</span>
             <span class="oris-kpi-value">{{ indicadores.equipamentos_total }}</span>
-            <span class="oris-kpi-meta">{{ indicadores.equipamentos_ativos }} ativos · {{ indicadores.equipamentos_inativos }} inativos</span>
+            <span class="oris-kpi-meta">
+                {{ indicadores.equipamentos_ativos }} ativos · {{ indicadores.equipamentos_inativos }} inativos ·
+                {{ indicadores.equipamentos_manutencao }} em manutenção
+            </span>
         </div>
     </article>
 

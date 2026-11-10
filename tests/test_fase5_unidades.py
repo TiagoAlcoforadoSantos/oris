@@ -212,7 +212,7 @@ def test_administrador_solicita_alteracao_de_situacao(client, app):
 
     resp = client.post(
         f"/unidades/{unidade_id}/situacao",
-        data={"situacao": "MANUTENCAO"},
+        data={"situacao": "MANUTENCAO", "descricao_situacao": "Reforma da unidade"},
         follow_redirects=True,
     )
     assert resp.status_code == 200
@@ -230,7 +230,10 @@ def test_aprovar_alteracao_de_situacao_aplica_a_mudanca(client, app):
     _login(client, PerfilUsuario.ADMINISTRADOR)
     unidade_id = _unidade_exemplo_id(app)
 
-    client.post(f"/unidades/{unidade_id}/situacao", data={"situacao": "MANUTENCAO"})
+    client.post(
+        f"/unidades/{unidade_id}/situacao",
+        data={"situacao": "MANUTENCAO", "descricao_situacao": "Reforma da unidade"},
+    )
 
     with app.app_context():
         alteracao = Alteracao.query.filter_by(tabela="unidades", operacao="ALTERAR_SITUACAO").first()
@@ -240,6 +243,7 @@ def test_aprovar_alteracao_de_situacao_aplica_a_mudanca(client, app):
 
         unidade = db.session.get(Unidade, unidade_id)
         assert unidade.situacao == SituacaoUnidade.MANUTENCAO
+        assert unidade.descricao_situacao == "Reforma da unidade"
 
 
 def test_gestor_consulta_unidades(client, app):
@@ -269,7 +273,10 @@ def test_gestor_nao_edita_unidade(client, app):
     resp = client.get(f"/unidades/{unidade_id}/editar")
     assert resp.status_code == 403
 
-    resp = client.post(f"/unidades/{unidade_id}/situacao", data={"situacao": "INATIVA"})
+    resp = client.post(
+        f"/unidades/{unidade_id}/situacao",
+        data={"situacao": "INATIVA", "descricao_situacao": "Unidade desativada"},
+    )
     assert resp.status_code == 403
 
 

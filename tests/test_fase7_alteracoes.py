@@ -223,7 +223,7 @@ def test_rejeicao_altera_status_e_registra_responsavel_e_data(client, app):
         alteracao = Alteracao.query.filter_by(tabela="unidades", operacao="CRIAR").first()
         aprovador = _usuario(app, PerfilUsuario.ADMINISTRADOR)
 
-        ok, mensagem = rejeitar_alteracao(alteracao, aprovador)
+        ok, mensagem = rejeitar_alteracao(alteracao, aprovador, "Dados insuficientes")
 
         assert ok is True
         assert alteracao.status == StatusAlteracao.REJEITADO
@@ -255,10 +255,10 @@ def test_alteracao_ja_rejeitada_nao_pode_ser_rejeitada_novamente(client, app):
     with app.app_context():
         alteracao = Alteracao.query.filter_by(tabela="unidades", operacao="CRIAR").first()
         aprovador = _usuario(app, PerfilUsuario.ADMINISTRADOR)
-        rejeitar_alteracao(alteracao, aprovador)
+        rejeitar_alteracao(alteracao, aprovador, "Dados insuficientes")
 
         outro_aprovador = _usuario(app, PerfilUsuario.GESTAO_INFORMACAO)
-        ok, mensagem = rejeitar_alteracao(alteracao, outro_aprovador)
+        ok, mensagem = rejeitar_alteracao(alteracao, outro_aprovador, "Dados insuficientes")
         assert ok is False
         assert "já foi processada" in mensagem
 
@@ -296,7 +296,10 @@ def test_alteracao_relacionada_a_unidade(client, app):
     _login(client, PerfilUsuario.RESPONSAVEL_SAUDE_BUCAL)
     unidade_id = _unidade_id(app)
 
-    client.post(f"/unidades/{unidade_id}/situacao", data={"situacao": "MANUTENCAO"})
+    client.post(
+        f"/unidades/{unidade_id}/situacao",
+        data={"situacao": "MANUTENCAO", "descricao_situacao": "Reforma da unidade"},
+    )
 
     with app.app_context():
         alteracao = Alteracao.query.filter_by(tabela="unidades", operacao="ALTERAR_SITUACAO").first()
@@ -313,7 +316,10 @@ def test_alteracao_relacionada_a_servico(client, app):
     _login(client, PerfilUsuario.RESPONSAVEL_SAUDE_BUCAL)
     servico_id = _servico_id(app)
 
-    client.post(f"/servicos/{servico_id}/situacao", data={"situacao": "INATIVO"})
+    client.post(
+        f"/servicos/{servico_id}/situacao",
+        data={"situacao": "INATIVO", "descricao_situacao": "Serviço suspenso"},
+    )
 
     with app.app_context():
         alteracao = Alteracao.query.filter_by(tabela="servicos", operacao="ALTERAR_SITUACAO").first()
@@ -330,7 +336,10 @@ def test_alteracao_relacionada_a_equipamento(client, app):
     _login(client, PerfilUsuario.RESPONSAVEL_SAUDE_BUCAL)
     equipamento_id = _equipamento_id(app)
 
-    client.post(f"/equipamentos/{equipamento_id}/situacao", data={"situacao": "INATIVO"})
+    client.post(
+        f"/equipamentos/{equipamento_id}/situacao",
+        data={"situacao": "INATIVO", "descricao_situacao": "Aguardando reparo"},
+    )
 
     with app.app_context():
         alteracao = Alteracao.query.filter_by(tabela="equipamentos", operacao="ALTERAR_SITUACAO").first()

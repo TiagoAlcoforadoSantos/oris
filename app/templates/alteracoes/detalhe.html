@@ -152,6 +152,13 @@
 {% endif %}
 {% endif %}
 
+{% if alteracao.motivo_rejeicao %}
+<div class="oris-panel mb-4">
+    <h2 class="oris-section-label">Descrição da rejeição</h2>
+    <p class="mb-0">{{ alteracao.motivo_rejeicao }}</p>
+</div>
+{% endif %}
+
 {% if pode_decidir %}
 <div class="oris-panel">
     <h2 class="oris-section-label">Ações</h2>
@@ -162,11 +169,17 @@
                 <i class="bi bi-check-lg" aria-hidden="true"></i> Aprovar alteração
             </button>
         </form>
-        <form method="POST" action="{{ url_for('alteracoes.rejeitar', alteracao_id=alteracao.id) }}">
+        <form method="POST" action="{{ url_for('alteracoes.rejeitar', alteracao_id=alteracao.id) }}" class="js-form-rejeicao">
             {{ form.hidden_tag() }}
-            <button type="submit" class="btn btn-outline-danger">
+            <button type="button" class="btn btn-outline-danger js-show-rejection">
                 <i class="bi bi-x-lg" aria-hidden="true"></i> Rejeitar alteração
             </button>
+            <div class="js-rejection-details mt-3" hidden>
+                {{ form.motivo_rejeicao.label(class="form-label") }}
+                {{ form.motivo_rejeicao(class="form-control mb-2", rows="3", maxlength="2000", required=true) }}
+                <button type="submit" class="btn btn-danger">Confirmar rejeição</button>
+                <button type="button" class="btn btn-outline-secondary js-cancel-rejection">Cancelar</button>
+            </div>
         </form>
     </div>
 </div>
@@ -177,4 +190,8 @@
     você quem a solicitou.
 </div>
 {% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/rejeicao-descricao.js') }}" defer></script>
 {% endblock %}

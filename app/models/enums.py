@@ -30,10 +30,11 @@ class SituacaoUnidade(str, enum.Enum):
 
 
 class SituacaoAtivoInativo(str, enum.Enum):
-    """Situação simples (ativo/inativo) usada por Serviço e Equipamento."""
+    """Situação de Serviços e Equipamentos."""
 
     ATIVO = "ATIVO"
     INATIVO = "INATIVO"
+    MANUTENCAO = "MANUTENCAO"
 
 
 class StatusAlteracao(str, enum.Enum):
