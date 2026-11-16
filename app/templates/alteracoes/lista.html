@@ -71,7 +71,7 @@
 
 {% if alteracoes %}
 <div class="table-responsive oris-panel p-0">
-    <table class="table table-hover align-middle mb-0">
+    <table class="table table-hover align-middle mb-0 oris-tabela-cartoes">
         <thead>
             <tr>
                 <th>#</th>
@@ -86,7 +86,7 @@
         <tbody>
             {% for alteracao in alteracoes %}
             <tr>
-                <td class="text-muted">#{{ alteracao.id }}</td>
+                <td class="text-muted" data-rotulo="Nº">#{{ alteracao.id }}</td>
                 <td>
                     <a href="{{ url_for('alteracoes.visualizar', alteracao_id=alteracao.id) }}" class="fw-semibold text-decoration-none">
                         {% if alteracao.operacao.value == "CRIAR" %}Criação
@@ -96,10 +96,10 @@
                     </a>
                     <div class="text-muted small">{{ alteracao.descricao }}</div>
                 </td>
-                <td class="text-capitalize">{{ alteracao.tabela }}</td>
-                <td>{{ alteracao.usuario_criador.nome }}</td>
-                <td>{{ alteracao.created_at.strftime("%d/%m/%Y %H:%M") }}</td>
-                <td>
+                <td class="text-capitalize" data-rotulo="Entidade">{{ alteracao.tabela }}</td>
+                <td data-rotulo="Solicitante">{{ alteracao.usuario_criador.nome }}</td>
+                <td data-rotulo="Data">{{ alteracao.created_at.strftime("%d/%m/%Y %H:%M") }}</td>
+                <td data-rotulo="Status">
                     {% if alteracao.status.value == "PENDENTE" %}
                         <span class="badge bg-warning text-dark">Pendente</span>
                     {% elif alteracao.status.value == "APROVADO" %}

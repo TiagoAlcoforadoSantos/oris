@@ -116,6 +116,12 @@
     padding-bottom: 0.6rem;
 }
 
+.oris-login-card .btn-primary,
+.oris-login-card .btn-primary:hover,
+.oris-login-card .btn-primary:focus {
+    color: #fff;
+}
+
 .oris-login-card .btn-primary:hover {
     background: linear-gradient(120deg, var(--oris-petroleum), var(--oris-teal));
 }
@@ -130,3 +136,5 @@
 .oris-login-footnote a {
     color: var(--oris-white);
 }
+
+.oris-login-card .form-label::after { content: none; }

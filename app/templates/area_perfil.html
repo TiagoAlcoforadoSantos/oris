@@ -14,13 +14,12 @@
 <div class="card">
     <div class="card-body">
         <p class="mb-1"><strong>Usuário autenticado:</strong> {{ usuario.nome }}</p>
-        <p class="mb-0"><strong>Perfil:</strong> {{ usuario.perfil.value }}</p>
+        <p class="mb-0"><strong>Perfil:</strong> {{ usuario.perfil.value|rotulo_perfil }}</p>
     </div>
 </div>
 
 <p class="text-muted small mt-4">
-    Esta página existe apenas para comprovar o controle de acesso (RBAC)
-    por perfil. As funcionalidades reais desta área serão implementadas
-    em fases futuras.
+    Esta área está disponível para o seu perfil. Use o menu lateral para acessar
+    unidades, serviços, equipamentos e aprovações.
 </p>
 {% endblock %}

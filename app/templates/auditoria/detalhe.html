@@ -45,7 +45,7 @@
         <div>
             <dt>Usuário</dt>
             <dd>
-                {% if registro.usuario %}{{ registro.usuario.nome }} ({{ registro.usuario.perfil.value }})
+                {% if registro.usuario %}{{ registro.usuario.nome }} ({{ registro.usuario.perfil.value|rotulo_perfil }})
                 {% else %}Sem usuário vinculado — identificador informado: {{ registro.identificador_tentado or "—" }}{% endif %}
             </dd>
 

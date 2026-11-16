@@ -118,6 +118,17 @@ def create_app(config_object=None):
         "descricao_situacao": "Descrição",
     }
 
+    ROTULOS_PERFIL = {
+        "ADMINISTRADOR": "Administrador",
+        "GESTAO_INFORMACAO": "Gestão da Informação",
+        "RESPONSAVEL_SAUDE_BUCAL": "Responsável pela Saúde Bucal",
+        "GESTOR": "Gestor",
+    }
+
+    @app.template_filter("rotulo_perfil")
+    def rotulo_perfil_filter(valor):
+        return ROTULOS_PERFIL.get(valor, valor)
+
     @app.template_filter("rotulo_campo")
     def rotulo_campo_filter(campo):
         return RÓTULOS_CAMPOS_ALTERACAO.get(campo, campo.replace("_", " ").capitalize())

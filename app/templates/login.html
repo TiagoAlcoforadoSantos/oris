@@ -6,6 +6,8 @@
 <link href="{{ url_for('static', filename='css/login-premium.css') }}" rel="stylesheet">
 {% endblock %}
 
+{% block flashes_publico %}{% endblock %}
+
 {% block content %}
 <div class="oris-login-backdrop">
     <div class="oris-login-decor oris-login-decor--top" aria-hidden="true">
@@ -36,6 +38,11 @@
         </div>
 
         <div class="oris-login-card">
+            {% with mensagens = get_flashed_messages(with_categories=true) %}
+                {% for categoria, mensagem in mensagens %}
+                    <div class="alert alert-{{ categoria }} py-2 small" role="alert">{{ mensagem }}</div>
+                {% endfor %}
+            {% endwith %}
             <form method="POST" action="{{ url_for('auth.login') }}" novalidate>
                 {{ form.hidden_tag() }}
 

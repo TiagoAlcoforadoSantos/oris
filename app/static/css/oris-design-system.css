@@ -358,6 +358,10 @@ a.text-decoration-none:hover {
     transition: border-color 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease;
 }
 
+.form-select {
+    padding-right: 2.25rem;
+}
+
 .form-control:hover,
 .form-select:hover {
     border-color: var(--oris-petroleum);
@@ -668,4 +672,33 @@ footer a:hover {
 .oris-back-link:hover {
     color: var(--oris-teal);
     gap: 0.55rem;
+}
+
+
+/* Botões de ação lado a lado nas tabelas */
+.table td.text-end { white-space: nowrap; }
+.table td.text-end .js-rejection-details { white-space: normal; }
+
+/* Campos obrigatórios marcados com asterisco */
+.form-label:has(+ [required])::after,
+.form-label:has(+ .form-control[required])::after {
+    content: " *";
+    color: #b02a37;
+}
+
+/* Tabelas viram cartões no celular */
+@media (max-width: 768px) {
+    .oris-tabela-cartoes,
+    .oris-tabela-cartoes tbody,
+    .oris-tabela-cartoes tr,
+    .oris-tabela-cartoes td { display: block; width: 100%; }
+    .oris-tabela-cartoes thead { display: none; }
+    .oris-tabela-cartoes tr { padding: 0.75rem 1rem; border-bottom: 1px solid var(--oris-border); }
+    .oris-tabela-cartoes td { padding: 0.15rem 0; border: 0; }
+    .oris-tabela-cartoes td[data-rotulo]::before {
+        content: attr(data-rotulo) ": ";
+        font-weight: 600;
+        color: #5b6b75;
+    }
+    .oris-tabela-cartoes td.text-end { text-align: left !important; margin-top: 0.5rem; }
 }

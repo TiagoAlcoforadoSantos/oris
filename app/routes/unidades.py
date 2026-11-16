@@ -127,10 +127,12 @@ def editar(unidade_id):
             "descricao_situacao": (form.descricao_situacao.data or "").strip() or None,
         }
 
+        valores_atuais = {campo: getattr(unidade, campo) for campo in dados_novos}
+        valores_atuais["situacao"] = unidade.situacao.value
         campos_alterados = [
-            f"{campo} '{getattr(unidade, campo)}' → '{valor}'"
+            f"{campo} '{valores_atuais[campo]}' → '{valor}'"
             for campo, valor in dados_novos.items()
-            if str(getattr(unidade, campo)) != str(valor)
+            if str(valores_atuais[campo]) != str(valor)
         ]
         if not campos_alterados:
             flash("Nenhuma alteração foi detectada nos dados informados.", "warning")

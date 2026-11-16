@@ -73,11 +73,11 @@
                 </a>
                 <a class="oris-nav-item {% if request.endpoint == 'bd.dashboard_integrado' %}active{% endif %}"
                    href="{{ url_for('bd.dashboard_integrado') }}">
-                    <i class="bi bi-speedometer2"></i> <span>Dashboard BD</span>
+                    <i class="bi bi-speedometer2"></i> <span>Indicadores de manutenção</span>
                 </a>
                 <a class="oris-nav-item {% if request.endpoint in ('bd.rotinas', 'bd.rotinas_executar') %}active{% endif %}"
                    href="{{ url_for('bd.rotinas') }}">
-                    <i class="bi bi-gear-wide-connected"></i> <span>Rotinas do BD</span>
+                    <i class="bi bi-gear-wide-connected"></i> <span>Rotinas do banco</span>
                 </a>
                 <a class="oris-nav-item {% if request.endpoint == 'bd.estatistica_painel' %}active{% endif %}"
                    href="{{ url_for('bd.estatistica_painel') }}">
@@ -129,7 +129,7 @@
                         <div class="oris-avatar" aria-hidden="true">{{ usuario_logado.nome[0]|upper }}</div>
                         <div class="oris-user-info">
                             <div class="oris-user-name">{{ usuario_logado.nome }}</div>
-                            <div class="oris-user-role">{{ usuario_logado.perfil.value }}</div>
+                            <div class="oris-user-role">{{ usuario_logado.perfil.value|rotulo_perfil }}</div>
                         </div>
                     </div>
                     {% endif %}
@@ -168,6 +168,7 @@
     </div>
     {% else %}
     <div class="container pb-5">
+        {% block flashes_publico %}
         {% with mensagens = get_flashed_messages(with_categories=true) %}
             {% if mensagens %}
                 {% for categoria, mensagem in mensagens %}
@@ -177,6 +178,7 @@
                 {% endfor %}
             {% endif %}
         {% endwith %}
+        {% endblock %}
 
         {{ self.content() }}
 
