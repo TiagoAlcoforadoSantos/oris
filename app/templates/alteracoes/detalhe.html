@@ -11,7 +11,7 @@
 {% endblock %}
 
 {% block content %}
-{% set dados_propostos = alteracao.dados_novos | from_json | campos_visiveis %}
+{% set dados_propostos = dados_propostos | campos_visiveis %}
 
 <a href="{{ url_for('alteracoes.listar') }}" class="oris-back-link">
     <i class="bi bi-arrow-left" aria-hidden="true"></i> Voltar para aprovações

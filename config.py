@@ -16,6 +16,7 @@ class Config:
     """Configuração base, compartilhada por todos os ambientes."""
 
     SECRET_KEY = os.getenv("SECRET_KEY", SECRET_KEY_PADRAO)
+    DATA_ENCRYPTION_KEY = os.getenv("DATA_ENCRYPTION_KEY", "")
 
     DB_HOST = os.getenv("DB_HOST", "localhost")
     DB_PORT = os.getenv("DB_PORT", "3306")
@@ -104,6 +105,7 @@ class TestingConfig(Config):
     WTF_CSRF_ENABLED = False
     RATE_LIMIT_LOGIN_ENABLED = False
     SQLALCHEMY_DATABASE_URI = "sqlite:///:memory:"
+    DATA_ENCRYPTION_KEY = "8YUlDwN5PXNRQGa8BFCUZkwAA95sjPiITg3aJ8u0MZs="
 
 
 config_by_name = {

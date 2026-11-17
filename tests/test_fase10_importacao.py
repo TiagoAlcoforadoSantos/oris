@@ -428,7 +428,11 @@ def test_senha_e_hash_nao_aparecem_nos_dados_registrados(client, app):
 
     with app.app_context():
         alteracao = Alteracao.query.filter_by(tabela="unidades", operacao="CRIAR").first()
-        assert "senha" not in alteracao.dados_novos.lower()
+        from app.services.alteracoes_service import ler_dados_novos
+
+        assert alteracao.dados_novos.startswith("oris-fernet-v1:")
+        assert ler_dados_novos(alteracao)["nome"] == "UBS Segura"
+        assert "UBS Segura" not in alteracao.dados_novos
         assert "$2b$" not in alteracao.dados_novos
 
         for registro in Auditoria.query.all():
@@ -447,6 +451,8 @@ def test_arquivo_temporario_e_removido_apos_processamento(client):
 
     caminho = _caminho_do_token(token)
     assert os.path.exists(caminho)
+    with open(caminho, "rb") as arquivo_temporario:
+        assert b"UBS Temp" not in arquivo_temporario.read()
 
     client.post(
         "/importacao/validar",
@@ -476,6 +482,47 @@ def test_arquivo_temporario_e_removido_quando_validacao_falha(client):
     )
 
     assert not os.path.exists(caminho)
+
+
+def test_upload_temporario_e_guardado_cifrado(client):
+    from app.routes.importacao import _caminho_do_token, _remover_temporario
+
+    _login(client, PerfilUsuario.ADMINISTRADOR)
+    conteudo = _csv_bytes([CABECALHO_UNIDADES, ["UBS Cifrada", "1112240", "Recife", "PE", "ATIVA"]])
+    resp = _upload_e_mapear(client, conteudo, "unidades.csv")
+    token = _extrair_token(resp.get_data(as_text=True))
+    with open(_caminho_do_token(token), "rb") as arquivo_temporario:
+        cifrado = arquivo_temporario.read()
+
+    assert conteudo not in cifrado
+    assert b"UBS Cifrada" not in cifrado
+    assert resp.status_code == 200
+    _remover_temporario(token)
+
+
+def test_migrar_alteracoes_legadas_para_cifradas(app):
+    from app.models.enums import StatusAlteracao, TipoOperacaoAlteracao
+    from app.services.alteracoes_service import (
+        criptografar_alteracoes_existentes,
+        ler_dados_novos,
+    )
+
+    with app.app_context():
+        usuario = Usuario.query.filter_by(email=EMAILS[PerfilUsuario.ADMINISTRADOR]).one()
+        alteracao = Alteracao(
+            usuario_id=usuario.id,
+            tabela="unidades",
+            operacao=TipoOperacaoAlteracao.CRIAR,
+            dados_novos='{"nome": "Registro legado"}',
+            status=StatusAlteracao.PENDENTE,
+        )
+        db.session.add(alteracao)
+        db.session.commit()
+
+        assert criptografar_alteracoes_existentes() == 1
+        assert alteracao.dados_novos.startswith("oris-fernet-v1:")
+        assert ler_dados_novos(alteracao) == {"nome": "Registro legado"}
+        assert criptografar_alteracoes_existentes() == 0
 
 
 @pytest.mark.parametrize("entidade", ["unidades", "servicos", "equipamentos"])

@@ -17,6 +17,7 @@ class ProducaoSemChave(ProductionConfig):
 
 class ProducaoComChaveForte(ProductionConfig):
     SECRET_KEY = "k" * 48
+    DATA_ENCRYPTION_KEY = "8YUlDwN5PXNRQGa8BFCUZkwAA95sjPiITg3aJ8u0MZs="
 
 
 def test_producao_recusa_chave_padrao():
@@ -29,12 +30,24 @@ def test_producao_recusa_chave_vazia():
         create_app(ProducaoSemChave)
 
 
+def test_producao_recusa_chave_de_criptografia_ausente():
+    class ProducaoSemChaveDeDados(ProductionConfig):
+        SECRET_KEY = "k" * 48
+        DATA_ENCRYPTION_KEY = ""
+
+    with pytest.raises(RuntimeError, match="DATA_ENCRYPTION_KEY"):
+        create_app(ProducaoSemChaveDeDados)
+
+
 def test_producao_aceita_chave_propria():
     app = create_app(ProducaoComChaveForte)
     assert app.config["SECRET_KEY"] == "k" * 48
     assert app.config["SESSION_COOKIE_SECURE"] is True
 
 
-def test_desenvolvimento_e_testes_continuam_com_chave_padrao():
-    assert create_app(DevelopmentConfig).config["SECRET_KEY"] == SECRET_KEY_PADRAO
-    assert create_app(TestingConfig).config["SECRET_KEY"] == SECRET_KEY_PADRAO
+def test_desenvolvimento_e_testes_inicializam_com_chave_de_dados():
+    class DesenvolvimentoComChaveDeDados(DevelopmentConfig):
+        DATA_ENCRYPTION_KEY = "8YUlDwN5PXNRQGa8BFCUZkwAA95sjPiITg3aJ8u0MZs="
+
+    assert create_app(DesenvolvimentoComChaveDeDados).config["DATA_ENCRYPTION_KEY"]
+    assert create_app(TestingConfig).config["SECRET_KEY"]

@@ -12,6 +12,7 @@ from app.extensions import db
 from app.models import PerfilUsuario
 from app.services.alteracoes_service import registrar_alteracao
 from app.services.auditoria_service import registrar_auditoria
+from app.services.criptografia_service import DadosCifradosInvalidos, cifrar_bytes, decifrar_bytes
 from app.services.importacao_service import (
     CAMPOS_POR_ENTIDADE,
     EXTENSOES_ACEITAS,
@@ -51,11 +52,19 @@ def _diretorio_temporario():
 
 
 def _salvar_arquivo_temporario(arquivo, extensao):
-    """Salva o arquivo enviado com um nome gerado pelo servidor (nunca o nome enviado..."""
+    """Cifra e salva o upload com um nome aleatório gerado pelo servidor."""
     token = f"{uuid.uuid4().hex}{extensao}"
     caminho = os.path.join(_diretorio_temporario(), token)
-    arquivo.save(caminho)
+    with open(caminho, "wb") as destino:
+        destino.write(cifrar_bytes(arquivo.read()))
     return token
+
+
+def _ler_arquivo_temporario(token, extensao):
+    caminho = _caminho_do_token(token)
+    with open(caminho, "rb") as arquivo:
+        conteudo = decifrar_bytes(arquivo.read())
+    return ler_planilha(io.BytesIO(conteudo), extensao)
 
 
 def _caminho_do_token(token):
@@ -166,13 +175,16 @@ def mapear():
         return redirect(url_for("importacao.nova", entidade=entidade))
 
     token = _salvar_arquivo_temporario(arquivo, extensao)
-    caminho = _caminho_do_token(token)
-
     try:
-        df = ler_planilha(caminho, extensao)
-    except ArquivoInvalidoError as erro:
+        df = _ler_arquivo_temporario(token, extensao)
+    except (ArquivoInvalidoError, DadosCifradosInvalidos) as erro:
         _remover_temporario(token)
-        flash(str(erro), "danger")
+        mensagem = (
+            "O arquivo temporário não pôde ser descriptografado — envie a planilha novamente."
+            if isinstance(erro, DadosCifradosInvalidos)
+            else str(erro)
+        )
+        flash(mensagem, "danger")
         return redirect(url_for("importacao.nova", entidade=entidade))
 
     colunas = list(df.columns)
@@ -212,10 +224,15 @@ def validar():
     campos_sem_mapeamento = [campo for campo in campos_obrigatorios if not mapeamento.get(campo)]
 
     try:
-        df = ler_planilha(caminho, extensao)
-    except ArquivoInvalidoError as erro:
+        df = _ler_arquivo_temporario(token, extensao)
+    except (ArquivoInvalidoError, DadosCifradosInvalidos) as erro:
         _remover_temporario(token)
-        flash(str(erro), "danger")
+        mensagem = (
+            "O arquivo temporário não pôde ser descriptografado — envie a planilha novamente."
+            if isinstance(erro, DadosCifradosInvalidos)
+            else str(erro)
+        )
+        flash(mensagem, "danger")
         return redirect(url_for("importacao.nova", entidade=entidade))
 
     if campos_sem_mapeamento:
@@ -282,10 +299,15 @@ def confirmar():
     hash_arquivo = sha256_arquivo(caminho)
 
     try:
-        df = ler_planilha(caminho, extensao)
-    except ArquivoInvalidoError as erro:
+        df = _ler_arquivo_temporario(token, extensao)
+    except (ArquivoInvalidoError, DadosCifradosInvalidos) as erro:
         _remover_temporario(token)
-        flash(str(erro), "danger")
+        mensagem = (
+            "O arquivo temporário não pôde ser descriptografado — envie a planilha novamente."
+            if isinstance(erro, DadosCifradosInvalidos)
+            else str(erro)
+        )
+        flash(mensagem, "danger")
         return redirect(url_for("importacao.nova", entidade=entidade))
 
     resultado = validar_e_classificar(df, mapeamento, entidade)

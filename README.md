@@ -677,6 +677,7 @@ Edite o `.env` com os dados do seu MySQL (use a mesma senha do passo 3):
 FLASK_ENV=development
 FLASK_DEBUG=True
 SECRET_KEY=gere-uma-chave-forte-aqui     # python -c "import secrets; print(secrets.token_hex(32))"
+DATA_ENCRYPTION_KEY=gere-uma-chave-fernet-aqui
 DB_HOST=localhost
 DB_PORT=3306
 DB_NAME=oris_db
@@ -686,6 +687,27 @@ SESSION_LIFETIME_MINUTES=60
 ```
 
 > O arquivo `.env` nunca deve ser enviado ao repositório (já está no `.gitignore`).
+> Gere `DATA_ENCRYPTION_KEY` com `python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"`.
+> Esta chave é obrigatória fora de testes. Mantenha-a separada do banco e faça backup seguro:
+> perder a chave impede decifrar arquivos temporários e solicitações pendentes.
+
+### Proteção dos dados importados em repouso
+
+- Os arquivos da importação são cifrados com Fernet antes de serem gravados na pasta temporária
+  e decifrados em memória para leitura. A remoção do arquivo cifrado continua ocorrendo ao final
+  do fluxo; arquivos abandonados por encerramento inesperado ainda podem permanecer nessa pasta.
+- `alteracoes.dados_novos` é cifrado pela aplicação. Solicitações antigas continuam legíveis e
+  podem ser cifradas após configurar e preservar a chave, fazendo backup antes:
+
+  ```bash
+  flask --app run.py criptografar-alteracoes-legadas
+  ```
+
+- Para cifrar o banco inteiro, backups e arquivos temporários em repouso no servidor, habilite
+  criptografia de volume (por exemplo, BitLocker no Windows) e proteja também o destino dos backups.
+  Essa configuração é responsabilidade do ambiente que hospeda o MySQL e não é ativada pelo código.
+  A criptografia de volume protege mídia desligada; usuários com acesso normal ao banco ainda podem
+  consultar dados após a inicialização do servidor.
 
 **Passo 5 - Criar tabelas, funções, procedures, triggers e views**
 

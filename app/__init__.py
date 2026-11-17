@@ -1,15 +1,25 @@
 """Application factory do ORIS."""
 
-from flask import Flask, render_template
+import io
+
+from flask import Flask, Request, render_template
 from flask_wtf.csrf import CSRFProtect
 
 from app.extensions import db
+from app.services.criptografia_service import validar_chave
 from config import SECRET_KEY_PADRAO, get_config
+
+
+class _UploadEmMemoriaRequest(Request):
+    def _get_file_stream(self, total_content_length, content_type, filename=None, content_length=None):
+        """Avoid Werkzeug spooling plaintext uploads to disk before route handling."""
+        return io.BytesIO()
 
 
 def create_app(config_object=None):
     """Cria e configura a instância da aplicação Flask."""
     app = Flask(__name__)
+    app.request_class = _UploadEmMemoriaRequest
 
     app.config.from_object(config_object or get_config())
 
@@ -21,6 +31,9 @@ def create_app(config_object=None):
                 "SECRET_KEY não configurada: defina uma chave aleatória e secreta "
                 "no .env antes de iniciar o ORIS em produção."
             )
+
+    if not app.config.get("TESTING"):
+        validar_chave(app.config.get("DATA_ENCRYPTION_KEY"))
 
     app.json.ensure_ascii = False
 

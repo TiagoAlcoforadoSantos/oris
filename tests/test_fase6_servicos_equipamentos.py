@@ -265,7 +265,9 @@ def test_descricao_de_situacao_e_salva_apos_aprovacao(client, app, tabela, situa
             registro_id=registro_id,
             operacao="ALTERAR_SITUACAO",
         ).one()
-        assert json.loads(alteracao.dados_novos)["descricao_situacao"] == "Motivo registrado no teste"
+        from app.services.alteracoes_service import ler_dados_novos
+
+        assert ler_dados_novos(alteracao)["descricao_situacao"] == "Motivo registrado no teste"
         aprovador = _usuario(app, PerfilUsuario.GESTAO_INFORMACAO)
         sucesso, _ = aprovar_alteracao(alteracao, aprovador)
         assert sucesso is True
