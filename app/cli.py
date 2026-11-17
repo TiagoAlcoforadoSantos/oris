@@ -75,7 +75,18 @@ def sincronizar_ldap_command(simular, manter_ausentes):
         click.echo(click.style(f"  protegido: {motivo}", fg="yellow"))
 
 
+@click.command("criptografar-alteracoes-legadas")
+@with_appcontext
+def criptografar_alteracoes_legadas_command():
+    """Cifra dados_novos de solicitações antigas que ainda estão em texto simples."""
+    from app.services.alteracoes_service import criptografar_alteracoes_existentes
+
+    quantidade = criptografar_alteracoes_existentes()
+    click.echo(f"{quantidade} solicitação(ões) antiga(s) criptografada(s).")
+
+
 def register_cli_commands(app):
     """Registra os comandos de CLI customizados na aplicação Flask."""
     app.cli.add_command(criar_usuario_command)
     app.cli.add_command(sincronizar_ldap_command)
+    app.cli.add_command(criptografar_alteracoes_legadas_command)

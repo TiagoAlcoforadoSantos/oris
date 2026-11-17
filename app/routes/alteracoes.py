@@ -5,7 +5,7 @@ from flask import Blueprint, abort, flash, redirect, render_template, request, u
 from app.extensions import db
 from app.forms import AcaoAlteracaoForm
 from app.models import Alteracao, PerfilUsuario, StatusAlteracao
-from app.services.alteracoes_service import aprovar_alteracao, rejeitar_alteracao
+from app.services.alteracoes_service import aprovar_alteracao, ler_dados_novos, rejeitar_alteracao
 from app.utils.decorators import login_required, roles_required, usuario_atual
 
 alteracoes_bp = Blueprint("alteracoes", __name__, url_prefix="/alteracoes")
@@ -67,6 +67,7 @@ def visualizar(alteracao_id):
     return render_template(
         "alteracoes/detalhe.html",
         alteracao=alteracao,
+        dados_propostos=ler_dados_novos(alteracao),
         pode_decidir=pode_decidir,
         form=AcaoAlteracaoForm(),
     )

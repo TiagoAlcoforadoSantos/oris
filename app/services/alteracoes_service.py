@@ -7,6 +7,7 @@ from app.models import Equipamento, Servico, Unidade
 from app.models.enums import StatusAlteracao, TipoOperacaoAlteracao
 from app.models.alteracao import Alteracao
 from app.services.auditoria_service import registrar_auditoria
+from app.services.criptografia_service import PREFIXO_TEXTO_CIFRADO, cifrar_texto, decifrar_texto
 from app.utils.datetime_utils import utcnow
 
 TABELA_MODELOS = {
@@ -23,7 +24,7 @@ def registrar_alteracao(usuario, tabela, registro_id, operacao, dados_novos, des
         tabela=tabela,
         registro_id=registro_id,
         operacao=TipoOperacaoAlteracao(operacao),
-        dados_novos=json.dumps(dados_novos, ensure_ascii=False),
+        dados_novos=cifrar_texto(json.dumps(dados_novos, ensure_ascii=False)),
         descricao=descricao,
         status=StatusAlteracao.PENDENTE,
     )
@@ -42,13 +43,34 @@ def registrar_alteracao(usuario, tabela, registro_id, operacao, dados_novos, des
     return alteracao
 
 
+def ler_dados_novos(alteracao_ou_valor):
+    """Decifra dados novos; mantém leitura das solicitações antigas em texto simples."""
+    valor = getattr(alteracao_ou_valor, "dados_novos", alteracao_ou_valor)
+    if not valor:
+        return {}
+    return json.loads(decifrar_texto(valor))
+
+
+def criptografar_alteracoes_existentes():
+    """Cifra solicitações legadas em texto simples e devolve a quantidade alterada."""
+    alteracoes = Alteracao.query.filter(Alteracao.dados_novos.isnot(None)).yield_per(100)
+    quantidade = 0
+    for alteracao in alteracoes:
+        if alteracao.dados_novos.startswith(PREFIXO_TEXTO_CIFRADO):
+            continue
+        alteracao.dados_novos = cifrar_texto(alteracao.dados_novos)
+        quantidade += 1
+    db.session.commit()
+    return quantidade
+
+
 def _aplicar_alteracao(alteracao):
     """Aplica de fato a alteração no registro de negócio correspondente, dentro da..."""
     modelo = TABELA_MODELOS.get(alteracao.tabela)
     if modelo is None:
         return False, f"Tabela '{alteracao.tabela}' desconhecida.", None, None
 
-    dados = json.loads(alteracao.dados_novos) if alteracao.dados_novos else {}
+    dados = ler_dados_novos(alteracao)
 
     if alteracao.operacao == TipoOperacaoAlteracao.CRIAR:
         novo_registro = modelo(**dados)
