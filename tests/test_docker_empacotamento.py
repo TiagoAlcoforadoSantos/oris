@@ -118,6 +118,7 @@ def test_realm_gerado_troca_marcadores_e_nao_vaza_segredo_no_modelo(tmp_path, mo
     json.loads(modelo)  # modelo e JSON valido
     assert "@@OIDC_CLIENT_SECRET@@" in modelo and "@@ORIS_DEMO_SENHA@@" in modelo
     env = {"ORIS_DOMAIN": "teste.exemplo.com", "OIDC_CLIENT_SECRET": "segredo-x", "ORIS_DEMO_SENHA": "senha-y",
+           "LDAP_ADMIN_PASSWORD": "senha-ldap-z",
            "PATH": "/usr/bin:/bin"}
     destino = RAIZ / "docker" / "keycloak" / "generated"
     try:
@@ -127,6 +128,8 @@ def test_realm_gerado_troca_marcadores_e_nao_vaza_segredo_no_modelo(tmp_path, mo
         assert "@@" not in json.dumps(gerado)
         assert gerado["clients"][0]["redirectUris"] == ["https://teste.exemplo.com/login/oidc/callback"]
         assert gerado["clients"][0]["attributes"]["pkce.code.challenge.method"] == "S256"
+        ldap = gerado["components"]["org.keycloak.storage.UserStorageProvider"][0]["config"]
+        assert ldap["bindCredential"] == ["senha-ldap-z"]
     finally:
         import shutil
 

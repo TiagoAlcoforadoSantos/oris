@@ -652,3 +652,100 @@ def test_botao_de_exportar_so_aparece_com_s3_e_permissao(app, client, s3):
     client.get("/logout")
     _login(client, PerfilUsuario.GESTOR)
     assert "Exportar para S3" not in client.get("/relatorios").get_data(as_text=True)
+
+
+# ------------------------------------------------------------------
+# Usuários do LDAP entrando pelo SSO (LDAP federado no Keycloak)
+# ------------------------------------------------------------------
+def _conta_ldap_sincronizada(app, uid="ana.admin", email="ana.admin@rede.gov"):
+    with app.app_context():
+        db.session.add(Usuario(
+            nome="Ana LDAP", email=email, senha_hash=gerar_hash_senha(SENHA),
+            perfil=PerfilUsuario.GESTAO_INFORMACAO, ativo=True,
+            origem=OrigemDiretorio.LDAP, identificador_externo=uid,
+        ))
+        db.session.commit()
+
+
+def test_usuario_do_ldap_ja_sincronizado_entra_pelo_sso_na_mesma_conta(app, client, oidc):
+    app.config["OIDC_CLAIM_LDAP_UID"] = "ldap_uid"
+    _conta_ldap_sincronizada(app)
+    _, p = _iniciar(client)
+    oidc["claims"] = _claims(p, sub="kc-uuid-1", email="ana.admin@rede.gov", ldap_uid="ana.admin",
+                             groups=["oris-gestao"])
+    oidc["userinfo"] = {"sub": "kc-uuid-1"}
+    resp = client.get(f"/login/oidc/callback?code=abc&state={p['state']}")
+    assert resp.status_code == 302 and resp.headers["Location"].endswith("/")
+    with app.app_context():
+        contas = Usuario.query.filter_by(email="ana.admin@rede.gov").all()
+        assert len(contas) == 1  # não cria uma segunda conta OIDC
+        assert contas[0].origem == OrigemDiretorio.LDAP and contas[0].identificador_externo == "ana.admin"
+        log = Auditoria.query.filter_by(acao="LOGIN", usuario_id=contas[0].id).first()
+        assert log is not None and "conta do LDAP" in log.descricao
+    assert client.get("/dashboard").status_code == 200
+
+
+def test_usuario_do_ldap_ainda_nao_sincronizado_vira_conta_ldap(app, client, oidc):
+    app.config["OIDC_CLAIM_LDAP_UID"] = "ldap_uid"
+    _, p = _iniciar(client)
+    oidc["claims"] = _claims(p, email="bruno@rede.gov", ldap_uid="bruno.gestao", groups=["oris-gestor"])
+    oidc["userinfo"] = {"sub": "u-123"}
+    assert client.get(f"/login/oidc/callback?code=abc&state={p['state']}").headers["Location"].endswith("/")
+    with app.app_context():
+        bruno = Usuario.query.filter_by(email="bruno@rede.gov").one()
+        # Mesma identidade que a `flask sincronizar-ldap` usará depois (sem duplicar)
+        assert bruno.origem == OrigemDiretorio.LDAP and bruno.identificador_externo == "bruno.gestao"
+        assert bruno.perfil == PerfilUsuario.GESTOR
+
+
+def test_usuario_do_ldap_sem_grupo_mapeado_continua_negado(app, client, oidc):
+    app.config["OIDC_CLAIM_LDAP_UID"] = "ldap_uid"
+    _, p = _iniciar(client)
+    oidc["claims"] = _claims(p, email="eva@rede.gov", ldap_uid="eva.semgrupo", groups=[])
+    oidc["userinfo"] = {"sub": "u-123"}
+    assert client.get(f"/login/oidc/callback?code=abc&state={p['state']}").headers["Location"].endswith("/login")
+    with app.app_context():
+        assert Usuario.query.filter_by(email="eva@rede.gov").first() is None
+
+
+def test_claim_ldap_uid_ignorada_se_a_configuracao_estiver_desligada(app, client, oidc):
+    # Sem OIDC_CLAIM_LDAP_UID, um token com ldap_uid NÃO assume a conta do LDAP.
+    app.config["OIDC_CLAIM_LDAP_UID"] = ""
+    _conta_ldap_sincronizada(app)
+    _, p = _iniciar(client)
+    oidc["claims"] = _claims(p, email="ana.admin@rede.gov", ldap_uid="ana.admin", groups=["oris-gestao"])
+    oidc["userinfo"] = {"sub": "u-123"}
+    assert client.get(f"/login/oidc/callback?code=abc&state={p['state']}").headers["Location"].endswith("/login")
+    with app.app_context():
+        assert Usuario.query.filter_by(email="ana.admin@rede.gov").one().origem == OrigemDiretorio.LDAP
+
+
+def test_conta_local_nunca_e_assumida_pela_claim_ldap_uid(app, client, oidc):
+    app.config["OIDC_CLAIM_LDAP_UID"] = "ldap_uid"
+    _, p = _iniciar(client)
+    oidc["claims"] = _claims(p, email=EMAILS[PerfilUsuario.ADMINISTRADOR], ldap_uid="ana.admin", groups=["oris-admin"])
+    oidc["userinfo"] = {"sub": "u-123"}
+    assert client.get(f"/login/oidc/callback?code=abc&state={p['state']}").headers["Location"].endswith("/login")
+    with app.app_context():
+        admin = Usuario.query.filter_by(email=EMAILS[PerfilUsuario.ADMINISTRADOR]).one()
+        assert admin.origem == OrigemDiretorio.LOCAL and admin.identificador_externo is None
+
+
+def test_realm_do_keycloak_federa_o_ldap_com_tls_e_emite_ldap_uid():
+    import json
+    import pathlib
+
+    raiz = pathlib.Path(__file__).resolve().parent.parent
+    realm = json.loads((raiz / "docker/keycloak/oris-realm.template.json").read_text(encoding="utf-8"))
+    ldap = realm["components"]["org.keycloak.storage.UserStorageProvider"][0]
+    cfg = ldap["config"]
+    assert cfg["startTls"] == ["true"] and cfg["editMode"] == ["READ_ONLY"]
+    assert cfg["bindCredential"] == ["@@LDAP_ADMIN_PASSWORD@@"]  # segredo só no arquivo gerado
+    mapeadores = {m["name"]: m for m in ldap["subComponents"]["org.keycloak.storage.ldap.mappers.LDAPStorageMapper"]}
+    assert mapeadores["ldap_uid"]["config"]["read.only"] == ["true"]
+    assert mapeadores["grupos"]["config"]["mode"] == ["READ_ONLY"]
+    cliente = realm["clients"][0]
+    assert any(pm["config"].get("claim.name") == "ldap_uid" for pm in cliente["protocolMappers"])
+    compose = (raiz / "docker-compose.idp.yml").read_text(encoding="utf-8")
+    assert "KC_TRUSTSTORE_PATHS" in compose and "OIDC_CLAIM_LDAP_UID: ldap_uid" in compose
+    assert "LDAP_ADMIN_PASSWORD" in (raiz / "docker/keycloak/gerar-realm.py").read_text(encoding="utf-8")

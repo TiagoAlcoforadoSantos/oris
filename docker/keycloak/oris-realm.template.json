@@ -6,27 +6,111 @@
   "loginWithEmailAllowed": true,
   "bruteForceProtected": true,
   "groups": [
-    {"name": "oris-admin"},
-    {"name": "oris-gestao"},
-    {"name": "oris-saude"},
-    {"name": "oris-gestor"}
+    {
+      "name": "oris-admin"
+    },
+    {
+      "name": "oris-gestao"
+    },
+    {
+      "name": "oris-saude"
+    },
+    {
+      "name": "oris-gestor"
+    },
+    {
+      "name": "ldap"
+    }
   ],
   "users": [
-    {"username": "oidc.admin", "email": "oidc.admin@oris.example", "firstName": "Otavio", "lastName": "Admin",
-     "enabled": true, "emailVerified": true, "groups": ["oris-admin"],
-     "credentials": [{"type": "password", "value": "@@ORIS_DEMO_SENHA@@", "temporary": false}]},
-    {"username": "oidc.gestao", "email": "oidc.gestao@oris.example", "firstName": "Paula", "lastName": "Gestao",
-     "enabled": true, "emailVerified": true, "groups": ["oris-gestao"],
-     "credentials": [{"type": "password", "value": "@@ORIS_DEMO_SENHA@@", "temporary": false}]},
-    {"username": "oidc.saude", "email": "oidc.saude@oris.example", "firstName": "Quirino", "lastName": "Saude",
-     "enabled": true, "emailVerified": true, "groups": ["oris-saude"],
-     "credentials": [{"type": "password", "value": "@@ORIS_DEMO_SENHA@@", "temporary": false}]},
-    {"username": "oidc.gestor", "email": "oidc.gestor@oris.example", "firstName": "Rita", "lastName": "Gestor",
-     "enabled": true, "emailVerified": true, "groups": ["oris-gestor"],
-     "credentials": [{"type": "password", "value": "@@ORIS_DEMO_SENHA@@", "temporary": false}]},
-    {"username": "oidc.semgrupo", "email": "oidc.semgrupo@oris.example", "firstName": "Sergio", "lastName": "Semgrupo",
-     "enabled": true, "emailVerified": true, "groups": [],
-     "credentials": [{"type": "password", "value": "@@ORIS_DEMO_SENHA@@", "temporary": false}]}
+    {
+      "username": "oidc.admin",
+      "email": "oidc.admin@oris.example",
+      "firstName": "Otavio",
+      "lastName": "Admin",
+      "enabled": true,
+      "emailVerified": true,
+      "groups": [
+        "oris-admin"
+      ],
+      "credentials": [
+        {
+          "type": "password",
+          "value": "@@ORIS_DEMO_SENHA@@",
+          "temporary": false
+        }
+      ]
+    },
+    {
+      "username": "oidc.gestao",
+      "email": "oidc.gestao@oris.example",
+      "firstName": "Paula",
+      "lastName": "Gestao",
+      "enabled": true,
+      "emailVerified": true,
+      "groups": [
+        "oris-gestao"
+      ],
+      "credentials": [
+        {
+          "type": "password",
+          "value": "@@ORIS_DEMO_SENHA@@",
+          "temporary": false
+        }
+      ]
+    },
+    {
+      "username": "oidc.saude",
+      "email": "oidc.saude@oris.example",
+      "firstName": "Quirino",
+      "lastName": "Saude",
+      "enabled": true,
+      "emailVerified": true,
+      "groups": [
+        "oris-saude"
+      ],
+      "credentials": [
+        {
+          "type": "password",
+          "value": "@@ORIS_DEMO_SENHA@@",
+          "temporary": false
+        }
+      ]
+    },
+    {
+      "username": "oidc.gestor",
+      "email": "oidc.gestor@oris.example",
+      "firstName": "Rita",
+      "lastName": "Gestor",
+      "enabled": true,
+      "emailVerified": true,
+      "groups": [
+        "oris-gestor"
+      ],
+      "credentials": [
+        {
+          "type": "password",
+          "value": "@@ORIS_DEMO_SENHA@@",
+          "temporary": false
+        }
+      ]
+    },
+    {
+      "username": "oidc.semgrupo",
+      "email": "oidc.semgrupo@oris.example",
+      "firstName": "Sergio",
+      "lastName": "Semgrupo",
+      "enabled": true,
+      "emailVerified": true,
+      "groups": [],
+      "credentials": [
+        {
+          "type": "password",
+          "value": "@@ORIS_DEMO_SENHA@@",
+          "temporary": false
+        }
+      ]
+    }
   ],
   "clients": [
     {
@@ -40,15 +124,294 @@
       "directAccessGrantsEnabled": false,
       "implicitFlowEnabled": false,
       "serviceAccountsEnabled": false,
-      "redirectUris": ["https://@@ORIS_DOMAIN@@/login/oidc/callback"],
-      "webOrigins": ["https://@@ORIS_DOMAIN@@"],
-      "attributes": {"pkce.code.challenge.method": "S256"},
-      "defaultClientScopes": ["web-origins", "profile", "email", "roles"],
+      "redirectUris": [
+        "https://@@ORIS_DOMAIN@@/login/oidc/callback"
+      ],
+      "webOrigins": [
+        "https://@@ORIS_DOMAIN@@"
+      ],
+      "attributes": {
+        "pkce.code.challenge.method": "S256"
+      },
+      "defaultClientScopes": [
+        "web-origins",
+        "profile",
+        "email",
+        "roles"
+      ],
       "protocolMappers": [
-        {"name": "groups", "protocol": "openid-connect", "protocolMapper": "oidc-group-membership-mapper",
-         "config": {"claim.name": "groups", "full.path": "false", "id.token.claim": "true",
-                    "access.token.claim": "true", "userinfo.token.claim": "true"}}
+        {
+          "name": "groups",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-group-membership-mapper",
+          "config": {
+            "claim.name": "groups",
+            "full.path": "false",
+            "id.token.claim": "true",
+            "access.token.claim": "true",
+            "userinfo.token.claim": "true"
+          }
+        },
+        {
+          "name": "ldap_uid",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-attribute-mapper",
+          "config": {
+            "user.attribute": "ldap_uid",
+            "claim.name": "ldap_uid",
+            "jsonType.label": "String",
+            "id.token.claim": "true",
+            "access.token.claim": "false",
+            "userinfo.token.claim": "true",
+            "multivalued": "false"
+          }
+        }
       ]
     }
-  ]
+  ],
+  "components": {
+    "org.keycloak.storage.UserStorageProvider": [
+      {
+        "name": "ldap-oris",
+        "providerId": "ldap",
+        "subComponents": {
+          "org.keycloak.storage.ldap.mappers.LDAPStorageMapper": [
+            {
+              "name": "username",
+              "providerId": "user-attribute-ldap-mapper",
+              "subComponents": {},
+              "config": {
+                "ldap.attribute": [
+                  "uid"
+                ],
+                "user.model.attribute": [
+                  "username"
+                ],
+                "read.only": [
+                  "true"
+                ],
+                "always.read.value.from.ldap": [
+                  "false"
+                ],
+                "is.mandatory.in.ldap": [
+                  "true"
+                ]
+              }
+            },
+            {
+              "name": "email",
+              "providerId": "user-attribute-ldap-mapper",
+              "subComponents": {},
+              "config": {
+                "ldap.attribute": [
+                  "mail"
+                ],
+                "user.model.attribute": [
+                  "email"
+                ],
+                "read.only": [
+                  "true"
+                ],
+                "always.read.value.from.ldap": [
+                  "true"
+                ],
+                "is.mandatory.in.ldap": [
+                  "false"
+                ]
+              }
+            },
+            {
+              "name": "first name",
+              "providerId": "user-attribute-ldap-mapper",
+              "subComponents": {},
+              "config": {
+                "ldap.attribute": [
+                  "cn"
+                ],
+                "user.model.attribute": [
+                  "firstName"
+                ],
+                "read.only": [
+                  "true"
+                ],
+                "always.read.value.from.ldap": [
+                  "true"
+                ],
+                "is.mandatory.in.ldap": [
+                  "true"
+                ]
+              }
+            },
+            {
+              "name": "last name",
+              "providerId": "user-attribute-ldap-mapper",
+              "subComponents": {},
+              "config": {
+                "ldap.attribute": [
+                  "sn"
+                ],
+                "user.model.attribute": [
+                  "lastName"
+                ],
+                "read.only": [
+                  "true"
+                ],
+                "always.read.value.from.ldap": [
+                  "true"
+                ],
+                "is.mandatory.in.ldap": [
+                  "true"
+                ]
+              }
+            },
+            {
+              "name": "ldap_uid",
+              "providerId": "user-attribute-ldap-mapper",
+              "subComponents": {},
+              "config": {
+                "ldap.attribute": [
+                  "uid"
+                ],
+                "user.model.attribute": [
+                  "ldap_uid"
+                ],
+                "read.only": [
+                  "true"
+                ],
+                "always.read.value.from.ldap": [
+                  "true"
+                ],
+                "is.mandatory.in.ldap": [
+                  "true"
+                ]
+              }
+            },
+            {
+              "name": "grupos",
+              "providerId": "group-ldap-mapper",
+              "subComponents": {},
+              "config": {
+                "groups.dn": [
+                  "ou=grupos,dc=oris,dc=local"
+                ],
+                "group.name.ldap.attribute": [
+                  "cn"
+                ],
+                "group.object.classes": [
+                  "groupOfNames"
+                ],
+                "preserve.group.inheritance": [
+                  "false"
+                ],
+                "ignore.missing.groups": [
+                  "true"
+                ],
+                "membership.ldap.attribute": [
+                  "member"
+                ],
+                "membership.attribute.type": [
+                  "DN"
+                ],
+                "membership.user.ldap.attribute": [
+                  "uid"
+                ],
+                "mode": [
+                  "READ_ONLY"
+                ],
+                "user.roles.retrieve.strategy": [
+                  "LOAD_GROUPS_BY_MEMBER_ATTRIBUTE"
+                ],
+                "memberof.ldap.attribute": [
+                  "memberOf"
+                ],
+                "groups.path": [
+                  "/ldap"
+                ],
+                "drop.non.existing.groups.during.sync": [
+                  "false"
+                ]
+              }
+            }
+          ]
+        },
+        "config": {
+          "enabled": [
+            "true"
+          ],
+          "priority": [
+            "0"
+          ],
+          "editMode": [
+            "READ_ONLY"
+          ],
+          "vendor": [
+            "other"
+          ],
+          "connectionUrl": [
+            "ldap://ldap.oris.local:389"
+          ],
+          "startTls": [
+            "true"
+          ],
+          "useTruststoreSpi": [
+            "always"
+          ],
+          "connectionPooling": [
+            "false"
+          ],
+          "authType": [
+            "simple"
+          ],
+          "bindDn": [
+            "cn=admin,dc=oris,dc=local"
+          ],
+          "bindCredential": [
+            "@@LDAP_ADMIN_PASSWORD@@"
+          ],
+          "usersDn": [
+            "ou=usuarios,dc=oris,dc=local"
+          ],
+          "usernameLDAPAttribute": [
+            "uid"
+          ],
+          "rdnLDAPAttribute": [
+            "uid"
+          ],
+          "uuidLDAPAttribute": [
+            "entryUUID"
+          ],
+          "userObjectClasses": [
+            "inetOrgPerson"
+          ],
+          "searchScope": [
+            "1"
+          ],
+          "importEnabled": [
+            "true"
+          ],
+          "syncRegistrations": [
+            "false"
+          ],
+          "trustEmail": [
+            "true"
+          ],
+          "validatePasswordPolicy": [
+            "false"
+          ],
+          "fullSyncPeriod": [
+            "-1"
+          ],
+          "changedSyncPeriod": [
+            "-1"
+          ],
+          "cachePolicy": [
+            "DEFAULT"
+          ],
+          "pagination": [
+            "false"
+          ]
+        }
+      }
+    ]
+  }
 }

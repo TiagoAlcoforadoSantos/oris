@@ -38,8 +38,14 @@ services:
       KC_HTTP_ENABLED: "true"
       KC_PROXY_HEADERS: xforwarded
       JAVA_OPTS_KC_HEAP: "-Xms256m -Xmx640m"
+      # O Keycloak le os usuarios do OpenLDAP (federacao) com STARTTLS e precisa
+      # confiar na CA propria do laboratorio para validar o certificado do LDAP.
+      KC_TRUSTSTORE_PATHS: /opt/keycloak/conf/truststores/ca.crt
+    depends_on:
+      - ldap
     volumes:
       - ./docker/keycloak/generated/oris-realm.json:/opt/keycloak/data/import/oris-realm.json:ro
+      - ./docker/ldap/certs/ca.crt:/opt/keycloak/conf/truststores/ca.crt:ro
 
   caddy:
     volumes:
@@ -69,6 +75,9 @@ services:
       OIDC_CLIENT_ID: oris
       OIDC_CLIENT_SECRET: ${OIDC_CLIENT_SECRET:?defina OIDC_CLIENT_SECRET}
       OIDC_CLAIM_GROUPS: groups
+      # Usuarios do LDAP entram pelo SSO e o ORIS os reconhece pela claim ldap_uid
+      # (so o Keycloak a emite, e so para quem vem do LDAP federado).
+      OIDC_CLAIM_LDAP_UID: ldap_uid
 
 volumes:
   ldap_data:

@@ -75,3 +75,21 @@ sudo docker compose -f docker-compose.aws.yml -f docker-compose.idp.yml --env-fi
 Login OIDC: na tela de login, o botão de login institucional leva ao Keycloak (`oidc.admin@oris.example`, `oidc.gestao`, `oidc.saude`, `oidc.gestor`, todos com a senha `ORIS_DEMO_SENHA`; `oidc.semgrupo` deve ser **negado**).
 
 Validação do LDAP: o `sincronizar-ldap` foi executado contra um OpenLDAP 2.5 real (STARTTLS + CA própria): 4 usuários criados com o perfil do grupo, 1 sem grupo ignorado, 2ª execução sem alterações, CA errada recusada, conexão sem TLS recusada.
+
+### Usuários do LDAP entrando pelo SSO (federação LDAP no Keycloak)
+
+O Keycloak lê o OpenLDAP (federação, **somente leitura**, STARTTLS validando a CA do laboratório). Assim quem está no LDAP (`ana.admin`, `bruno.gestao`, `carla.saude`, `davi.gestor`) entra pelo botão de login institucional **com a senha do LDAP**, e o ORIS reconhece que é a **mesma conta** criada pela `sincronizar-ldap` (claim `ldap_uid`, emitida só para usuários federados). `eva.semgrupo` continua **negada**.
+
+Para aplicar num servidor que já está no ar (o Keycloak só importa o realm quando é criado do zero; ele não tem volume de dados, então recriar o contêiner basta):
+
+```bash
+cd ~/oris && git pull
+set -a; . ./.env.aws; set +a
+python3 docker/keycloak/gerar-realm.py          # agora inclui a federação com o LDAP
+sudo docker compose -f docker-compose.aws.yml -f docker-compose.idp.yml --env-file .env.aws up -d --build --force-recreate keycloak app
+sh docker/ldap/definir-senhas.sh                 # senha dos usuários do LDAP = ORIS_DEMO_SENHA
+```
+
+Conferir: entrar pelo SSO como `ana.admin` (perfil ADMINISTRADOR, origem LDAP na tela de usuários) e como `eva.semgrupo` (negado). Rodar `sincronizar-ldap` de novo não cria conta duplicada.
+
+**Não testado ainda em servidor real** (escrito sem acesso à AWS): se o Keycloak não subir, veja `docker compose logs keycloak` (o mais provável é o certificado do LDAP ou o caminho do truststore).

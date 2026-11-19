@@ -87,6 +87,9 @@ mapeia grupo→perfil (`DIRETORIO_MAPA_GRUPO_PERFIL`, maior privilégio vence), 
 
 **6.3 Login OIDC (Requisito 3)** — `/login/oidc` (Authorization Code + PKCE S256 + state + nonce)
 → IdP → `/login/oidc/callback` valida tudo, provisiona o usuário via o mesmo serviço e abre a sessão.
+Quem vem do **LDAP federado no Keycloak** chega com a claim `ldap_uid` (`OIDC_CLAIM_LDAP_UID`): o ORIS usa a
+**mesma conta** da sincronização LDAP (origem LDAP, identificador = uid), em vez de criar outra. Assim LDAP e SSO
+são um só cadastro: a pessoa é criada no LDAP, entra pelo SSO com a senha do LDAP e recebe o perfil do grupo.
 
 **6.4 Exportação ao S3 (Requisito 4)** — `/relatorios` → `relatorio_service.gerar_csv` (sanitiza
 fórmulas) → `armazenamento_service.enviar_relatorio` (SSE AES256) → URL pré-assinada → auditoria.

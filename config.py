@@ -73,6 +73,11 @@ class Config:
     OIDC_CLIENT_SECRET = os.getenv("OIDC_CLIENT_SECRET", "")
     OIDC_SCOPES = os.getenv("OIDC_SCOPES", "openid profile email")
     OIDC_CLAIM_GROUPS = os.getenv("OIDC_CLAIM_GROUPS", "groups")
+    # Claim com o uid do LDAP, emitida pelo provedor SÓ para usuários federados do LDAP
+    # (Keycloak: mapper de atributo somente leitura). Vazia = desligado: todo login OIDC
+    # vira conta OIDC. Ligue apenas se o provedor for confiável e o atributo não puder
+    # ser editado pelo próprio usuário.
+    OIDC_CLAIM_LDAP_UID = os.getenv("OIDC_CLAIM_LDAP_UID", "")
     OIDC_ALLOW_INSECURE = os.getenv("OIDC_ALLOW_INSECURE", "false").lower() == "true"
 
     # --- Exportação de relatórios para nuvem: Amazon S3 (Requisito 4) ---

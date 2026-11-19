@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Gera docker/keycloak/generated/oris-realm.json a partir do modelo, trocando os marcadores
-@@VAR@@ pelas variaveis de ambiente (ORIS_DOMAIN, OIDC_CLIENT_SECRET, ORIS_DEMO_SENHA).
+@@VAR@@ pelas variaveis de ambiente (ORIS_DOMAIN, OIDC_CLIENT_SECRET, ORIS_DEMO_SENHA,
+LDAP_ADMIN_PASSWORD - usada pela federacao do Keycloak com o OpenLDAP).
 Os segredos ficam so no arquivo gerado (ignorado pelo Git), nunca no repositorio."""
 import json
 import os
@@ -9,7 +10,7 @@ import sys
 from pathlib import Path
 
 PASTA = Path(__file__).resolve().parent
-VARS = ("ORIS_DOMAIN", "OIDC_CLIENT_SECRET", "ORIS_DEMO_SENHA")
+VARS = ("ORIS_DOMAIN", "OIDC_CLIENT_SECRET", "ORIS_DEMO_SENHA", "LDAP_ADMIN_PASSWORD")
 
 
 def main():

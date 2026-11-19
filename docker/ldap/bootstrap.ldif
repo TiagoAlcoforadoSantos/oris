@@ -1,4 +1,5 @@
-# Dados do LDAP de laboratorio (sem senhas: o login de pessoas e feito pelo OIDC).
+# Dados do LDAP de laboratorio. Sem senhas aqui (nada de senha no Git): defina-as depois com
+# docker/ldap/definir-senhas.sh. As pessoas entram pelo SSO; o Keycloak confere a senha no LDAP.
 # Base dc=oris,dc=local e criada pelo proprio contêiner.
 dn: ou=usuarios,dc=oris,dc=local
 objectClass: organizationalUnit

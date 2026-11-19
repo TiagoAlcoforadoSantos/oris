@@ -203,9 +203,18 @@ def concluir_autorizacao(codigo, estado, redirect_uri, config=None):
     if isinstance(grupos, str):
         grupos = [grupos]
 
+    uid_ldap = ""
+    claim_uid = config.get("OIDC_CLAIM_LDAP_UID") or ""
+    if claim_uid:
+        valor = claims.get(claim_uid)
+        if isinstance(valor, list):
+            valor = valor[0] if len(valor) == 1 else ""
+        uid_ldap = str(valor or "").strip()
+
     return UsuarioExterno(
         identificador=str(claims.get("sub", "")),
         nome=claims.get("name") or claims.get("preferred_username") or "",
         email=claims.get("email", ""),
         grupos=[str(g) for g in grupos],
+        uid_ldap=uid_ldap,
     )

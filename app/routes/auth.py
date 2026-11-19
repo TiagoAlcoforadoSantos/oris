@@ -8,7 +8,7 @@ from app.extensions import db
 from app.forms import LoginForm
 from app.models import OrigemDiretorio, Usuario
 from app.services.auditoria_service import registrar_auditoria
-from app.services.diretorio_service import DiretorioConfigError, provisionar_usuario_externo
+from app.services.diretorio_service import DiretorioConfigError, UsuarioExterno, provisionar_usuario_externo
 from app.services.oidc_service import OidcError, concluir_autorizacao, iniciar_autorizacao, oidc_habilitado
 from app.utils.decorators import usuario_atual
 from app.utils.rate_limit import bloqueado, limpar_tentativas, registrar_tentativa_falha
@@ -134,7 +134,18 @@ def login_oidc_callback():
 
     try:
         externo = concluir_autorizacao(codigo, estado, _uri_callback_oidc())
-        usuario = provisionar_usuario_externo(externo, OrigemDiretorio.OIDC)
+        if externo.uid_ldap:
+            # Pessoa do LDAP (federado no Keycloak): é a MESMA conta que a
+            # `flask sincronizar-ldap` cria (origem LDAP, identificador = uid).
+            # Sem isso, quem já foi sincronizado era recusado por "e-mail já em uso".
+            externo = UsuarioExterno(
+                identificador=externo.uid_ldap, nome=externo.nome,
+                email=externo.email, grupos=externo.grupos,
+            )
+            origem_login = OrigemDiretorio.LDAP
+        else:
+            origem_login = OrigemDiretorio.OIDC
+        usuario = provisionar_usuario_externo(externo, origem_login)
     except (OidcError, DiretorioConfigError, OSError, ValueError, KeyError):
         current_app.logger.exception("Falha no callback OIDC")
         db.session.rollback()
@@ -159,7 +170,10 @@ def login_oidc_callback():
     session["usuario_id"] = usuario.id
     session["autenticado"] = True
     session.permanent = True
-    registrar_auditoria(usuario=usuario, acao="LOGIN", descricao="Login via OIDC.")
+    registrar_auditoria(
+        usuario=usuario, acao="LOGIN",
+        descricao="Login via OIDC (conta do LDAP)." if origem_login == OrigemDiretorio.LDAP else "Login via OIDC.",
+    )
     db.session.commit()
     return redirect(url_for("main.index"))
 

@@ -62,6 +62,9 @@ class UsuarioExterno:
     nome: str
     email: str
     grupos: list = field(default_factory=list)
+    # Preenchido só no login OIDC de quem vem do LDAP federado no provedor: o `uid`
+    # do LDAP, para o ORIS reconhecer a mesma conta da `flask sincronizar-ldap`.
+    uid_ldap: str = ""
 
 
 def carregar_mapa_grupo_perfil(config=None):
