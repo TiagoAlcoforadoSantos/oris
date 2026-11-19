@@ -37,6 +37,8 @@ services:
       DB_USER: oris_user
       DB_PASSWORD: ${DB_PASSWORD:?defina DB_PASSWORD}
       SECRET_KEY: ${SECRET_KEY:?defina SECRET_KEY}
+      # Chave Fernet dos dados cifrados (uploads e alteracoes). Gere UMA vez e guarde copia segura.
+      DATA_ENCRYPTION_KEY: ${DATA_ENCRYPTION_KEY:?defina DATA_ENCRYPTION_KEY}
       SESSION_COOKIE_SECURE: "true"
       TRUSTED_PROXY_COUNT: "1"
       ORIS_SEED: ${ORIS_SEED:-true}

@@ -100,12 +100,46 @@ def ler_env():
     return valores
 
 
+def gerar_chave_fernet():
+    from cryptography.fernet import Fernet
+
+    return Fernet.generate_key().decode()
+
+
+def chave_fernet_valida(valor):
+    from cryptography.fernet import Fernet
+
+    try:
+        Fernet(valor.encode())
+        return True
+    except Exception:
+        return False
+
+
+def garantir_chave_de_dados(destino):
+    """Completa um .env antigo com DATA_ENCRYPTION_KEY (exigida desde a criptografia de dados).
+
+    So gera chave quando ela FALTA ou e invalida (nesse caso o ORIS nem iniciava, entao nao
+    ha dado cifrado com ela). Uma chave valida nunca e trocada: perde-la impede ler os dados.
+    """
+    atual = ler_env().get("DATA_ENCRYPTION_KEY", "")
+    if atual and chave_fernet_valida(atual):
+        return
+    nova = gerar_chave_fernet()
+    linhas = destino.read_text(encoding="utf-8").splitlines()
+    linhas = [l for l in linhas if not (l.split("=", 1)[0].strip() == "DATA_ENCRYPTION_KEY" and not l.lstrip().startswith("#"))]
+    linhas += ["", "# Chave de criptografia dos dados (gerada pelo iniciar.py). GUARDE UMA COPIA SEGURA.", f"DATA_ENCRYPTION_KEY={nova}"]
+    destino.write_text("\n".join(linhas) + "\n", encoding="utf-8")
+    aviso("DATA_ENCRYPTION_KEY faltava (ou era invalida) no .env: gerei uma nova. Guarde uma copia segura dela.")
+
+
 def criar_env():
     """Cria o .env a partir do exemplo, com SECRET_KEY e senha do banco novas."""
     passo("Conferindo o arquivo .env...")
     destino = RAIZ / ".env"
     if destino.exists():
-        ok(".env ja existe (nao foi alterado).")
+        garantir_chave_de_dados(destino)
+        ok(".env ja existe.")
         return False
     exemplo = RAIZ / ".env.example"
     if not exemplo.exists():
@@ -113,6 +147,7 @@ def criar_env():
     texto = exemplo.read_text(encoding="utf-8")
     novos = {
         "SECRET_KEY": secrets.token_hex(32),
+        "DATA_ENCRYPTION_KEY": gerar_chave_fernet(),
         "DB_PASSWORD": secrets.token_urlsafe(18),
         "DB_NAME": BANCO,
         "DB_USER": USUARIO_BD,
@@ -124,7 +159,8 @@ def criar_env():
             linha = f"{chave}={novos[chave]}"
         linhas.append(linha)
     destino.write_text("\n".join(linhas) + "\n", encoding="utf-8")
-    ok(".env criado com SECRET_KEY e senha do banco gerados automaticamente.")
+    ok(".env criado com SECRET_KEY, DATA_ENCRYPTION_KEY e senha do banco gerados automaticamente.")
+    aviso("Guarde uma copia segura da DATA_ENCRYPTION_KEY do .env: sem ela os dados cifrados nao podem ser lidos.")
     return True
 
 

@@ -54,7 +54,7 @@ def test_senhas_do_compose_sao_sobrescreviveis_por_variavel():
 
 def test_aws_compose_nao_tem_segredo_padrao_e_so_o_caddy_publica_portas():
     texto = (RAIZ / "docker-compose.aws.yml").read_text(encoding="utf-8")
-    for var in ("DB_PASSWORD", "DB_ROOT_PASSWORD", "SECRET_KEY", "ORIS_DEMO_SENHA", "ORIS_DOMAIN"):
+    for var in ("DB_PASSWORD", "DB_ROOT_PASSWORD", "SECRET_KEY", "DATA_ENCRYPTION_KEY", "ORIS_DEMO_SENHA", "ORIS_DOMAIN"):
         assert f"${{{var}:?" in texto, f"{var} deve ser obrigatoria (sem valor padrao)"
     assert 'SESSION_COOKIE_SECURE: "true"' in texto
     app_bloco = texto.split("  app:")[1].split("  caddy:")[0]

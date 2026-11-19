@@ -19,6 +19,7 @@ ORIS_DOMAIN=54-174-10-29.sslip.io
 DB_PASSWORD=$(openssl rand -hex 16)
 DB_ROOT_PASSWORD=$(openssl rand -hex 16)
 SECRET_KEY=$(openssl rand -hex 32)
+DATA_ENCRYPTION_KEY=$(python3 -c "import base64,os;print(base64.urlsafe_b64encode(os.urandom(32)).decode())")
 ORIS_DEMO_SENHA=<escolha uma senha forte para os usuários de demonstração>
 EOT
 chmod 600 .env.aws
@@ -35,6 +36,8 @@ sudo docker compose -f docker-compose.aws.yml logs app | tail
 Abrir `https://<ORIS_DOMAIN>`. A primeira emissão do certificado leva ~1 minuto e exige as portas 80 e 443 abertas no security group.
 
 ## Cuidados
+
+- **`DATA_ENCRYPTION_KEY` é obrigatória** desde a criptografia de dados (uploads e alterações pendentes). Num servidor já implantado, antes do `git pull` + `up -d --build`, acrescente-a ao `.env.aws` (comando da seção "Segredos") e **guarde uma cópia segura**: trocar ou perder a chave torna ilegíveis os dados já cifrados. Sem ela o `docker compose` recusa subir, com a mensagem "defina DATA_ENCRYPTION_KEY".
 
 - O **Learner Lab desliga o servidor** ao fim da sessão (~4 h). Ao religar, o IP elástico e os dados continuam; os contêineres sobem sozinhos (`restart: unless-stopped`).
 - Os usuários `@oris.example` usam a senha de `ORIS_DEMO_SENHA`, nunca a do repositório.

@@ -39,6 +39,8 @@ services:
       DB_USER: oris_user
       DB_PASSWORD: ${DB_PASSWORD:-oris-demo-troque}
       SECRET_KEY: ${SECRET_KEY:-}
+      # Se vazia, o entrypoint gera uma so para esta execucao (demonstracao local).
+      DATA_ENCRYPTION_KEY: ${DATA_ENCRYPTION_KEY:-}
       # Demonstracao em http://localhost: sem HTTPS o cookie "Secure" nao funcionaria.
       # Em producao REAL (atras de HTTPS) use SESSION_COOKIE_SECURE=true.
       SESSION_COOKIE_SECURE: ${SESSION_COOKIE_SECURE:-false}

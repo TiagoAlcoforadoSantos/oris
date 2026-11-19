@@ -115,6 +115,12 @@ def main():
     if not os.environ.get("SECRET_KEY"):
         os.environ["SECRET_KEY"] = secrets.token_hex(32)
         log("SECRET_KEY nao definida: gerada para esta execucao (sessoes caem se reiniciar).")
+    if not os.environ.get("DATA_ENCRYPTION_KEY"):
+        from cryptography.fernet import Fernet
+
+        os.environ["DATA_ENCRYPTION_KEY"] = Fernet.generate_key().decode()
+        log("DATA_ENCRYPTION_KEY nao definida: gerada para esta execucao. Alteracoes pendentes e "
+            "uploads cifrados ficam ilegiveis se reiniciar; em producao defina a chave (docker-compose.aws.yml exige).")
     esperar_banco()
     preparar_schema()
     carregar_seed()
